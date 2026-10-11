@@ -29,8 +29,10 @@ import moe.rgsekai.sekaitune.db.MusicDatabase
 import moe.rgsekai.sekaitune.extensions.currentMetadata
 import moe.rgsekai.sekaitune.extensions.getCurrentQueueIndex
 import moe.rgsekai.sekaitune.extensions.getQueueWindows
+import moe.rgsekai.sekaitune.models.MediaMetadata
 import moe.rgsekai.sekaitune.playback.MusicService.MusicBinder
 import moe.rgsekai.sekaitune.playback.queues.Queue
+import moe.rgsekai.sekaitune.playback.queues.YouTubeQueue
 import moe.rgsekai.sekaitune.utils.reportException
 import timber.log.Timber
 
@@ -130,6 +132,21 @@ class PlayerConnection(
 
     fun startRadioSeamlessly() {
         service.startRadioSeamlessly()
+    }
+
+    /**
+     * "Start radio" for [song].
+     * If [song] is the one that is already playing we must NOT rebuild the queue with
+     * playQueue(): that calls setMediaItem() and restarts the track from 0:00.
+     * Instead keep the current item/position and only replace what comes after it.
+     */
+    fun startRadio(song: MediaMetadata) {
+        val playingId = player.currentMetadata?.id ?: player.currentMediaItem?.mediaId
+        if (player.mediaItemCount > 0 && playingId == song.id) {
+            service.startRadioSeamlessly()
+        } else {
+            service.playQueue(YouTubeQueue.radio(song))
+        }
     }
 
     fun playNext(item: MediaItem) = playNext(listOf(item))
