@@ -33,6 +33,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
@@ -248,6 +254,9 @@ fun PoTokenScreen(
         )
     }
 
+    val lazyListState = rememberLazyListState()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         modifier =
             Modifier
@@ -270,6 +279,11 @@ fun PoTokenScreen(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(lazyListState = lazyListState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -288,6 +302,7 @@ fun PoTokenScreen(
     ) { innerPadding ->
         val playerInsets = LocalPlayerAwareWindowInsets.current
         LazyColumn(
+            state = lazyListState,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -295,7 +310,8 @@ fun PoTokenScreen(
                         playerInsets.only(
                             WindowInsetsSides.Horizontal,
                         ),
-                    ),
+                    )
+                    .tvDpadListScroll(lazyListState, coroutineScope),
             contentPadding =
                 PaddingValues(
                     top = innerPadding.calculateTopPadding(),
@@ -428,13 +444,14 @@ private fun TokenListItem(
     modifier: Modifier = Modifier,
 ) {
     val copyLabel = stringResource(R.string.copy)
+    val shapes = ListItemDefaults.segmentedShapes(index = index, count = count)
     SegmentedListItem(
         onClick = { onCopy(token) },
         onLongClick = { onCopy(token) },
         onLongClickLabel = copyLabel,
         enabled = token.isNotBlank(),
-        shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
-        modifier = modifier.fillMaxWidth(),
+        shapes = shapes,
+        modifier = modifier.fillMaxWidth().tvFocusOutline(shape = shapes.shape),
         colors =
             ListItemDefaults.segmentedColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,

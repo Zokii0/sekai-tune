@@ -61,6 +61,7 @@ import moe.rgsekai.sekaitune.spotify.models.SpotifyArtist
 import moe.rgsekai.sekaitune.spotify.models.SpotifyPlaylist
 import moe.rgsekai.sekaitune.spotify.models.SpotifyTrack
 import moe.rgsekai.sekaitune.ui.utils.resize
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.joinByBullet
 import moe.rgsekai.sekaitune.utils.makeTimeString
 
@@ -91,7 +92,7 @@ fun SpotifyLibraryPlaylistListItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .focusable()
+                .tvFocusOutline(shape = shape)
                 .clickable(onClick = openPlaylist),
     )
 }
@@ -115,7 +116,7 @@ fun SpotifyLibraryArtistListItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .focusable()
+                .tvFocusOutline(shape = shape)
                 .clickable(enabled = !isResolving, onClick = onClick),
     ) {
         Row(
@@ -178,6 +179,7 @@ fun SpotifyLibraryArtistListItem(
                 Box {
                     IconButton(
                         onClick = { showMenu = true },
+                        modifier = Modifier.tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.more_vert),
@@ -235,7 +237,10 @@ fun SpotifyLibraryArtistListItem(
                 )
             },
             buttons = {
-                TextButton(onClick = { showConfirmDialog = false }) {
+                TextButton(
+                    onClick = { showConfirmDialog = false },
+                    modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)),
+                ) {
                     Text(stringResource(R.string.cancel))
                 }
                 TextButton(
@@ -243,6 +248,7 @@ fun SpotifyLibraryArtistListItem(
                         showConfirmDialog = false
                         onUnfollow()
                     },
+                    modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)),
                 ) {
                     Text(
                         text = stringResource(R.string.spotify_unfollow),

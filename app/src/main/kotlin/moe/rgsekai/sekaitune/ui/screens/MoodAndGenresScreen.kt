@@ -58,6 +58,8 @@ import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.innertube.YouTube
 import moe.rgsekai.sekaitune.innertube.models.BrowseEndpoint
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
+import moe.rgsekai.sekaitune.ui.utils.tvDpadGridScroll
 import moe.rgsekai.sekaitune.ui.component.NavigationTitle
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerHost
 import moe.rgsekai.sekaitune.ui.component.shimmer.TextPlaceholder
@@ -72,6 +74,7 @@ fun MoodAndGenresScreen(
 ) {
     val moodAndGenres by viewModel.moodAndGenres.collectAsState()
     val gridState = rememberLazyGridState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val density = LocalDensity.current
     val windowInsets = LocalPlayerAwareWindowInsets.current
     val topPadding = with(density) { windowInsets.getTop(this).toDp() }
@@ -97,6 +100,7 @@ fun MoodAndGenresScreen(
                 end = 6.dp,
                 bottom = bottomPadding,
             ),
+        modifier = Modifier.tvDpadGridScroll(gridState, coroutineScope),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             NavigationTitle(
@@ -206,7 +210,8 @@ fun MoodAndGenresButton(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier =
             modifier
-                .height(MoodAndGenresButtonHeight),
+                .height(MoodAndGenresButtonHeight)
+                .tvFocusOutline(shape = MoodAndGenresButtonShape),
     ) {
         Box(
             modifier =

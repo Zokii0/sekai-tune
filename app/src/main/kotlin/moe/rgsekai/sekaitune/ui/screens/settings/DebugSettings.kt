@@ -57,6 +57,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -123,6 +128,10 @@ fun DebugSettings(navController: NavController) {
 
     val playerConnection = LocalPlayerConnection.current
 
+    val scrollState = rememberScrollState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -138,6 +147,11 @@ fun DebugSettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(scrollState = scrollState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(painterResource(R.drawable.arrow_back), contentDescription = null)
                     }
@@ -154,7 +168,9 @@ fun DebugSettings(navController: NavController) {
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
                         ),
-                    ).verticalScroll(rememberScrollState()),
+                    )
+                    .tvDpadScroll(scrollState, coroutineScope)
+                    .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PreferenceGroup(title = stringResource(R.string.experimental_features)) {

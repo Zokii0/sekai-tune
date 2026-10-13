@@ -13,6 +13,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import kotlinx.coroutines.CoroutineScope
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.db.entities.Album
@@ -53,6 +55,7 @@ fun LibraryArtistListItem(
                     )
                 }
             },
+            modifier = Modifier.tvFocusOutline(shape = CircleShape),
         ) {
             Icon(
                 painter = painterResource(R.drawable.more_vert),
@@ -121,6 +124,7 @@ fun LibraryAlbumListItem(
                     )
                 }
             },
+            modifier = Modifier.tvFocusOutline(shape = CircleShape),
         ) {
             Icon(
                 painter = painterResource(R.drawable.more_vert),
@@ -237,6 +241,7 @@ fun LibraryPlaylistListItem(
                     }
                 }
             },
+            modifier = Modifier.tvFocusOutline(shape = CircleShape),
         ) {
             Icon(
                 painter = painterResource(R.drawable.more_vert),
@@ -264,7 +269,7 @@ fun LibraryPlaylistListItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .focusable()
+                .tvFocusOutline(shape = shape)
                 .clickable(onClick = openPlaylist),
     )
 }

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.constants.PlaylistSongSortType
 import moe.rgsekai.sekaitune.constants.PlaylistSortType
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -67,7 +68,10 @@ inline fun <reified T : Enum<T>> SortHeader(
                 leadingButton = {
                     SplitButtonDefaults.TonalLeadingButton(
                         onClick = { menuExpanded = true },
-                        modifier = Modifier.heightIn(min = SplitButtonDefaults.MediumContainerHeight),
+                        modifier =
+                            Modifier
+                                .heightIn(min = SplitButtonDefaults.MediumContainerHeight)
+                                .tvFocusOutline(),
                     ) {
                         Text(
                             text = stringResource(sortTypeText(sortType)),
@@ -83,7 +87,8 @@ inline fun <reified T : Enum<T>> SortHeader(
                         modifier =
                             Modifier
                                 .heightIn(min = SplitButtonDefaults.MediumContainerHeight)
-                                .widthIn(min = SplitButtonDefaults.MediumContainerHeight),
+                                .widthIn(min = SplitButtonDefaults.MediumContainerHeight)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_downward),

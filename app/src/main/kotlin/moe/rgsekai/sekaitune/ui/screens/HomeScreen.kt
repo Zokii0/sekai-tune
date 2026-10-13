@@ -58,6 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.LocalPlayerConnection
 import moe.rgsekai.sekaitune.R
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import moe.rgsekai.sekaitune.home.HomeAction
 import moe.rgsekai.sekaitune.home.HomeScreenState
 import moe.rgsekai.sekaitune.home.HomeUiState
@@ -307,7 +308,8 @@ private fun HomeContent(
                         Modifier
                             .widthIn(max = HomeFeedMaxWidth)
                             .fillMaxWidth()
-                            .align(Alignment.TopCenter),
+                            .align(Alignment.TopCenter)
+                            .tvDpadListScroll(lazyListState, scope),
                 ) {
                     if (uiState.showCategoryChips) {
                         item(

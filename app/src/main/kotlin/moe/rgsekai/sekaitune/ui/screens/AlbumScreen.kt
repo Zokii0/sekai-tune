@@ -14,6 +14,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -135,6 +140,7 @@ import moe.rgsekai.sekaitune.ui.utils.sendAddMissingDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendPauseDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendRemoveDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendResumeDownloads
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import moe.rgsekai.sekaitune.utils.makeTimeString
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.viewmodels.AlbumUiState
@@ -252,6 +258,8 @@ fun AlbumScreen(
 
     // State for LazyColumn to track scroll
     val lazyListState = rememberLazyListState()
+    val contentFocusRequester = remember { FocusRequester() }
+    val topBarFocusRequester = remember { FocusRequester() }
 
     // Calculate gradient opacity based on scroll position
     val gradientAlpha by remember {
@@ -405,12 +413,13 @@ fun AlbumScreen(
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+            modifier = Modifier.tvDpadListScroll(lazyListState, scope),
         ) {
             val albumWithSongs = albumWithSongs
             val hasSongs = albumWithSongs?.songs?.isNotEmpty() == true
             if (hasSongs) {
-                // Hero Header
-                item(key = "header") {
+                // Hero Header - Info
+                item(key = "header_info") {
                     Column(
                         modifier =
                             Modifier
@@ -529,17 +538,21 @@ fun AlbumScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
 
-                        // Action Buttons Row
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                // Action Buttons Row
+                item(key = "header_actions") {
+                    Row(
+                        modifier =
+                            Modifier
+                                .focusGroup()
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                             val isBookmarked = albumWithSongs.album.bookmarkedAt != null
 
                             ToggleButton(
@@ -549,7 +562,11 @@ fun AlbumScreen(
                                         update(albumWithSongs.album.toggleLike())
                                     }
                                 },
-                                modifier = Modifier.size(56.dp),
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .focusRequester(contentFocusRequester)
+                                    .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState)
+                                    .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                 shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                                 colors =
                                     ToggleButtonDefaults.toggleButtonColors(
@@ -579,7 +596,8 @@ fun AlbumScreen(
                                 modifier =
                                     Modifier
                                         .weight(1f)
-                                        .height(56.dp),
+                                        .height(56.dp)
+                                        .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                 shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                 colors =
                                     ToggleButtonDefaults.toggleButtonColors(
@@ -606,7 +624,8 @@ fun AlbumScreen(
                                 modifier =
                                     Modifier
                                         .weight(1f)
-                                        .height(56.dp),
+                                        .height(56.dp)
+                                        .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                 shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                 colors =
                                     ToggleButtonDefaults.toggleButtonColors(
@@ -660,7 +679,9 @@ fun AlbumScreen(
                                         }
                                     }
                                 },
-                                modifier = Modifier.size(56.dp),
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                 shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                 colors =
                                     ToggleButtonDefaults.toggleButtonColors(
@@ -729,9 +750,6 @@ fun AlbumScreen(
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
                 }
 
                 // Songs Section Header
@@ -809,7 +827,9 @@ fun AlbumScreen(
                         )
                     }
                     item(key = "other_versions_list") {
-                        LazyRow {
+                        LazyRow(
+                            modifier = Modifier.focusGroup(),
+                        ) {
                             items(
                                 items = otherVersions.distinctBy { it.id },
                                 key = { it.id },
@@ -1069,6 +1089,15 @@ fun AlbumScreen(
                             navController.backToMain()
                         }
                     },
+                    modifier =
+                        Modifier
+                            .focusRequester(topBarFocusRequester)
+                            .tvFocusBridge(
+                                down = contentFocusRequester,
+                                lazyListState = lazyListState,
+                                targetDownIndex = 1,
+                            )
+                            .tvFocusOutline(shape = CircleShape),
                 ) {
                     Icon(
                         painter =

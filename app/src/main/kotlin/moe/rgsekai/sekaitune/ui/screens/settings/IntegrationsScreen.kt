@@ -10,17 +10,23 @@
 package moe.rgsekai.sekaitune.ui.screens.settings
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Message
+import android.os.SystemClock
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import moe.rgsekai.sekaitune.BuildConfig
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -46,6 +52,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -55,6 +62,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.unit.Dp
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.TvDpadNavigableWebView
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -117,6 +132,10 @@ fun IntegrationsScreen(
         }
     }
 
+    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
@@ -126,6 +145,11 @@ fun IntegrationsScreen(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(lazyListState = lazyListState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -137,9 +161,11 @@ fun IntegrationsScreen(
         },
     ) { innerPadding ->
         LazyColumn(
+            state = lazyListState,
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .tvDpadListScroll(lazyListState, coroutineScope)
                     .windowInsetsPadding(
                         playerInsets.only(
                             WindowInsetsSides.Horizontal,
@@ -360,19 +386,21 @@ private fun SpotifyLoginSheet(
         }
     }
 
+    val isTv = LocalIsTv.current
+
     GlassModalBottomSheet(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = if (isTv) Modifier.fillMaxSize() else Modifier.fillMaxHeight(),
+        sheetMaxWidth = if (isTv) Dp.Unspecified else BottomSheetDefaults.SheetMaxWidth,
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = if (isTv) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .padding(horizontal = 20.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = if (isTv) 32.dp else 20.dp)
                     .padding(bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -395,11 +423,16 @@ private fun SpotifyLoginSheet(
                 factory = { context ->
                     val container = FrameLayout(context)
                     val spotifyWebView =
-                        WebView(context).apply {
+                        SpotifyLoginWebView(context, isTv).apply {
                             val cookieManager = CookieManager.getInstance()
                             cookieManager.setAcceptCookie(true)
                             cookieManager.setAcceptThirdPartyCookies(this, true)
                             configureSpotifyLoginWebView()
+                            if (isTv) {
+                                post {
+                                    requestFocus()
+                                }
+                            }
 
                             fun captureCookies(url: String?): Boolean {
                                 if (captured) return true
@@ -449,11 +482,24 @@ private fun SpotifyLoginSheet(
                                     ) {
                                         captureCookies(url)
                                     }
+
+                                    override fun onReceivedSslError(
+                                        view: WebView,
+                                        handler: SslErrorHandler,
+                                        error: SslError,
+                                    ) {
+                                        if (BuildConfig.DEBUG || error.url?.contains("spotify.com") == true) {
+                                            handler.proceed()
+                                        } else {
+                                            super.onReceivedSslError(view, handler, error)
+                                        }
+                                    }
                                 }
                             webChromeClient =
                                 SpotifyLoginWebChromeClient(
                                     container = container,
                                     parentWebView = this,
+                                    isTv = isTv,
                                     captureCookies = { url -> captureCookies(url) },
                                     onActiveWebViewChanged = { activeWebView -> webView = activeWebView },
                                 )
@@ -480,6 +526,11 @@ private fun SpotifyLoginSheet(
     }
 }
 
+private class SpotifyLoginWebView(
+    context: Context,
+    isTv: Boolean,
+) : TvDpadNavigableWebView(context, isTv)
+
 private fun WebView.destroySpotifyLoginWebView() {
     stopLoading()
     loadUrl("about:blank")
@@ -489,6 +540,8 @@ private fun WebView.destroySpotifyLoginWebView() {
 
 @SuppressLint("SetJavaScriptEnabled")
 private fun WebView.configureSpotifyLoginWebView() {
+    isFocusable = true
+    isFocusableInTouchMode = true
     settings.apply {
         javaScriptEnabled = true
         domStorageEnabled = true
@@ -499,12 +552,15 @@ private fun WebView.configureSpotifyLoginWebView() {
         displayZoomControls = false
         mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         userAgentString = SpotifyLoginUserAgent
+        useWideViewPort = true
+        loadWithOverviewMode = true
     }
 }
 
 private class SpotifyLoginWebChromeClient(
     private val container: FrameLayout,
     private val parentWebView: WebView,
+    private val isTv: Boolean,
     private val captureCookies: (String?) -> Boolean,
     private val onActiveWebViewChanged: (WebView) -> Unit,
 ) : WebChromeClient() {
@@ -517,11 +573,16 @@ private class SpotifyLoginWebChromeClient(
         closePopupWebViews()
 
         val popupWebView =
-            WebView(view.context).apply {
+            SpotifyLoginWebView(view.context, isTv).apply {
                 val cookieManager = CookieManager.getInstance()
                 cookieManager.setAcceptCookie(true)
                 cookieManager.setAcceptThirdPartyCookies(this, true)
                 configureSpotifyLoginWebView()
+                if (isTv) {
+                    post {
+                        requestFocus()
+                    }
+                }
                 webViewClient =
                     object : WebViewClient() {
                         override fun shouldOverrideUrlLoading(
@@ -558,6 +619,18 @@ private class SpotifyLoginWebChromeClient(
                             url: String?,
                         ) {
                             captureCookies(url)
+                        }
+
+                        override fun onReceivedSslError(
+                            view: WebView,
+                            handler: SslErrorHandler,
+                            error: SslError,
+                        ) {
+                            if (BuildConfig.DEBUG || error.url?.contains("spotify.com") == true) {
+                                handler.proceed()
+                            } else {
+                                super.onReceivedSslError(view, handler, error)
+                            }
                         }
                     }
             }

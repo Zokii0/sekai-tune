@@ -106,6 +106,8 @@ import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.viewmodels.SearchDiscoveryScreenState
 import moe.rgsekai.sekaitune.viewmodels.SearchDiscoveryTab
 import moe.rgsekai.sekaitune.viewmodels.SearchDiscoveryViewModel
+import androidx.compose.foundation.focusGroup
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -343,7 +345,8 @@ private fun SearchEntryField(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(56.dp)
+                .tvFocusOutline(shape = CircleShape),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -401,7 +404,8 @@ private fun MusicRecognitionPill(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(56.dp)
+                .tvFocusOutline(shape = CircleShape),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -452,6 +456,7 @@ private fun SearchDiscoveryTabs(
             Tab(
                 selected = selectedTab == tab,
                 onClick = { onTabSelected(tab) },
+                modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)),
                 text = {
                     Text(
                         text =
@@ -492,7 +497,8 @@ private fun SearchMoodAndGenresGrid(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height((MoodAndGenresButtonHeight + 12.dp) * rowCount + 12.dp),
+                    .height((MoodAndGenresButtonHeight + 12.dp) * rowCount + 12.dp)
+                    .focusGroup(),
         ) {
             items(
                 items = data.moodAndGenres,
@@ -591,8 +597,9 @@ private fun SuggestedSongsSection(
                     ),
         ) {
             visibleSongs.forEachIndexed { index, song ->
+                val cardShape = segmentedSuggestedSongShape(index = index, count = visibleSongs.size)
                 Card(
-                    shape = segmentedSuggestedSongShape(index = index, count = visibleSongs.size),
+                    shape = cardShape,
                     colors =
                         CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -601,6 +608,7 @@ private fun SuggestedSongsSection(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .tvFocusOutline(shape = cardShape)
                             .combinedClickable(
                                 onClick = {
                                     if (song.id == mediaMetadata?.id) {
@@ -666,6 +674,7 @@ private fun TrendingAlbumsSection(
     )
     LazyRow(
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal).asPaddingValues(),
+        modifier = Modifier.focusGroup(),
     ) {
         items(
             items = albums,
@@ -717,6 +726,7 @@ private fun SuggestedArtistsSection(
     )
     LazyRow(
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal).asPaddingValues(),
+        modifier = Modifier.focusGroup(),
     ) {
         items(
             items = artists,

@@ -104,6 +104,8 @@ import moe.rgsekai.sekaitune.constants.AiCustomModelKey
 import moe.rgsekai.sekaitune.constants.AiProvider
 import moe.rgsekai.sekaitune.constants.AiProviderKey
 import moe.rgsekai.sekaitune.constants.AiSelectedModelKey
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import moe.rgsekai.sekaitune.ui.component.DefaultDialog
 import moe.rgsekai.sekaitune.ui.component.EditTextPreference
 import moe.rgsekai.sekaitune.ui.component.IconButton
@@ -111,6 +113,9 @@ import moe.rgsekai.sekaitune.ui.component.ListPreference
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.viewmodels.AiIntegrationSettingsViewModel
@@ -123,6 +128,8 @@ fun AiIntegrationSettings(
     viewModel: AiIntegrationSettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    val topBarFocusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
 
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
@@ -157,6 +164,10 @@ fun AiIntegrationSettings(
                 title = { Text(stringResource(R.string.ai_integration)) },
                 navigationIcon = {
                     IconButton(
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(scrollState = scrollState),
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
                     ) {
@@ -173,7 +184,8 @@ fun AiIntegrationSettings(
             modifier = Modifier
                 .padding(top = innerPadding.calculateTopPadding())
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
+                .tvDpadScroll(scrollState, coroutineScope)
                 .padding(bottom = SettingsDimensions.ScreenBottomPadding)
         ) {
             PreferenceGroup(title = stringResource(R.string.ai_provider_settings)) {
@@ -608,7 +620,8 @@ private fun ModelPickerPreference(
                                     } else {
                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                     },
-                                ).selectable(
+                                ).tvFocusOutline(shape = MaterialTheme.shapes.extraLarge)
+                                .selectable(
                                     selected = selected,
                                     role = Role.RadioButton,
                                     onClick = {

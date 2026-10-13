@@ -45,12 +45,24 @@ import moe.rgsekai.sekaitune.constants.PlayerCustomBlurKey
 import moe.rgsekai.sekaitune.constants.PlayerCustomBrightnessKey
 import moe.rgsekai.sekaitune.constants.PlayerCustomContrastKey
 import moe.rgsekai.sekaitune.constants.PlayerCustomImageUriKey
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.rememberPreference
+import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomizeBackground(navController: NavController) {
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    val topBarFocusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
     val (imageUri, onImageUriChange) = rememberPreference(PlayerCustomImageUriKey, "")
     val (blur, onBlurChange) = rememberPreference(PlayerCustomBlurKey, 0f)
@@ -73,7 +85,13 @@ fun CustomizeBackground(navController: NavController) {
             TopAppBar(
                 title = { Text(stringResource(R.string.customize_background_title)) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(scrollState = scrollState),
+                        onClick = { navController.navigateUp() },
+                    ) {
                         Icon(painterResource(R.drawable.arrow_back), contentDescription = null)
                     }
                 },
@@ -91,7 +109,8 @@ fun CustomizeBackground(navController: NavController) {
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
                         ),
-                    ).verticalScroll(rememberScrollState())
+                    ).verticalScroll(scrollState)
+                    .tvDpadScroll(scrollState, coroutineScope)
                     .padding(
                         start = 16.dp,
                         top = 16.dp,
@@ -230,7 +249,7 @@ fun CustomizeBackground(navController: NavController) {
             }
             Button(
                 onClick = { launcher.launch(arrayOf("image/*")) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tvFocusOutline(),
                 shapes = ButtonDefaults.shapes(),
             ) {
                 Text(stringResource(R.string.add_image))
@@ -241,7 +260,15 @@ fun CustomizeBackground(navController: NavController) {
                 value = blur,
                 onValueChange = onBlurChange,
                 valueRange = 0f..50f,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .tvSliderDpad(
+                            value = blur,
+                            onValueChange = onBlurChange,
+                            step = 1f,
+                            valueRange = 0f..50f,
+                        ),
             )
 
             Text(stringResource(R.string.contrast))
@@ -249,7 +276,15 @@ fun CustomizeBackground(navController: NavController) {
                 value = contrast,
                 onValueChange = onContrastChange,
                 valueRange = 0.5f..2f,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .tvSliderDpad(
+                            value = contrast,
+                            onValueChange = onContrastChange,
+                            step = 0.05f,
+                            valueRange = 0.5f..2f,
+                        ),
             )
 
             Text(stringResource(R.string.brightness))
@@ -257,7 +292,15 @@ fun CustomizeBackground(navController: NavController) {
                 value = brightness,
                 onValueChange = onBrightnessChange,
                 valueRange = 0.5f..2f,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .tvSliderDpad(
+                            value = brightness,
+                            onValueChange = onBrightnessChange,
+                            step = 0.05f,
+                            valueRange = 0.5f..2f,
+                        ),
             )
 
             FilledTonalButton(
@@ -265,7 +308,7 @@ fun CustomizeBackground(navController: NavController) {
                     Toast.makeText(context, context.getString(R.string.save), Toast.LENGTH_SHORT).show()
                     navController.navigateUp()
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tvFocusOutline(),
                 shapes = ButtonDefaults.shapes(),
             ) {
                 Text(stringResource(R.string.save))

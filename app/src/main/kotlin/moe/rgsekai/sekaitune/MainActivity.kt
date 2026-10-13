@@ -288,6 +288,9 @@ import moe.rgsekai.sekaitune.ui.component.NetworkStatusBanner
 import moe.rgsekai.sekaitune.ui.component.StarDialog
 import moe.rgsekai.sekaitune.ui.component.TopSearch
 import moe.rgsekai.sekaitune.ui.component.TvNavigationRail
+import moe.rgsekai.sekaitune.ui.tv.TvRoot
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.isTvDevice
 import moe.rgsekai.sekaitune.ui.component.rememberBottomSheetState
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerTheme
 import moe.rgsekai.sekaitune.ui.menu.YouTubeSongMenu
@@ -1619,7 +1622,14 @@ class MainActivity : ComponentActivity() {
                         LocalAppBackdrop provides (if (playerBottomSheetState.isExpanded || playerBottomSheetState.progress > 0.05f) playerBackdrop else rootBackdrop),
                         moe.rgsekai.sekaitune.ui.component.LocalBottomSheetPageState provides bottomSheetPageState,
                         moe.rgsekai.sekaitune.ui.component.LocalMenuState provides menuState,
+                        LocalIsTv provides isTvDevice,
                     ) {
+                        if (isTvDevice) {
+                            TvRoot(
+                                navController = navController,
+                                playerConnection = playerConnection,
+                            )
+                        } else {
                         Row(
                             modifier =
                                 Modifier
@@ -2387,6 +2397,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        }
                     }
 
                         BackHandler(enabled = playerBottomSheetState.isExpanded) {
@@ -3043,14 +3054,7 @@ private fun OnlineSearchSortMenu(
     }
 }
 
-private fun Context.isTvDevice(): Boolean {
-    val isTelevisionUiMode =
-        (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
-            Configuration.UI_MODE_TYPE_TELEVISION
-    return isTelevisionUiMode ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
-}
+
 
 
 

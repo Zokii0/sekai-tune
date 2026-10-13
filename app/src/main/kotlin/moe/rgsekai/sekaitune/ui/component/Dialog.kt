@@ -72,6 +72,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import moe.rgsekai.sekaitune.R
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun DefaultDialog(
@@ -281,6 +283,7 @@ fun ActionPromptDialog(
                                 TextButton(
                                     onClick = { onReset() },
                                     shapes = ButtonDefaults.shapes(),
+                                    modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)),
                                 ) {
                                     Text(stringResource(R.string.reset))
                                 }
@@ -291,6 +294,7 @@ fun ActionPromptDialog(
                             TextButton(
                                 onClick = { onCancel() },
                                 shapes = ButtonDefaults.shapes(),
+                                modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)),
                             ) {
                                 Text(stringResource(android.R.string.cancel))
                             }
@@ -299,6 +303,7 @@ fun ActionPromptDialog(
                         TextButton(
                             onClick = { onConfirm() },
                             shapes = ButtonDefaults.shapes(),
+                            modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)),
                         ) {
                             Text(stringResource(android.R.string.ok))
                         }

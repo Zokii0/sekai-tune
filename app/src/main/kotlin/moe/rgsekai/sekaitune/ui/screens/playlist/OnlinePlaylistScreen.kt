@@ -15,6 +15,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +39,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,8 +78,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -155,6 +159,7 @@ import moe.rgsekai.sekaitune.ui.utils.sendAddMissingDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendPauseDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendRemoveDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendResumeDownloads
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.viewmodels.OnlinePlaylistViewModel
 
@@ -248,6 +253,9 @@ fun OnlinePlaylistScreen(
         }
     }
 
+    val contentFocusRequester = remember { FocusRequester() }
+    val firstSongFocusRequester = remember { FocusRequester() }
+    val topBarFocusRequester = remember { FocusRequester() }
     val showTopBarTitle by remember { derivedStateOf { lazyListState.firstVisibleItemIndex > 0 } }
 
     // Gradient colors state for playlist cover
@@ -497,6 +505,7 @@ fun OnlinePlaylistScreen(
             state = lazyListState,
             contentPadding =
                 LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime).asPaddingValues(),
+            modifier = Modifier.tvDpadListScroll(lazyListState, coroutineScope),
         ) {
             playlist.let { playlist ->
                 if (isLoading) {
@@ -587,8 +596,8 @@ fun OnlinePlaylistScreen(
                     }
                 } else if (playlist != null) {
                     if (!isSearching) {
-                        // Hero Header
-                        item(key = "header") {
+                        // Hero Header - Info
+                        item(key = "header_info") {
                             Column(
                                 modifier =
                                     Modifier
@@ -699,15 +708,29 @@ fun OnlinePlaylistScreen(
                                         modifier = Modifier.padding(horizontal = 32.dp),
                                     )
                                 }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
 
-                                Spacer(modifier = Modifier.height(24.dp))
-
+                        // Action Buttons Row
+                        item(key = "header_actions") {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .animateItem(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
                                 // Action Buttons Row
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                    modifier =
+                                        Modifier
+                                            .focusGroup()
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 24.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                ) {                                    val mixEndpoint = playlist.shuffleEndpoint ?: playlist.radioEndpoint
                                     val hasLike = playlist.id != "LM"
                                     val hasPlay = playlist.playEndpoint != null
                                     val hasShuffle = playlist.shuffleEndpoint != null
@@ -719,6 +742,8 @@ fun OnlinePlaylistScreen(
                                                 .filter { it.value }
                                                 .map { it.index }
                                         }
+                                    val firstActiveSlot = activeIndices.firstOrNull() ?: 0
+                                    val downTarget = if (mixEndpoint == null) firstSongFocusRequester else null
 
                                     @Composable
                                     fun shapeFor(slotIndex: Int) =
@@ -743,6 +768,7 @@ fun OnlinePlaylistScreen(
 
                                     if (hasLike) {
                                         val isBookmarked = dbPlaylist?.playlist?.bookmarkedAt != null
+                                        val isFirst = firstActiveSlot == 0
                                         ToggleButton(
                                             checked = isBookmarked,
                                             onCheckedChange = {
@@ -750,7 +776,7 @@ fun OnlinePlaylistScreen(
                                                     database.transaction {
                                                         val existingPlaylist = playlistEntityByBrowseId(playlist.id)
                                                         val targetPlaylistId =
-                                                            if (existingPlaylist == null) {                                                                 val playlistEntity =
+                                                            if (existingPlaylist == null) {                                                                 val playlistEntity =
                                                                     PlaylistEntity(
                                                                         name = playlist.title,
                                                                         browseId = playlist.id,
@@ -820,7 +846,17 @@ fun OnlinePlaylistScreen(
                                                     }
                                                 }
                                             },
-                                            modifier = Modifier.size(56.dp),
+                                            modifier =
+                                                Modifier
+                                                    .size(56.dp)
+                                                    .then(if (isFirst) Modifier.focusRequester(contentFocusRequester) else Modifier)
+                                                    .tvFocusBridge(
+                                                        up = topBarFocusRequester,
+                                                        down = downTarget,
+                                                        lazyListState = lazyListState,
+                                                        targetDownIndex = 2,
+                                                    )
+                                                    .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                             shapes = shapeFor(0),
                                             colors =
                                                 ToggleButtonDefaults.toggleButtonColors(
@@ -846,6 +882,7 @@ fun OnlinePlaylistScreen(
                                     }
 
                                     playlist.playEndpoint?.let { playEndpoint ->
+                                        val isFirst = firstActiveSlot == 1
                                         ToggleButton(
                                             checked = false,
                                             onCheckedChange = {
@@ -853,7 +890,18 @@ fun OnlinePlaylistScreen(
                                                     YouTubeQueue.playlist(playEndpoint),
                                                 )
                                             },
-                                            modifier = Modifier.weight(1f).height(56.dp),
+                                            modifier =
+                                                Modifier
+                                                    .weight(1f)
+                                                    .height(56.dp)
+                                                    .then(if (isFirst) Modifier.focusRequester(contentFocusRequester) else Modifier)
+                                                    .tvFocusBridge(
+                                                        up = topBarFocusRequester,
+                                                        down = downTarget,
+                                                        lazyListState = lazyListState,
+                                                        targetDownIndex = 2,
+                                                    )
+                                                    .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                             shapes = shapeFor(1),
                                             colors =
                                                 ToggleButtonDefaults.toggleButtonColors(
@@ -873,6 +921,7 @@ fun OnlinePlaylistScreen(
                                     }
 
                                     playlist.shuffleEndpoint?.let { shuffleEndpoint ->
+                                        val isFirst = firstActiveSlot == 2
                                         ToggleButton(
                                             checked = false,
                                             onCheckedChange = {
@@ -880,7 +929,18 @@ fun OnlinePlaylistScreen(
                                                     YouTubeQueue.playlist(shuffleEndpoint),
                                                 )
                                             },
-                                            modifier = Modifier.weight(1f).height(56.dp),
+                                            modifier =
+                                                Modifier
+                                                    .weight(1f)
+                                                    .height(56.dp)
+                                                    .then(if (isFirst) Modifier.focusRequester(contentFocusRequester) else Modifier)
+                                                    .tvFocusBridge(
+                                                        up = topBarFocusRequester,
+                                                        down = downTarget,
+                                                        lazyListState = lazyListState,
+                                                        targetDownIndex = 2,
+                                                    )
+                                                    .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                             shapes = shapeFor(2),
                                             colors =
                                                 ToggleButtonDefaults.toggleButtonColors(
@@ -900,6 +960,7 @@ fun OnlinePlaylistScreen(
                                     }
 
                                     playlist.radioEndpoint?.let { radioEndpoint ->
+                                        val isFirst = firstActiveSlot == 3
                                         ToggleButton(
                                             checked = false,
                                             onCheckedChange = {
@@ -907,7 +968,18 @@ fun OnlinePlaylistScreen(
                                                     YouTubeQueue(radioEndpoint),
                                                 )
                                             },
-                                            modifier = Modifier.weight(1f).height(56.dp),
+                                            modifier =
+                                                Modifier
+                                                    .weight(1f)
+                                                    .height(56.dp)
+                                                    .then(if (isFirst) Modifier.focusRequester(contentFocusRequester) else Modifier)
+                                                    .tvFocusBridge(
+                                                        up = topBarFocusRequester,
+                                                        down = downTarget,
+                                                        lazyListState = lazyListState,
+                                                        targetDownIndex = 2,
+                                                    )
+                                                    .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                             shapes = shapeFor(3),
                                             colors =
                                                 ToggleButtonDefaults.toggleButtonColors(
@@ -925,6 +997,7 @@ fun OnlinePlaylistScreen(
                                         }
                                     }
 
+                                    val isFirstSlot4 = firstActiveSlot == 4
                                     ToggleButton(
                                         checked = downloadState == HeaderDownloadState.Completed,
                                         onCheckedChange = {
@@ -962,7 +1035,17 @@ fun OnlinePlaylistScreen(
                                                 }
                                             }
                                         },
-                                        modifier = Modifier.size(56.dp),
+                                        modifier =
+                                            Modifier
+                                                .size(56.dp)
+                                                .then(if (isFirstSlot4) Modifier.focusRequester(contentFocusRequester) else Modifier)
+                                                .tvFocusBridge(
+                                                    up = topBarFocusRequester,
+                                                    down = downTarget,
+                                                    lazyListState = lazyListState,
+                                                    targetDownIndex = 2,
+                                                )
+                                                .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                         shapes = shapeFor(4),
                                         colors =
                                             ToggleButtonDefaults.toggleButtonColors(
@@ -999,6 +1082,7 @@ fun OnlinePlaylistScreen(
                                         }
                                     }
 
+                                    val isFirstSlot5 = firstActiveSlot == 5
                                     ToggleButton(
                                         checked = false,
                                         onCheckedChange = {
@@ -1014,7 +1098,17 @@ fun OnlinePlaylistScreen(
                                                 )
                                             }
                                         },
-                                        modifier = Modifier.size(56.dp),
+                                        modifier =
+                                            Modifier
+                                                .size(56.dp)
+                                                .then(if (isFirstSlot5) Modifier.focusRequester(contentFocusRequester) else Modifier)
+                                                .tvFocusBridge(
+                                                    up = topBarFocusRequester,
+                                                    down = downTarget,
+                                                    lazyListState = lazyListState,
+                                                    targetDownIndex = 2,
+                                                )
+                                                .tvFocusOutline(shape = RoundedCornerShape(28.dp)),
                                         shapes = shapeFor(5),
                                         colors =
                                             ToggleButtonDefaults.toggleButtonColors(
@@ -1052,7 +1146,17 @@ fun OnlinePlaylistScreen(
                                                     },
                                                 )
                                             },
-                                            modifier = Modifier.weight(1f).height(48.dp),
+                                            modifier =
+                                                Modifier
+                                                    .weight(1f)
+                                                    .height(48.dp)
+                                                    .tvFocusBridge(
+                                                        up = contentFocusRequester,
+                                                        down = firstSongFocusRequester,
+                                                        lazyListState = lazyListState,
+                                                        targetDownIndex = 2,
+                                                    )
+                                                    .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
                                             shapes = ButtonDefaults.shapes(),
                                         ) {
                                             Icon(
@@ -1069,65 +1173,69 @@ fun OnlinePlaylistScreen(
                         }
                     }
 
-                    if (songs.isEmpty() && !isLoading && error == null) {
-                        item(key = "empty") {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.empty_playlist),
-                                    style = MaterialTheme.typography.titleLarge,
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = stringResource(R.string.empty_playlist_desc),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                if (songs.isEmpty() && !isLoading && error == null) {
+                    item(key = "empty") {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.empty_playlist),
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.empty_playlist_desc),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
+                }
 
-                    // Songs List
-                    items(
-                        items = wrappedSongs,
-                        key = { it.item.second.setVideoId ?: "${it.item.second.id}-${it.item.first}" },
-                        contentType = { "online_playlist_song" },
-                    ) { song ->
-                        YouTubeListItem(
-                            item = song.item.second,
-                            viewCountText =
-                                viewCounts[song.item.second.id]?.let { count ->
-                                    formatCompactCount(count.toLong())
-                                },
-                            isActive = mediaMetadata?.id == song.item.second.id,
-                            isPlaying = isPlaying,
-                            isSelected = song.isSelected && selection,
-                            trailingContent = {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            YouTubeSongMenu(
-                                                song = song.item.second,
-                                                navController = navController,
-                                                onDismiss = menuState::dismiss,
-                                            )
-                                        }
-                                    },
-                                    onLongClick = {},
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null,
-                                    )
-                                }
+                // Songs List
+                itemsIndexed(
+                    items = wrappedSongs,
+                    key = { _, it -> it.item.second.setVideoId ?: "${it.item.second.id}-${it.item.first}" },
+                    contentType = { _, _ -> "online_playlist_song" },
+                ) { index, song ->
+                    YouTubeListItem(
+                        item = song.item.second,
+                        viewCountText =
+                            viewCounts[song.item.second.id]?.let { count ->
+                                formatCompactCount(count.toLong())
                             },
-                            modifier =
-                                Modifier
-                                    .combinedClickable(
-                                        enabled = !hideExplicit || !song.item.second.explicit,
-                                        onClick = {
+                        isActive = mediaMetadata?.id == song.item.second.id,
+                        isPlaying = isPlaying,
+                        isSelected = song.isSelected && selection,
+                        trailingContent = {
+                            IconButton(
+                                onClick = {
+                                    menuState.show {
+                                        YouTubeSongMenu(
+                                            song = song.item.second,
+                                            navController = navController,
+                                            onDismiss = menuState::dismiss,
+                                        )
+                                    }
+                                },
+                                onLongClick = {},
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.more_vert),
+                                    contentDescription = null,
+                                )
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .then(
+                                    if (index == 0) Modifier.focusRequester(firstSongFocusRequester) else Modifier
+                                )
+                                .tvFocusOutline(shape = RoundedCornerShape(12.dp))
+                                .combinedClickable(
+                                    enabled = !hideExplicit || !song.item.second.explicit,
+                                    onClick = {
                                             if (!selection) {
                                                 if (song.item.second.id == mediaMetadata?.id) {
                                                     playerConnection.player.togglePlayPause()
@@ -1318,6 +1426,15 @@ fun OnlinePlaylistScreen(
                             navController.backToMain()
                         }
                     },
+                    modifier =
+                        Modifier
+                            .focusRequester(topBarFocusRequester)
+                            .tvFocusBridge(
+                                down = contentFocusRequester,
+                                lazyListState = lazyListState,
+                                targetDownIndex = 1,
+                            )
+                            .tvFocusOutline(shape = CircleShape),
                 ) {
                     Icon(
                         painter =
@@ -1340,6 +1457,14 @@ fun OnlinePlaylistScreen(
                             }
                         },
                         onLongClick = {},
+                        modifier =
+                            Modifier
+                                .tvFocusBridge(
+                                    down = contentFocusRequester,
+                                    lazyListState = lazyListState,
+                                    targetDownIndex = 1,
+                                )
+                                .tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter =
@@ -1372,6 +1497,14 @@ fun OnlinePlaylistScreen(
                             }
                         },
                         onLongClick = {},
+                        modifier =
+                            Modifier
+                                .tvFocusBridge(
+                                    down = contentFocusRequester,
+                                    lazyListState = lazyListState,
+                                    targetDownIndex = 1,
+                                )
+                                .tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.more_vert),
@@ -1379,7 +1512,18 @@ fun OnlinePlaylistScreen(
                         )
                     }
                 } else if (!isSearching) {
-                    IconButton(onClick = { isSearching = true }, onLongClick = {}) {
+                    IconButton(
+                        onClick = { isSearching = true },
+                        onLongClick = {},
+                        modifier =
+                            Modifier
+                                .tvFocusBridge(
+                                    down = contentFocusRequester,
+                                    lazyListState = lazyListState,
+                                    targetDownIndex = 1,
+                                )
+                                .tvFocusOutline(shape = CircleShape),
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.search),
                             contentDescription = null,

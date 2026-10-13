@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -394,6 +395,7 @@ private fun MiniPlayerTransportButton(
                 .clip(CircleShape)
                 .background(containerColor)
                 .border(width = 1.dp, color = borderColor, shape = CircleShape)
+                .tvFocusOutline(shape = CircleShape)
                 .clickable(enabled = enabled, onClick = {
                     if (enableHapticFeedback) {
                         view.performHapticFeedback(

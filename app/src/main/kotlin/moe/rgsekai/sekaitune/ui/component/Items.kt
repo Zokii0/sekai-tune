@@ -140,6 +140,7 @@ import kotlin.math.roundToInt
 
 import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.luminance
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 
 const val ActiveBoxAlpha = 0.6f
 
@@ -176,7 +177,7 @@ inline fun ListItem(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
             modifier
-                .focusable()
+                .tvFocusOutline(shape = RoundedCornerShape(12.dp))
                 .height(ListItemHeight)
                 .padding(horizontal = 8.dp)
                 .then(
@@ -272,12 +273,12 @@ fun GridItem(
         modifier =
             if (fillMaxWidth) {
                 modifier
-                    .focusable()
+                    .tvFocusOutline(shape = RoundedCornerShape(12.dp))
                     .padding(12.dp)
                     .fillMaxWidth()
             } else {
                 modifier
-                    .focusable()
+                    .tvFocusOutline(shape = RoundedCornerShape(12.dp))
                     .padding(12.dp)
                     .width(GridThumbnailHeight * thumbnailRatio)
             },

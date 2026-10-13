@@ -49,6 +49,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
+import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import androidx.navigation.NavController
 import kotlin.math.roundToInt
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
@@ -152,6 +158,10 @@ fun GlassEffectSettings(navController: NavController) {
     var showSurfaceTintDialog by rememberSaveable { mutableStateOf(false) }
     var showTextColorDialog by rememberSaveable { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -170,6 +180,11 @@ fun GlassEffectSettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(scrollState = scrollState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -188,7 +203,8 @@ fun GlassEffectSettings(navController: NavController) {
                 .windowInsetsPadding(
                     LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal)
                 )
-                .verticalScroll(rememberScrollState()),
+                .tvDpadScroll(scrollState, coroutineScope)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(0.dp))
@@ -363,7 +379,20 @@ fun GlassEffectSettings(navController: NavController) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Text(text = stringResource(R.string.liquid_glass_vibrancy), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                 Text(text = "${tempValue.roundToInt()}%", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 16.dp))
-                Slider(value = tempValue, onValueChange = { tempValue = it }, valueRange = 0f..100f, modifier = Modifier.fillMaxWidth())
+                Slider(
+                    value = tempValue,
+                    onValueChange = { tempValue = it },
+                    valueRange = 0f..100f,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .tvSliderDpad(
+                                value = tempValue,
+                                onValueChange = { tempValue = it },
+                                step = 1f,
+                                valueRange = 0f..100f,
+                            ),
+                )
             }
         }
     }
@@ -382,7 +411,20 @@ fun GlassEffectSettings(navController: NavController) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Text(text = stringResource(R.string.liquid_glass_blur_radius), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                 Text(text = "${tempValue.roundToInt()} dp", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 16.dp))
-                Slider(value = tempValue, onValueChange = { tempValue = it }, valueRange = 0f..50f, modifier = Modifier.fillMaxWidth())
+                Slider(
+                    value = tempValue,
+                    onValueChange = { tempValue = it },
+                    valueRange = 0f..50f,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .tvSliderDpad(
+                                value = tempValue,
+                                onValueChange = { tempValue = it },
+                                step = 1f,
+                                valueRange = 0f..50f,
+                            ),
+                )
             }
         }
     }
@@ -401,7 +443,20 @@ fun GlassEffectSettings(navController: NavController) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Text(text = stringResource(R.string.liquid_glass_lens_height), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                 Text(text = "${tempValue.roundToInt()}%", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 16.dp))
-                Slider(value = tempValue, onValueChange = { tempValue = it }, valueRange = 0f..100f, modifier = Modifier.fillMaxWidth())
+                Slider(
+                    value = tempValue,
+                    onValueChange = { tempValue = it },
+                    valueRange = 0f..100f,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .tvSliderDpad(
+                                value = tempValue,
+                                onValueChange = { tempValue = it },
+                                step = 1f,
+                                valueRange = 0f..100f,
+                            ),
+                )
             }
         }
     }
@@ -420,7 +475,20 @@ fun GlassEffectSettings(navController: NavController) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Text(text = stringResource(R.string.liquid_glass_lens_amount), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                 Text(text = "${tempValue.roundToInt()}%", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 16.dp))
-                Slider(value = tempValue, onValueChange = { tempValue = it }, valueRange = 0f..100f, modifier = Modifier.fillMaxWidth())
+                Slider(
+                    value = tempValue,
+                    onValueChange = { tempValue = it },
+                    valueRange = 0f..100f,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .tvSliderDpad(
+                                value = tempValue,
+                                onValueChange = { tempValue = it },
+                                step = 1f,
+                                valueRange = 0f..100f,
+                            ),
+                )
             }
         }
     }
@@ -439,7 +507,20 @@ fun GlassEffectSettings(navController: NavController) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                 Text(text = stringResource(R.string.liquid_glass_surface_opacity), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                 Text(text = "${tempValue.roundToInt()}%", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 16.dp))
-                Slider(value = tempValue, onValueChange = { tempValue = it }, valueRange = 0f..100f, modifier = Modifier.fillMaxWidth())
+                Slider(
+                    value = tempValue,
+                    onValueChange = { tempValue = it },
+                    valueRange = 0f..100f,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .tvSliderDpad(
+                                value = tempValue,
+                                onValueChange = { tempValue = it },
+                                step = 1f,
+                                valueRange = 0f..100f,
+                            ),
+                )
             }
         }
     }

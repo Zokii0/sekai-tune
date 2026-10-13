@@ -21,6 +21,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
@@ -66,6 +71,9 @@ fun ChangelogScreen(
         loadReleases(forceRefresh = true)
     }
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,6 +82,11 @@ fun ChangelogScreen(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(lazyListState = listState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -141,10 +154,12 @@ fun ChangelogScreen(
 
                 else -> {
                     LazyColumn(
+                        state = listState,
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 16.dp)
+                                .tvDpadListScroll(listState, coroutineScope),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -177,7 +192,10 @@ private fun ReleaseCard(release: ReleaseInfo) {
         }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .tvFocusOutline(shape = RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(

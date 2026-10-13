@@ -63,6 +63,20 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.BuildConfig
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
@@ -149,6 +163,20 @@ fun SettingsScreen(
             settingsGroups.flatMap { it.items }
         }
 
+    val topBarFocusRequester = remember { FocusRequester() }
+    val searchBarFocusRequester = remember { FocusRequester() }
+    val isTv = LocalIsTv.current
+    val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(isTv) {
+        if (isTv) {
+            try {
+                topBarFocusRequester.requestFocus()
+            } catch (_: Exception) {}
+        }
+    }
+
     Scaffold(
         modifier =
             Modifier
@@ -163,6 +191,37 @@ fun SettingsScreen(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .then(
+                                    if (isTv) {
+                                        Modifier.onPreviewKeyEvent { keyEvent ->
+                                            if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                                            when (keyEvent.key) {
+                                                Key.DirectionDown, Key.PageDown -> {
+                                                    if (focusManager.moveFocus(FocusDirection.Down)) {
+                                                        true
+                                                    } else {
+                                                        val moved = runCatching {
+                                                            searchBarFocusRequester.requestFocus()
+                                                            true
+                                                        }.getOrDefault(false)
+                                                        if (moved) true else focusManager.moveFocus(FocusDirection.Next)
+                                                    }
+                                                }
+                                                Key.DirectionUp, Key.DirectionLeft -> {
+                                                    if (focusManager.moveFocus(if (keyEvent.key == Key.DirectionUp) FocusDirection.Up else FocusDirection.Left)) {
+                                                        true
+                                                    } else {
+                                                        true // Consume so focus cannot escape to system
+                                                    }
+                                                }
+                                                else -> false
+                                            }
+                                        }
+                                    } else Modifier
+                                ),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -186,6 +245,7 @@ fun SettingsScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .tvDpadListScroll(listState, coroutineScope)
                     .windowInsetsPadding(
                         playerInsets.only(
                             WindowInsetsSides.Horizontal,
@@ -201,6 +261,7 @@ fun SettingsScreen(
                 SettingsSearchBar(
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
+                    focusRequester = searchBarFocusRequester,
                     modifier =
                         Modifier
                             .padding(horizontal = 26.dp)

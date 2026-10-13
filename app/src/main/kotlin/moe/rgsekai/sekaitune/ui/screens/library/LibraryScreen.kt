@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.focusGroup
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -210,7 +212,8 @@ fun LibraryScreen(navController: NavController) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 8.dp)
+                        .focusGroup(),
                 contentPadding = PaddingValues(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -456,6 +459,7 @@ private fun PlaylistTagFilterChip(
                 }.heightIn(min = 48.dp)
                 .clip(CircleShape)
                 .background(containerColor)
+                .tvFocusOutline(shape = CircleShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -544,6 +548,7 @@ fun ExpressiveTabChip(
                     scaleY = scale
                 }.clip(CircleShape)
                 .background(bgColor)
+                .tvFocusOutline(shape = CircleShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,

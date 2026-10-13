@@ -20,6 +20,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -169,6 +174,7 @@ import moe.rgsekai.sekaitune.ui.theme.PlayerColorExtractor
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.ui.utils.formatCompactCount
 import moe.rgsekai.sekaitune.ui.utils.resize
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.viewmodels.ArtistAction
 import moe.rgsekai.sekaitune.viewmodels.ArtistBlockState
@@ -218,8 +224,11 @@ fun ArtistScreen(
     val librarySongs = remember(loadedLibrarySongs, isArtistBlocked) { loadedLibrarySongs.takeUnless { isArtistBlocked }.orEmpty() }
     val libraryAlbums = remember(loadedLibraryAlbums, isArtistBlocked) { loadedLibraryAlbums.takeUnless { isArtistBlocked }.orEmpty() }
     val spotifyFollowState by viewModel.spotifyFollowState.collectAsStateWithLifecycle()
+    val artistName = artistPage?.artist?.title ?: libraryArtist?.artist?.name
 
     val lazyListState = rememberLazyListState()
+    val contentFocusRequester = remember { FocusRequester() }
+    val topBarFocusRequester = remember { FocusRequester() }
     val snackbarHostState = remember { SnackbarHostState() }
     var showLocal by rememberSaveable { mutableStateOf(false) }
     var showSpotifyUnfollowDialog by rememberSaveable { mutableStateOf(false) }
@@ -323,6 +332,33 @@ fun ArtistScreen(
     LaunchedEffect(libraryArtist) {
         showLocal = libraryArtist?.artist?.isLocal == true
     }
+
+    val songsLabel = stringResource(R.string.songs)
+    val albumsLabel = stringResource(R.string.albums)
+    val monthlyListenersLabel = stringResource(R.string.monthly_listeners)
+    val subscribersLabel = stringResource(R.string.subscribers)
+    val artistStats =
+        remember(
+            showLocal,
+            artistPage,
+            librarySongs.size,
+            libraryAlbums.size,
+            songsLabel,
+            albumsLabel,
+            monthlyListenersLabel,
+            subscribersLabel,
+        ) {
+            buildArtistStats(
+                showLocal = showLocal,
+                artistPage = artistPage,
+                librarySongCount = librarySongs.size,
+                libraryAlbumCount = libraryAlbums.size,
+                songsLabel = songsLabel,
+                albumsLabel = albumsLabel,
+                monthlyListenersLabel = monthlyListenersLabel,
+                subscribersLabel = subscribersLabel,
+            )
+        }
 
     Box(
         modifier =
@@ -448,10 +484,14 @@ fun ArtistScreen(
                         },
             )
         }
+        val hasRadio = !showLocal && artistPage?.artist?.radioEndpoint != null
+        val isSubscribed = libraryArtist?.artist?.bookmarkedAt != null
+        val showSpotifyButton = spotifyFollowState !is SpotifyFollowState.Hidden
 
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+            modifier = Modifier.tvDpadListScroll(lazyListState, coroutineScope),
         ) {
             if (artistPage == null && !showLocal) {
                 // Shimmer loading state
@@ -568,10 +608,8 @@ fun ArtistScreen(
                     }
                 }
             } else {
-                // Hero Header
-                item(key = "header") {
-                    val artistName = artistPage?.artist?.title ?: libraryArtist?.artist?.name
-
+                // Hero Header - Avatar, Title, Description
+                item(key = "header_info") {
                     Column(
                         modifier =
                             Modifier
@@ -637,6 +675,7 @@ fun ArtistScreen(
                                     Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 24.dp, vertical = 8.dp)
+                                        .tvFocusOutline(shape = RoundedCornerShape(12.dp))
                                         .combinedClickable(
                                             onClick = { isExpanded = !isExpanded },
                                             onLongClick = {},
@@ -663,246 +702,167 @@ fun ArtistScreen(
                                 }
                             }
                         }
+                    }
+                }
 
-                        val songsLabel = stringResource(R.string.songs)
-                        val albumsLabel = stringResource(R.string.albums)
-                        val monthlyListenersLabel = stringResource(R.string.monthly_listeners)
-                        val subscribersLabel = stringResource(R.string.subscribers)
-                        val artistStats =
-                            remember(
-                                showLocal,
-                                artistPage,
-                                librarySongs.size,
-                                libraryAlbums.size,
-                                songsLabel,
-                                albumsLabel,
-                                monthlyListenersLabel,
-                                subscribersLabel,
-                            ) {
-                                buildArtistStats(
-                                    showLocal = showLocal,
-                                    artistPage = artistPage,
-                                    librarySongCount = librarySongs.size,
-                                    libraryAlbumCount = libraryAlbums.size,
-                                    songsLabel = songsLabel,
-                                    albumsLabel = albumsLabel,
-                                    monthlyListenersLabel = monthlyListenersLabel,
-                                    subscribersLabel = subscribersLabel,
-                                )
-                            }
+                if (artistStats.isNotEmpty()) {
+                    item(key = "header_stats") {
+                        ArtistStatsButtonGroup(stats = artistStats)
+                    }
+                }
 
-                        if (artistStats.isNotEmpty()) {
-                            ArtistStatsButtonGroup(stats = artistStats)
-                        }
-
-                        // Action Buttons (Subscribe, Shuffle, Radio)
-                        val hasRadio = !showLocal && artistPage?.artist?.radioEndpoint != null
-                        val isSubscribed = libraryArtist?.artist?.bookmarkedAt != null
-                        val showSpotifyButton = spotifyFollowState !is SpotifyFollowState.Hidden
-
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            ToggleButton(
-                                checked = isSubscribed,
-                                onCheckedChange = {
-                                    database.transaction {
-                                        val artist = libraryArtist?.artist
-                                        if (artist != null) {
-                                            update(artist.toggleLike())
-                                        } else {
-                                            artistPage?.artist?.let {
-                                                insert(
-                                                    ArtistEntity(
-                                                        id = it.id,
-                                                        name = it.title,
-                                                        channelId = it.channelId,
-                                                        thumbnailUrl = it.thumbnail,
-                                                    ).toggleLike(),
-                                                )
-                                            }
-                                        }
-                                    }
-                                },
-                                colors =
-                                    ToggleButtonDefaults.toggleButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .height(48.dp),
-                                shapes =
-                                    if (hasRadio) {
-                                        ButtonGroupDefaults.connectedLeadingButtonShapes()
+                // Action Buttons (Subscribe, Shuffle, Radio)
+                item(key = "header_actions") {
+                    Row(
+                        modifier =
+                            Modifier
+                                .focusGroup()
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ToggleButton(
+                            checked = isSubscribed,
+                            onCheckedChange = {
+                                database.transaction {
+                                    val artist = libraryArtist?.artist
+                                    if (artist != null) {
+                                        update(artist.toggleLike())
                                     } else {
-                                        ButtonGroupDefaults.connectedLeadingButtonShapes()
-                                    },
-                            ) {
-                                Icon(
-                                    painter =
-                                        painterResource(
-                                            if (isSubscribed) R.drawable.done else R.drawable.add,
-                                        ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text =
-                                        stringResource(
-                                            if (isSubscribed) R.string.subscribed else R.string.subscribe,
-                                        ),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
-
-                            ToggleButton(
-                                checked = false,
-                                onCheckedChange = {
-                                    if (!showLocal) {
-                                        artistPage?.artist?.shuffleEndpoint?.let { shuffleEndpoint ->
-                                            playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
+                                        artistPage?.artist?.let {
+                                            insert(
+                                                ArtistEntity(
+                                                    id = it.id,
+                                                    name = it.title,
+                                                    channelId = it.channelId,
+                                                    thumbnailUrl = it.thumbnail,
+                                                ).toggleLike(),
+                                            )
                                         }
-                                    } else if (librarySongs.isNotEmpty()) {
-                                        val shuffledSongs = librarySongs.shuffled()
-                                        playerConnection.playQueue(
-                                            ListQueue(
-                                                title = libraryArtist?.artist?.name ?: "Unknown Artist",
-                                                items = shuffledSongs.map { it.toMediaItem() },
-                                            ),
-                                        )
-                                    }
-                                },
-                                enabled = if (showLocal) librarySongs.isNotEmpty() else artistPage?.artist?.shuffleEndpoint != null,
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .height(48.dp),
-                                shapes =
-                                    if (hasRadio) {
-                                        ButtonGroupDefaults.connectedMiddleButtonShapes()
-                                    } else {
-                                        ButtonGroupDefaults.connectedTrailingButtonShapes()
-                                    },
-                                colors =
-                                    ToggleButtonDefaults.toggleButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                                        checkedContainerColor = MaterialTheme.colorScheme.primary,
-                                        checkedContentColor = MaterialTheme.colorScheme.onPrimary,
-                                    ),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.shuffle),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = stringResource(R.string.shuffle),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
-
-                            if (hasRadio) {
-                                artistPage?.artist?.radioEndpoint?.let { radioEndpoint ->
-                                    ToggleButton(
-                                        checked = false,
-                                        onCheckedChange = {
-                                            playerConnection.playQueue(YouTubeQueue(radioEndpoint))
-                                        },
-                                        modifier =
-                                            Modifier
-                                                .weight(1f)
-                                                .height(48.dp),
-                                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
-                                        colors =
-                                            ToggleButtonDefaults.toggleButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                checkedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                checkedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            ),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.radio),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = stringResource(R.string.radio),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = MaterialTheme.typography.labelMedium,
-                                        )
                                     }
                                 }
-                            }
+                            },
+                            colors =
+                                ToggleButtonDefaults.toggleButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .focusRequester(contentFocusRequester)
+                                    .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState)
+                                    .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                            shapes =
+                                if (hasRadio) {
+                                    ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                } else {
+                                    ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                },
+                        ) {
+                            Icon(
+                                painter =
+                                    painterResource(
+                                        if (isSubscribed) R.drawable.done else R.drawable.add,
+                                    ),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text =
+                                    stringResource(
+                                        if (isSubscribed) R.string.subscribed else R.string.subscribe,
+                                    ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
                         }
 
-                        // Spotify Follow Button Row (Centered below primary action buttons)
-                        if (showSpotifyButton) {
-                            val isFollowing = spotifyFollowState is SpotifyFollowState.Following
-                            val isBusy = spotifyFollowState is SpotifyFollowState.Busy
+                        ToggleButton(
+                            checked = false,
+                            onCheckedChange = {
+                                if (!showLocal) {
+                                    artistPage?.artist?.shuffleEndpoint?.let { shuffleEndpoint ->
+                                        playerConnection.playQueue(YouTubeQueue(shuffleEndpoint))
+                                    }
+                                } else if (librarySongs.isNotEmpty()) {
+                                    val shuffledSongs = librarySongs.shuffled()
+                                    playerConnection.playQueue(
+                                        ListQueue(
+                                            title = libraryArtist?.artist?.name ?: "Unknown Artist",
+                                            items = shuffledSongs.map { it.toMediaItem() },
+                                        ),
+                                    )
+                                }
+                            },
+                            enabled = if (showLocal) librarySongs.isNotEmpty() else artistPage?.artist?.shuffleEndpoint != null,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                            shapes =
+                                if (hasRadio) {
+                                    ButtonGroupDefaults.connectedMiddleButtonShapes()
+                                } else {
+                                    ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                },
+                            colors =
+                                ToggleButtonDefaults.toggleButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    checkedContainerColor = MaterialTheme.colorScheme.primary,
+                                    checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.shuffle),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.shuffle),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
 
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 24.dp, end = 24.dp, top = 2.dp, bottom = 8.dp),
-                                horizontalArrangement = Arrangement.Center,
-                            ) {
+                        if (hasRadio) {
+                            artistPage?.artist?.radioEndpoint?.let { radioEndpoint ->
                                 ToggleButton(
-                                    checked = isFollowing,
+                                    checked = false,
                                     onCheckedChange = {
-                                        if (isFollowing) {
-                                            showSpotifyUnfollowDialog = true
-                                        } else {
-                                            viewModel.followSpotifyArtist()
-                                        }
+                                        playerConnection.playQueue(YouTubeQueue(radioEndpoint))
                                     },
-                                    enabled = !isBusy,
                                     modifier =
                                         Modifier
-                                            .fillMaxWidth()
-                                            .height(44.dp),
-                                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+                                            .weight(1f)
+                                            .height(48.dp)
+                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            checkedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            checkedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                         ),
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.spotify_icon),
-                                        contentDescription =
-                                            stringResource(
-                                                if (isFollowing) R.string.following_on_spotify else R.string.follow_on_spotify,
-                                            ),
+                                        painter = painterResource(R.drawable.radio),
+                                        contentDescription = null,
                                         modifier = Modifier.size(18.dp),
-                                        tint = Color.Unspecified,
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text =
-                                            stringResource(
-                                                if (isFollowing) R.string.spotify_following else R.string.spotify_follow,
-                                            ),
+                                        text = stringResource(R.string.radio),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.labelMedium,
@@ -910,50 +870,68 @@ fun ArtistScreen(
                                 }
                             }
                         }
+                    }
+                }
 
-                        if (showSpotifyUnfollowDialog) {
-                            DefaultDialog(
-                                onDismiss = { showSpotifyUnfollowDialog = false },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.spotify_icon),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp),
-                                        tint = Color.Unspecified,
-                                    )
-                                },
-                                title = {
-                                    Text(text = stringResource(R.string.spotify_unfollow_dialog_title))
-                                },
-                                buttons = {
-                                    TextButton(
-                                        onClick = { showSpotifyUnfollowDialog = false },
-                                    ) {
-                                        Text(text = stringResource(R.string.cancel))
-                                    }
-                                    TextButton(
-                                        onClick = {
-                                            showSpotifyUnfollowDialog = false
-                                            viewModel.unfollowSpotifyArtist()
-                                        },
-                                    ) {
-                                        Text(text = stringResource(R.string.spotify_unfollow))
+                // Spotify Follow Button Row (Centered below primary action buttons)
+                if (showSpotifyButton) {
+                    item(key = "header_spotify") {
+                        val isFollowing = spotifyFollowState is SpotifyFollowState.Following
+                        val isBusy = spotifyFollowState is SpotifyFollowState.Busy
+
+                        Row(
+                            modifier =
+                                Modifier
+                                    .focusGroup()
+                                    .fillMaxWidth()
+                                    .padding(start = 24.dp, end = 24.dp, top = 2.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            ToggleButton(
+                                checked = isFollowing,
+                                onCheckedChange = {
+                                    if (isFollowing) {
+                                        showSpotifyUnfollowDialog = true
+                                    } else {
+                                        viewModel.followSpotifyArtist()
                                     }
                                 },
+                                enabled = !isBusy,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp)
+                                        .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+                                colors =
+                                    ToggleButtonDefaults.toggleButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    ),
                             ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.spotify_icon),
+                                    contentDescription =
+                                        stringResource(
+                                            if (isFollowing) R.string.following_on_spotify else R.string.follow_on_spotify,
+                                        ),
+                                    modifier = Modifier.size(18.dp),
+                                    tint = Color.Unspecified,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text =
                                         stringResource(
-                                            R.string.spotify_unfollow_dialog_message,
-                                            artistName ?: stringResource(R.string.unknown_artist),
+                                            if (isFollowing) R.string.spotify_following else R.string.spotify_follow,
                                         ),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.labelMedium,
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
 
@@ -1204,6 +1182,7 @@ fun ArtistScreen(
                                 contentType = CONTENT_TYPE_LIST,
                             ) {
                                 LazyRow(
+                                    modifier = Modifier.focusGroup(),
                                     contentPadding = PaddingValues(horizontal = 12.dp),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
@@ -1361,6 +1340,15 @@ fun ArtistScreen(
             IconButton(
                 onClick = navController::navigateUp,
                 onLongClick = navController::backToMain,
+                modifier =
+                    Modifier
+                        .focusRequester(topBarFocusRequester)
+                        .tvFocusBridge(
+                            down = contentFocusRequester,
+                            lazyListState = lazyListState,
+                            targetDownIndex = if (artistStats.isNotEmpty()) 2 else 1,
+                        )
+                        .tvFocusOutline(shape = CircleShape),
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),
@@ -1396,6 +1384,14 @@ fun ArtistScreen(
                     }
                 },
                 onLongClick = {},
+                modifier =
+                    Modifier
+                        .tvFocusBridge(
+                            down = contentFocusRequester,
+                            lazyListState = lazyListState,
+                            targetDownIndex = if (artistStats.isNotEmpty()) 2 else 1,
+                        )
+                        .tvFocusOutline(shape = CircleShape),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.more_vert),
@@ -1410,6 +1406,48 @@ fun ArtistScreen(
                 TopAppBarDefaults.topAppBarColors()
             },
     )
+
+    if (showSpotifyUnfollowDialog) {
+        DefaultDialog(
+            onDismiss = { showSpotifyUnfollowDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.spotify_icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = Color.Unspecified,
+                )
+            },
+            title = {
+                Text(text = stringResource(R.string.spotify_unfollow_dialog_title))
+            },
+            buttons = {
+                TextButton(
+                    onClick = { showSpotifyUnfollowDialog = false },
+                ) {
+                    Text(text = stringResource(R.string.cancel))
+                }
+                TextButton(
+                    onClick = {
+                        showSpotifyUnfollowDialog = false
+                        viewModel.unfollowSpotifyArtist()
+                    },
+                ) {
+                    Text(text = stringResource(R.string.spotify_unfollow))
+                }
+            },
+        ) {
+            Text(
+                text =
+                    stringResource(
+                        R.string.spotify_unfollow_dialog_message,
+                        artistName ?: stringResource(R.string.unknown_artist),
+                    ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 @Composable
@@ -1504,6 +1542,7 @@ private fun ArtistStatsButtonGroup(
     FlowRow(
         modifier =
             modifier
+                .focusGroup()
                 .fillMaxWidth()
                 .padding(vertical = 16.dp, horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -1516,6 +1555,7 @@ private fun ArtistStatsButtonGroup(
                 contentPadding = PaddingValues(horizontal = 14.dp),
                 modifier =
                     Modifier
+                        .tvFocusOutline(shape = RoundedCornerShape(20.dp))
                         .heightIn(min = 48.dp)
                         .widthIn(min = 72.dp)
                         .semantics(mergeDescendants = true) {

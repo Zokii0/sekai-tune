@@ -53,6 +53,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.utils.TvDpadNavigableWebView
+import moe.rgsekai.sekaitune.ui.utils.isTvDevice
 import moe.rgsekai.sekaitune.utils.potoken.BotGuardTokenGenerator
 import moe.rgsekai.sekaitune.utils.resetAuthWebViewSession
 
@@ -277,7 +279,8 @@ class PoTokenExtractionActivity : ComponentActivity() {
                         .fillMaxSize()
                         .windowInsetsPadding(WindowInsets.systemBars),
                 factory = { ctx ->
-                    WebView(ctx).apply {
+                    val isTv = ctx.isTvDevice()
+                    TvDpadNavigableWebView(ctx, isTv).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.setSupportZoom(true)
@@ -310,13 +313,21 @@ class PoTokenExtractionActivity : ComponentActivity() {
                                 override fun onPageFinished(
                                     view: WebView,
                                     url: String?,
-                                ) {
+                                    ) {
                                     currentUrl = url.orEmpty()
                                     if (isAtDestination(currentUrl, targetUrl)) {
                                         triggerExtraction()
                                     }
                                 }
                             }
+
+                        if (isTv) {
+                            isFocusable = true
+                            isFocusableInTouchMode = true
+                            post {
+                                requestFocus()
+                            }
+                        }
 
                         webView = this
                         activeWebView = this

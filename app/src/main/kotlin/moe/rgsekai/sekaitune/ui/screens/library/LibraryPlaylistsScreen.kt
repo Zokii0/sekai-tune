@@ -93,6 +93,7 @@ import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.constants.PlaylistEditLockKey
 import moe.rgsekai.sekaitune.constants.PlaylistSortDescendingKey
 import moe.rgsekai.sekaitune.constants.PlaylistSortType
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.constants.PlaylistSortTypeKey
 import moe.rgsekai.sekaitune.constants.PureBlackKey
 import moe.rgsekai.sekaitune.db.entities.Playlist
@@ -700,7 +701,8 @@ fun PlaylistListCard(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }.clip(RoundedCornerShape(32.dp))
+                }.tvFocusOutline(shape = RoundedCornerShape(32.dp))
+                .clip(RoundedCornerShape(32.dp))
                 .background(cardBgColor)
                 .clickable(
                     interactionSource = interactionSource,
@@ -825,7 +827,8 @@ fun PlaylistGridCard(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }.clip(RoundedCornerShape(32.dp))
+                }.tvFocusOutline(shape = RoundedCornerShape(32.dp))
+                .clip(RoundedCornerShape(32.dp))
                 .background(cardBgColor)
                 .combinedClickable(
                     interactionSource = interactionSource,

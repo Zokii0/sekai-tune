@@ -47,6 +47,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.settingsFirstContentItem
+import moe.rgsekai.sekaitune.ui.utils.settingsTopBarBack
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -288,6 +296,18 @@ fun StorageSettings(
         }
     }
 
+    val scrollState = rememberScrollState()
+    val topBarFocusRequester = remember { FocusRequester() }
+    val firstItemFocusRequester = remember { FocusRequester() }
+    val isTv = LocalIsTv.current
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(isTv) {
+        if (isTv) {
+            topBarFocusRequester.requestFocus()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -296,6 +316,12 @@ fun StorageSettings(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .settingsTopBarBack(
+                                    firstContentItemRequester = firstItemFocusRequester,
+                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -321,7 +347,8 @@ fun StorageSettings(
             Modifier
                 .padding(top = topPadding)
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
+                .tvDpadScroll(scrollState, coroutineScope)
                 .padding(
                     start = 12.dp,
                     top = 12.dp,
@@ -329,6 +356,10 @@ fun StorageSettings(
                 ),
         ) {
             StorageFolderSection(
+                modifier =
+                    Modifier
+                        .focusRequester(firstItemFocusRequester)
+                        .settingsFirstContentItem(topBarFocusRequester),
                 state = screenState,
                 smartTrimmer = smartTrimmer,
                 isSmartTrimmerAvailable = isSmartTrimmerAvailable,
@@ -586,6 +617,7 @@ fun StorageSettings(
 
 @Composable
 private fun StorageFolderSection(
+    modifier: Modifier = Modifier,
     state: StorageSettingsScreenState,
     smartTrimmer: Boolean,
     isSmartTrimmerAvailable: Boolean,
@@ -597,6 +629,7 @@ private fun StorageFolderSection(
             StorageSettingsScreenState.Loading -> {
                 item {
                     PreferenceEntry(
+                        modifier = modifier,
                         title = { Text(stringResource(R.string.storage_folder_pick)) },
                         description = stringResource(R.string.please_wait),
                         icon = {
@@ -617,6 +650,7 @@ private fun StorageFolderSection(
             is StorageSettingsScreenState.Error -> {
                 item {
                     PreferenceEntry(
+                        modifier = modifier,
                         title = { Text(stringResource(R.string.storage_folder_pick)) },
                         description = stringResource(state.messageResId),
                         icon = {
@@ -633,6 +667,7 @@ private fun StorageFolderSection(
             is StorageSettingsScreenState.Success -> {
                 item {
                     StorageFolderPreference(
+                        modifier = modifier,
                         folder = state.model.folder,
                         onSelectFolder = onSelectFolder,
                     )
@@ -654,10 +689,12 @@ private fun StorageFolderSection(
 
 @Composable
 private fun StorageFolderPreference(
+    modifier: Modifier = Modifier,
     folder: StorageFolderUiModel,
     onSelectFolder: () -> Unit,
 ) {
     PreferenceEntry(
+        modifier = modifier,
         title = { Text(storageLocationTitle(folder.kind, folder.volumeLabel)) },
         description = stringResource(R.string.storage_location_free, formatFileSize(folder.availableBytes)),
         icon = {

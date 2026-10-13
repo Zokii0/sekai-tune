@@ -58,6 +58,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
@@ -121,6 +126,9 @@ private fun ChiperSettingsContent(
 ) {
     val scrollBehavior = appBarScrollBehavior()
 
+    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         modifier =
             Modifier
@@ -143,6 +151,11 @@ private fun ChiperSettingsContent(
                     IconButton(
                         onClick = onNavigateUp,
                         onLongClick = onNavigateToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(lazyListState = lazyListState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -213,6 +226,7 @@ private fun ChiperSettingsContent(
             is ChiperSettingsUiState.Success -> {
                 CipherSettingsSuccess(
                     data = state.data,
+                    lazyListState = lazyListState,
                     onRefresh = onRefresh,
                     contentPadding =
                         PaddingValues(
@@ -236,10 +250,12 @@ private fun ChiperSettingsContent(
 @Composable
 private fun CipherSettingsSuccess(
     data: ChiperSettingsUiData,
+    lazyListState: androidx.compose.foundation.lazy.LazyListState,
     onRefresh: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val lastUpdatedText =
         remember(data.lastUpdatedMillis) {
             DateFormat
@@ -266,7 +282,8 @@ private fun CipherSettingsSuccess(
         }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        state = lazyListState,
+        modifier = modifier.fillMaxSize().tvDpadListScroll(lazyListState, coroutineScope),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(SettingsDimensions.SectionSpacing),
     ) {

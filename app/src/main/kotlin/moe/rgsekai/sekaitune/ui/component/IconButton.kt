@@ -37,6 +37,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
+
 @Composable
 fun ResizableIconButton(
     @DrawableRes icon: Int,
@@ -46,15 +48,17 @@ fun ResizableIconButton(
     indication: Indication? = null,
     onClick: () -> Unit = {},
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Image(
         painter = painterResource(icon),
         contentDescription = null,
         colorFilter = ColorFilter.tint(color),
         modifier =
             modifier
+                .tvFocusOutline(shape = CircleShape, interactionSource = interactionSource)
                 .clickable(
                     indication = indication ?: ripple(bounded = false),
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = interactionSource,
                     enabled = enabled,
                     onClick = onClick,
                 ).alpha(if (enabled) 1f else 0.5f),
@@ -77,6 +81,7 @@ fun IconButton(
             modifier
                 .minimumInteractiveComponentSize()
                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .tvFocusOutline(shape = CircleShape, interactionSource = interactionSource)
                 .clip(CircleShape)
                 .background(color = colors.containerColor)
                 .combinedClickable(

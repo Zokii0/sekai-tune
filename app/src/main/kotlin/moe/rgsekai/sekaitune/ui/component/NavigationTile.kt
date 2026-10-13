@@ -28,6 +28,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
+
 @Composable
 fun NavigationTile(
     title: String,
@@ -47,6 +49,7 @@ fun NavigationTile(
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .tvFocusOutline(shape = CircleShape)
                     .focusable()
                     .clickable(onClick = onClick),
         ) {

@@ -31,11 +31,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.runtime.rememberCoroutineScope
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
@@ -64,6 +71,10 @@ fun SupportScreen(navController: NavController) {
         }
     }
 
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val topBarFocusRequester = remember { FocusRequester() }
+
     Scaffold(
         topBar = {
             androidx.compose.material3.TopAppBar(
@@ -72,6 +83,11 @@ fun SupportScreen(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(scrollState = scrollState)
+                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -90,7 +106,9 @@ fun SupportScreen(navController: NavController) {
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
                         ),
-                    ).verticalScroll(rememberScrollState())
+                    )
+                    .tvDpadScroll(scrollState, coroutineScope)
+                    .verticalScroll(scrollState)
                     .padding(bottom = SettingsDimensions.ScreenBottomPadding),
         ) {
             PreferenceGroup(title = stringResource(R.string.support_development_title)) {

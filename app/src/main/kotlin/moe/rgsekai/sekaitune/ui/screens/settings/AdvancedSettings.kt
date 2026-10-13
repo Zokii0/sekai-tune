@@ -37,15 +37,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
+import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
 
 @Composable
 fun AdvancedSettings(navController: NavController) {
     val context = LocalContext.current
     val isAndroid12OrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val scrollState = rememberScrollState()
+    val topBarFocusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -53,6 +62,10 @@ fun AdvancedSettings(navController: NavController) {
                 title = { Text(stringResource(R.string.advanced)) },
                 navigationIcon = {
                     IconButton(
+                        modifier =
+                            Modifier
+                                .focusRequester(topBarFocusRequester)
+                                .tvFocusBridge(scrollState = scrollState),
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
                     ) {
@@ -73,7 +86,8 @@ fun AdvancedSettings(navController: NavController) {
                         WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
                     ),
                 )
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
+                .tvDpadScroll(scrollState, coroutineScope)
                 .padding(bottom = SettingsDimensions.ScreenBottomPadding),
         ) {
             PreferenceGroup(title = stringResource(R.string.content_and_behavior)) {

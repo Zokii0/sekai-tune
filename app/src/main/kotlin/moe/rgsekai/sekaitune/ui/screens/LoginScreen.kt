@@ -32,9 +32,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.TvDpadNavigableWebView
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.resetAuthWebViewSession
 import moe.rgsekai.sekaitune.viewmodels.LoginEvent
@@ -67,6 +74,8 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
 
+    val isTv = LocalIsTv.current
+
     @Suppress("UNUSED_VARIABLE")
     val screenState by viewModel.screenState.collectAsStateWithLifecycle()
     val loginSuccessMessage = stringResource(R.string.login_success)
@@ -89,7 +98,7 @@ fun LoginScreen(
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
                 .fillMaxSize(),
         factory = { context ->
-            WebView(context).apply {
+            TvDpadNavigableWebView(context, isTv).apply {
                 val cookieManager = CookieManager.getInstance()
                 webViewClient =
                     object : WebViewClient() {
@@ -142,6 +151,13 @@ fun LoginScreen(
                     "Android",
                 )
                 webView = this
+                if (isTv) {
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                    post {
+                        requestFocus()
+                    }
+                }
                 resetAuthWebViewSession(context, this, clearCookies = true) {
                     loadUrl(startUrl?.takeIf { it.isNotBlank() } ?: DEFAULT_LOGIN_URL)
                 }
@@ -155,6 +171,18 @@ fun LoginScreen(
             IconButton(
                 onClick = navController::navigateUp,
                 onLongClick = navController::backToMain,
+                modifier =
+                    if (isTv) {
+                        Modifier.onPreviewKeyEvent { keyEvent ->
+                            if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionDown) {
+                                webView?.requestFocus() ?: false
+                            } else {
+                                false
+                            }
+                        }
+                    } else {
+                        Modifier
+                    },
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),

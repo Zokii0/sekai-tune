@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -69,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -136,6 +138,7 @@ import moe.rgsekai.sekaitune.ui.utils.sendAddMissingDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendPauseDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendRemoveDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendResumeDownloads
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.makeTimeString
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import kotlin.math.abs
@@ -277,6 +280,8 @@ fun SpotifyPlaylistScreen(
     var resolvingTrackId by remember { mutableStateOf<String?>(null) }
     var query by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     val focusRequester = remember { FocusRequester() }
+    val playButtonFocusRequester = remember { FocusRequester() }
+    val backButtonFocusRequester = remember { FocusRequester() }
 
     val filteredTracks =
         remember(tracks, query.text) {
@@ -714,7 +719,10 @@ fun SpotifyPlaylistScreen(
                                         }
                                     },
                                     enabled = tracks.isNotEmpty() && !state.isLoading && !state.isResolvingDownloads,
-                                    modifier = Modifier.size(48.dp),
+                                    modifier =
+                                        Modifier
+                                            .size(48.dp)
+                                            .tvFocusOutline(shape = CircleShape),
                                     shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -761,7 +769,12 @@ fun SpotifyPlaylistScreen(
                                     modifier =
                                         Modifier
                                             .weight(1f)
-                                            .height(48.dp),
+                                            .height(48.dp)
+                                            .focusRequester(playButtonFocusRequester)
+                                            .focusProperties {
+                                                up = backButtonFocusRequester
+                                            }
+                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
                                     shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -785,7 +798,8 @@ fun SpotifyPlaylistScreen(
                                     modifier =
                                         Modifier
                                             .weight(1f)
-                                            .height(48.dp),
+                                            .height(48.dp)
+                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
                                     shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -805,7 +819,10 @@ fun SpotifyPlaylistScreen(
                                 ToggleButton(
                                     checked = false,
                                     onCheckedChange = { viewModel.reload() },
-                                    modifier = Modifier.size(48.dp),
+                                    modifier =
+                                        Modifier
+                                            .size(48.dp)
+                                            .tvFocusOutline(shape = CircleShape),
                                     shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -837,7 +854,8 @@ fun SpotifyPlaylistScreen(
                                     modifier =
                                         Modifier
                                             .weight(1f)
-                                            .height(48.dp),
+                                            .height(48.dp)
+                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
                                     shapes = ButtonDefaults.shapes(),
                                 ) {
                                     Icon(
@@ -928,6 +946,16 @@ fun SpotifyPlaylistScreen(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .then(
+                                if (index == 0) {
+                                    Modifier.focusProperties {
+                                        up = playButtonFocusRequester
+                                    }
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .tvFocusOutline(shape = RoundedCornerShape(12.dp))
                             .combinedClickable(
                                 enabled = resolvingTrackId == null || trackIsActive || selection,
                                 onClick = {
@@ -1029,6 +1057,12 @@ fun SpotifyPlaylistScreen(
                     onLongClick = {
                         if (!isSearching && !selection) navController.backToMain()
                     },
+                    modifier =
+                        Modifier
+                            .focusRequester(backButtonFocusRequester)
+                            .focusProperties {
+                                down = playButtonFocusRequester
+                            },
                 ) {
                     Icon(
                         painter =
