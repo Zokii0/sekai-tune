@@ -51,6 +51,8 @@ import moe.rgsekai.sekaitune.ui.tv.screens.TvAutoPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvHomeScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsCategory
+import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSpotifyPlaylistScreen
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.viewmodels.HomeViewModel
@@ -88,8 +90,8 @@ fun TvRoot(
         currentRoute == Screens.Library.route -> TvTab.LIBRARY
         currentRoute == "ambient_mode" -> TvTab.NOW_PLAYING
         currentRoute == Screens.Search.route || currentRoute.startsWith("online_search") -> TvTab.SEARCH
-        currentRoute == "settings" || currentRoute.startsWith("settings/") -> TvTab.SETTINGS
         currentRoute == LOGIN_ROUTE || currentRoute == "account" || currentRoute == "settings/account" -> TvTab.PROFILE
+        currentRoute == "settings" || currentRoute.startsWith("settings/") -> TvTab.SETTINGS
         else -> TvTab.HOME
     }
 
@@ -276,6 +278,264 @@ fun TvRoot(
                 ) {
                     TvSpotifyPlaylistScreen(
                         navController = navController,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Settings screen and sub-routes
+                composable("settings") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/account") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/canvas") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.CANVAS,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/player") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.PLAYER,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/lyrics") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.LYRICS,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/content") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.CONTENT,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/privacy") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.PRIVACY,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/storage") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.STORAGE,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/backup_restore") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.BACKUP_RESTORE,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/integrations") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.INTEGRATIONS,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/internet") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.INTERNET,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/advanced") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ADVANCED,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/about") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ABOUT,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/liquid_glass") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/liquid_glass",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/liquid_glass") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/liquid_glass",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/ambient_mode") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/ambient_mode",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/icon") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/icon",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/aod_customized") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/aod_customized",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/palette_picker") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/palette_picker",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/lyrics_animations") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/lyrics_animations",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/appearance/theme_creator") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        activeSubRoute = "settings/appearance/theme_creator",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/player/chiper") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.PLAYER,
+                        activeSubRoute = "settings/player/chiper",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/music_together") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.INTEGRATIONS,
+                        activeSubRoute = "settings/music_together",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/misc") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ADVANCED,
+                        activeSubRoute = "settings/misc",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/logcat") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ADVANCED,
+                        activeSubRoute = "settings/logcat",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/po_token") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ADVANCED,
+                        activeSubRoute = "settings/po_token",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                composable("settings/changelog") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ABOUT,
+                        activeSubRoute = "settings/changelog",
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                if (BuildConfig.UPDATER_AVAILABLE) {
+                    composable("settings/update") {
+                        TvSettingsScreen(
+                            navController = navController,
+                            initialCategory = TvSettingsCategory.ABOUT,
+                            activeSubRoute = "settings/update",
+                            upFocusRequester = topBarFocusRequester,
+                        )
+                    }
+                }
+
+                composable("settings/support") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.ABOUT,
+                        activeSubRoute = "settings/support",
                         upFocusRequester = topBarFocusRequester,
                     )
                 }

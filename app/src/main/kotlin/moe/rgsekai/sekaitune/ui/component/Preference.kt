@@ -68,6 +68,17 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -106,6 +117,9 @@ val LocalPreferenceInGroup = compositionLocalOf { false }
 enum class PreferenceGroupPosition { Single, First, Middle, Last }
 
 val LocalPreferenceGroupPosition = compositionLocalOf<PreferenceGroupPosition?> { null }
+
+val LocalTvSliderAdjustment = compositionLocalOf<((Boolean) -> Unit)?> { null }
+val LocalTvSettingsCategoryFocusRequester = compositionLocalOf<FocusRequester?> { null }
 
 private val PreferenceGroupLargeCorner = 28.dp
 private val PreferenceGroupSmallCorner = 6.dp
@@ -195,6 +209,63 @@ fun PreferenceEntry(
         label = "prefScale",
     )
 
+    val isTv = LocalIsTv.current
+    val leftCategoryFocusRequester = LocalTvSettingsCategoryFocusRequester.current
+    val focusManager = LocalFocusManager.current
+    val sliderAdjustment = LocalTvSliderAdjustment.current
+
+    val tvModifier = if (isTv) {
+        Modifier
+            .tvFocusOutline(shape = resolvedShape)
+            .focusable(enabled = isEnabled)
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (keyEvent.key) {
+                    Key.DirectionLeft -> {
+                        if (sliderAdjustment != null) {
+                            sliderAdjustment(false)
+                            true
+                        } else if (leftCategoryFocusRequester != null) {
+                            leftCategoryFocusRequester.safeRequestFocus()
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    Key.DirectionRight -> {
+                        if (sliderAdjustment != null) {
+                            sliderAdjustment(true)
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    Key.DirectionUp -> {
+                        val moved = focusManager.moveFocus(FocusDirection.Up)
+                        if (!moved && leftCategoryFocusRequester != null) {
+                            leftCategoryFocusRequester.safeRequestFocus()
+                        }
+                        true
+                    }
+                    Key.DirectionDown -> {
+                        focusManager.moveFocus(FocusDirection.Down)
+                        true
+                    }
+                    Key.DirectionCenter, Key.Enter, Key.Spacebar, Key.NumPadEnter -> {
+                        if (isEnabled && onClick != null) {
+                            onClick()
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    else -> false
+                }
+            }
+    } else {
+        Modifier
+    }
+
     val rowContent: @Composable () -> Unit = {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -221,6 +292,7 @@ fun PreferenceEntry(
                             )
                         }
                     ).alpha(if (isEnabled) 1f else 0.5f)
+                    .then(if (isTv) tvModifier else Modifier)
                     .padding(
                         horizontal = PreferenceEntryHorizontalPadding,
                         vertical = PreferenceEntryVerticalPadding,
@@ -305,42 +377,68 @@ fun <T> SegmentedPreference(
     onValueSelected: (T) -> Unit,
     isEnabled: Boolean = true,
 ) {
-    PreferenceEntry(
-        modifier = modifier,
-        title = title,
-        description = description,
-        icon = icon,
-        isEnabled = isEnabled,
-        content = {
-            Spacer(Modifier.height(12.dp))
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                values.forEachIndexed { index, value ->
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = values.size),
-                        onClick = { onValueSelected(value) },
-                        selected = value == selectedValue,
-                        enabled = isEnabled,
-                        colors =
-                            SegmentedButtonDefaults.colors(
-                                activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                inactiveContainerColor = MaterialTheme.colorScheme.surface,
-                                inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                    ) {
-                        Text(
-                            text = valueText(value),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.labelLarge,
-                        )
+    val isTv = LocalIsTv.current
+    val preferenceContent = @Composable {
+        PreferenceEntry(
+            modifier = modifier,
+            title = title,
+            description = description,
+            icon = icon,
+            isEnabled = isEnabled,
+            content = {
+                Spacer(Modifier.height(12.dp))
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    values.forEachIndexed { index, value ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = values.size),
+                            onClick = { onValueSelected(value) },
+                            selected = value == selectedValue,
+                            enabled = isEnabled,
+                            colors =
+                                SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                                    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                                ),
+                        ) {
+                            Text(
+                                text = valueText(value),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        }
                     }
                 }
-            }
-        },
-    )
+            },
+        )
+    }
+
+    if (isTv) {
+        CompositionLocalProvider(
+            LocalTvSliderAdjustment provides { increase ->
+                val currentIndex = values.indexOf(selectedValue)
+                if (currentIndex != -1) {
+                    val nextIndex =
+                        if (increase) {
+                            (currentIndex + 1).coerceAtMost(values.size - 1)
+                        } else {
+                            (currentIndex - 1).coerceAtLeast(0)
+                        }
+                    if (nextIndex != currentIndex) {
+                        onValueSelected(values[nextIndex])
+                    }
+                }
+            },
+        ) {
+            preferenceContent()
+        }
+    } else {
+        preferenceContent()
+    }
 }
 
 @Composable
@@ -584,6 +682,12 @@ private fun PreferenceSelectionOption(
                             shape = shape,
                             applyEdgeEffects = true,
                         )
+                    } else {
+                        Modifier
+                    },
+                ).then(
+                    if (LocalIsTv.current) {
+                        Modifier.tvFocusOutline(shape = shape)
                     } else {
                         Modifier
                     },
@@ -897,14 +1001,37 @@ fun SliderPreference(
         )
     }
 
-    PreferenceEntry(
-        modifier = modifier,
-        title = title,
-        description = stringResource(R.string.history_duration_seconds, value),
-        icon = icon,
-        onClick = { showDialog = true },
-        isEnabled = isEnabled,
-    )
+    val isTv = LocalIsTv.current
+    if (isTv) {
+        val minVal = HISTORY_DURATION_RANGE.start.toInt()
+        val maxVal = HISTORY_DURATION_RANGE.endInclusive.toInt()
+        CompositionLocalProvider(
+            LocalTvSliderAdjustment provides { increase ->
+                val next = if (increase) (value + 1).coerceAtMost(maxVal) else (value - 1).coerceAtLeast(minVal)
+                if (next != value) {
+                    onValueChange(next)
+                }
+            },
+        ) {
+            PreferenceEntry(
+                modifier = modifier,
+                title = title,
+                description = stringResource(R.string.history_duration_seconds, value),
+                icon = icon,
+                onClick = { showDialog = true },
+                isEnabled = isEnabled,
+            )
+        }
+    } else {
+        PreferenceEntry(
+            modifier = modifier,
+            title = title,
+            description = stringResource(R.string.history_duration_seconds, value),
+            icon = icon,
+            onClick = { showDialog = true },
+            isEnabled = isEnabled,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1026,14 +1153,37 @@ fun CrossfadeSliderPreference(
             stringResource(R.string.audio_crossfade_seconds, displayValue)
         }
 
-    PreferenceEntry(
-        modifier = modifier,
-        title = { Text(stringResource(R.string.audio_crossfade_title)) },
-        description = descriptionText,
-        icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
-        onClick = { if (isEnabled) showDialog = true },
-        isEnabled = isEnabled,
-    )
+    val isTv = LocalIsTv.current
+    if (isTv) {
+        CompositionLocalProvider(
+            LocalTvSliderAdjustment provides { increase ->
+                val step = 0.5f
+                val next = if (increase) (valueSeconds + step).coerceAtMost(10f) else (valueSeconds - step).coerceAtLeast(0f)
+                val rounded = ((next * 2f).roundToInt().toFloat() / 2f).coerceIn(0f, 10f)
+                if (kotlin.math.abs(rounded - valueSeconds) > 0.01f) {
+                    onValueChange(rounded)
+                }
+            },
+        ) {
+            PreferenceEntry(
+                modifier = modifier,
+                title = { Text(stringResource(R.string.audio_crossfade_title)) },
+                description = descriptionText,
+                icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
+                onClick = { if (isEnabled) showDialog = true },
+                isEnabled = isEnabled,
+            )
+        }
+    } else {
+        PreferenceEntry(
+            modifier = modifier,
+            title = { Text(stringResource(R.string.audio_crossfade_title)) },
+            description = descriptionText,
+            icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
+            onClick = { if (isEnabled) showDialog = true },
+            isEnabled = isEnabled,
+        )
+    }
 }
 
 @Composable
@@ -1117,14 +1267,35 @@ fun NumberPickerPreference(
         )
     }
 
-    PreferenceEntry(
-        modifier = modifier,
-        title = title,
-        description = valueText(value),
-        icon = icon,
-        onClick = { if (isEnabled) showDialog = true },
-        isEnabled = isEnabled,
-    )
+    val isTv = LocalIsTv.current
+    if (isTv) {
+        CompositionLocalProvider(
+            LocalTvSliderAdjustment provides { increase ->
+                val next = if (increase) (value + 1).coerceAtMost(maxValue) else (value - 1).coerceAtLeast(minValue)
+                if (next != value) {
+                    onValueChange(next)
+                }
+            },
+        ) {
+            PreferenceEntry(
+                modifier = modifier,
+                title = title,
+                description = valueText(value),
+                icon = icon,
+                onClick = { if (isEnabled) showDialog = true },
+                isEnabled = isEnabled,
+            )
+        }
+    } else {
+        PreferenceEntry(
+            modifier = modifier,
+            title = title,
+            description = valueText(value),
+            icon = icon,
+            onClick = { if (isEnabled) showDialog = true },
+            isEnabled = isEnabled,
+        )
+    }
 }
 
 class PreferenceGroupScope internal constructor() {
