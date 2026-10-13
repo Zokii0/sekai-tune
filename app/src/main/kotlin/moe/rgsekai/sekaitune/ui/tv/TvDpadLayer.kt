@@ -240,11 +240,6 @@ fun TvDpadLayer(
                 .onFocusChanged { focusState ->
                     isContentFocused = focusState.hasFocus
                 }
-                .focusProperties {
-                    if (!isSettingsRoute) {
-                        up = upFocusRequester
-                    }
-                }
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
                     when (keyEvent.key) {

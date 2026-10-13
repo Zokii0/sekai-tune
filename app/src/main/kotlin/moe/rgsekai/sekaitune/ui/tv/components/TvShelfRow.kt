@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -58,11 +60,13 @@ fun TvShelfRow(
     upFocusRequester: FocusRequester? = null,
     firstItemFocusRequester: FocusRequester? = null,
     leftFocusRequester: FocusRequester? = null,
+    onItemFocused: ((FocusRequester) -> Unit)? = null,
     horizontalPadding: androidx.compose.ui.unit.Dp = 32.dp,
+    lazyListState: LazyListState = rememberLazyListState(),
 ) {
     if (items.isEmpty()) return
 
-    val listState = rememberLazyListState()
+    val listState = lazyListState
 
     Column(
         modifier = modifier
@@ -89,14 +93,20 @@ fun TvShelfRow(
                 items = items,
                 key = { index, item -> "${item.id}_$index" },
             ) { index, item ->
+                val cardFocusRequester = remember { FocusRequester() }
+                val targetFocusRequester = if (index == 0 && firstItemFocusRequester != null) {
+                    firstItemFocusRequester
+                } else {
+                    cardFocusRequester
+                }
+
                 val itemModifier = Modifier
-                    .then(
-                        if (index == 0 && firstItemFocusRequester != null) {
-                            Modifier.focusRequester(firstItemFocusRequester)
-                        } else {
-                            Modifier
-                        },
-                    )
+                    .focusRequester(targetFocusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            onItemFocused?.invoke(targetFocusRequester)
+                        }
+                    }
                     .onPreviewKeyEvent { keyEvent ->
                         if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 

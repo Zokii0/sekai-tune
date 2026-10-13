@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,8 +42,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +76,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.extensions.toMediaItem
 import moe.rgsekai.sekaitune.innertube.models.AlbumItem
@@ -116,8 +120,9 @@ fun TvArtistScreen(
     val playButtonFocusRequester = remember { FocusRequester() }
     val shuffleButtonFocusRequester = remember { FocusRequester() }
     val radioButtonFocusRequester = remember { FocusRequester() }
-    val firstShelfFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     var lastFocusedActionRequester by remember { mutableStateOf(playButtonFocusRequester) }
 
@@ -231,6 +236,47 @@ fun TvArtistScreen(
         }
     }
 
+    val shelfFocusRequesters = remember(displaySections.size) {
+        List(displaySections.size) { FocusRequester() }
+    }
+    val shelfListStates = remember(displaySections.size) {
+        List(displaySections.size) { LazyListState() }
+    }
+    var lastFocusedShelfIndex by remember { mutableIntStateOf(0) }
+    var lastFocusedShelfItemRequester by remember { mutableStateOf<FocusRequester?>(null) }
+
+    val focusShelfFromActionButtons: () -> Boolean = {
+        val exactMoved = lastFocusedShelfItemRequester?.safeRequestFocus() ?: false
+        if (exactMoved) {
+            true
+        } else {
+            val sectionIndex = lastFocusedShelfIndex.coerceIn(0, (displaySections.size - 1).coerceAtLeast(0))
+            val currentShelfRequester = shelfFocusRequesters.getOrNull(sectionIndex)
+            val currentShelfMoved = currentShelfRequester?.safeRequestFocus() ?: false
+            if (currentShelfMoved) {
+                true
+            } else if (sectionIndex != 0 && shelfFocusRequesters.getOrNull(0)?.safeRequestFocus() == true) {
+                true
+            } else if (displaySections.isNotEmpty()) {
+                coroutineScope.launch {
+                    listState.scrollToItem(sectionIndex)
+                    shelfListStates.getOrNull(sectionIndex)?.scrollToItem(0)
+                    delay(50)
+                    val moved = shelfFocusRequesters.getOrNull(sectionIndex)?.safeRequestFocus() ?: false
+                    if (!moved && sectionIndex != 0) {
+                        listState.scrollToItem(0)
+                        shelfListStates.getOrNull(0)?.scrollToItem(0)
+                        delay(50)
+                        shelfFocusRequesters.getOrNull(0)?.safeRequestFocus()
+                    }
+                }
+                true
+            } else {
+                true
+            }
+        }
+    }
+
     val hasRadio = artistPage?.artist?.radioEndpoint != null
 
     Row(
@@ -332,12 +378,14 @@ fun TvArtistScreen(
                             Key.DirectionUp -> {
                                 upFocusRequester?.safeRequestFocus() ?: true
                             }
+                            Key.DirectionDown -> {
+                                shuffleButtonFocusRequester.safeRequestFocus()
+                            }
                             Key.DirectionLeft -> {
                                 true // Stay put
                             }
                             Key.DirectionRight -> {
-                                val moved = firstShelfFocusRequester.safeRequestFocus()
-                                if (!moved) focusManager.moveFocus(FocusDirection.Right) else true
+                                focusShelfFromActionButtons()
                             }
                             else -> false
                         }
@@ -376,18 +424,20 @@ fun TvArtistScreen(
                     onPreviewKeyEvent = { keyEvent ->
                         if (keyEvent.type != KeyEventType.KeyDown) return@TvActionButton false
                         when (keyEvent.key) {
+                            Key.DirectionUp -> {
+                                playButtonFocusRequester.safeRequestFocus()
+                            }
                             Key.DirectionLeft -> {
                                 true // Stay put
                             }
                             Key.DirectionRight -> {
-                                val moved = firstShelfFocusRequester.safeRequestFocus()
-                                if (!moved) focusManager.moveFocus(FocusDirection.Right) else true
+                                focusShelfFromActionButtons()
                             }
                             Key.DirectionDown -> {
-                                if (!hasRadio) {
-                                    true // Last button when radio is unavailable, stay put and consume key
+                                if (hasRadio) {
+                                    radioButtonFocusRequester.safeRequestFocus()
                                 } else {
-                                    false
+                                    true // Last button when radio is unavailable, stay put and consume key
                                 }
                             }
                             else -> false
@@ -429,12 +479,14 @@ fun TvArtistScreen(
                     onPreviewKeyEvent = { keyEvent ->
                         if (keyEvent.type != KeyEventType.KeyDown) return@TvActionButton false
                         when (keyEvent.key) {
+                            Key.DirectionUp -> {
+                                shuffleButtonFocusRequester.safeRequestFocus()
+                            }
                             Key.DirectionLeft -> {
                                 true // Stay put
                             }
                             Key.DirectionRight -> {
-                                val moved = firstShelfFocusRequester.safeRequestFocus()
-                                if (!moved) focusManager.moveFocus(FocusDirection.Right) else true
+                                focusShelfFromActionButtons()
                             }
                             Key.DirectionDown -> {
                                 true // Last row button: stays put and consumes key
@@ -476,8 +528,6 @@ fun TvArtistScreen(
                     )
                 }
             } else {
-                val listState = rememberLazyListState()
-
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(top = 16.dp, bottom = 48.dp, end = 24.dp),
@@ -489,6 +539,8 @@ fun TvArtistScreen(
                     ) { index, section ->
                         val isFirst = index == 0
                         val isLast = index == displaySections.size - 1
+                        val shelfRequester = shelfFocusRequesters.getOrNull(index) ?: remember { FocusRequester() }
+                        val shelfState = shelfListStates.getOrNull(index) ?: rememberLazyListState()
 
                         TvShelfRow(
                             title = section.title,
@@ -496,8 +548,13 @@ fun TvArtistScreen(
                             isFirstShelf = isFirst,
                             isLastShelf = isLast,
                             upFocusRequester = upFocusRequester,
-                            firstItemFocusRequester = if (isFirst) firstShelfFocusRequester else null,
+                            firstItemFocusRequester = shelfRequester,
                             leftFocusRequester = lastFocusedActionRequester,
+                            lazyListState = shelfState,
+                            onItemFocused = { requester ->
+                                lastFocusedShelfIndex = index
+                                lastFocusedShelfItemRequester = requester
+                            },
                             horizontalPadding = 20.dp,
                         )
                     }

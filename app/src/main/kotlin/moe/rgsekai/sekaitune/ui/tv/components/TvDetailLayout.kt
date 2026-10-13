@@ -46,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +74,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
@@ -123,8 +125,11 @@ fun TvDetailLayout(
     val shuffleButtonFocusRequester = remember { FocusRequester() }
     val firstSongFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     var lastFocusedActionRequester by remember { mutableStateOf(playButtonFocusRequester) }
+    var lastFocusedSongRequester by remember { mutableStateOf<FocusRequester?>(null) }
 
     // Intercept hardware and remote Back key
     BackHandler {
@@ -243,12 +248,29 @@ fun TvDetailLayout(
                             Key.DirectionUp -> {
                                 upFocusRequester?.safeRequestFocus() ?: true
                             }
+                            Key.DirectionDown -> {
+                                shuffleButtonFocusRequester.safeRequestFocus()
+                            }
                             Key.DirectionLeft -> {
                                 true // Stay put
                             }
                             Key.DirectionRight -> {
-                                val moved = firstSongFocusRequester.safeRequestFocus()
-                                if (!moved) focusManager.moveFocus(FocusDirection.Right) else true
+                                val moved = lastFocusedSongRequester?.safeRequestFocus() ?: false
+                                if (!moved) {
+                                    val firstMoved = firstSongFocusRequester.safeRequestFocus()
+                                    if (!firstMoved && songs.isNotEmpty()) {
+                                        coroutineScope.launch {
+                                            listState.scrollToItem(0)
+                                            delay(30)
+                                            firstSongFocusRequester.safeRequestFocus()
+                                        }
+                                        true
+                                    } else {
+                                        true
+                                    }
+                                } else {
+                                    true
+                                }
                             }
                             else -> false
                         }
@@ -266,12 +288,29 @@ fun TvDetailLayout(
                     onPreviewKeyEvent = { keyEvent ->
                         if (keyEvent.type != KeyEventType.KeyDown) return@TvDetailActionButton false
                         when (keyEvent.key) {
+                            Key.DirectionUp -> {
+                                playButtonFocusRequester.safeRequestFocus()
+                            }
                             Key.DirectionLeft -> {
                                 true // Stay put
                             }
                             Key.DirectionRight -> {
-                                val moved = firstSongFocusRequester.safeRequestFocus()
-                                if (!moved) focusManager.moveFocus(FocusDirection.Right) else true
+                                val moved = lastFocusedSongRequester?.safeRequestFocus() ?: false
+                                if (!moved) {
+                                    val firstMoved = firstSongFocusRequester.safeRequestFocus()
+                                    if (!firstMoved && songs.isNotEmpty()) {
+                                        coroutineScope.launch {
+                                            listState.scrollToItem(0)
+                                            delay(30)
+                                            firstSongFocusRequester.safeRequestFocus()
+                                        }
+                                        true
+                                    } else {
+                                        true
+                                    }
+                                } else {
+                                    true
+                                }
                             }
                             Key.DirectionDown -> {
                                 if (extraButtons == null) {
@@ -316,8 +355,6 @@ fun TvDetailLayout(
                     )
                 }
             } else {
-                val listState = rememberLazyListState()
-
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(top = 16.dp, bottom = 48.dp, end = 24.dp),
@@ -339,6 +376,7 @@ fun TvDetailLayout(
                             firstSongFocusRequester = if (isFirstSong) firstSongFocusRequester else null,
                             upFocusRequester = upFocusRequester,
                             leftFocusRequester = lastFocusedActionRequester,
+                            onFocused = { requester -> lastFocusedSongRequester = requester },
                         )
                     }
                 }
@@ -360,10 +398,19 @@ private fun TvSongRow(
     firstSongFocusRequester: FocusRequester?,
     upFocusRequester: FocusRequester?,
     leftFocusRequester: FocusRequester?,
+    onFocused: (FocusRequester) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
+    val rowFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isFocused) {
+        if (isFocused) {
+            onFocused(firstSongFocusRequester ?: rowFocusRequester)
+        }
+    }
+
     val shape = RoundedCornerShape(10.dp)
 
     val backgroundColor by animateColorAsState(
@@ -399,7 +446,7 @@ private fun TvSongRow(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .then(if (firstSongFocusRequester != null) Modifier.focusRequester(firstSongFocusRequester) else Modifier)
+            .focusRequester(firstSongFocusRequester ?: rowFocusRequester)
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (keyEvent.key) {
