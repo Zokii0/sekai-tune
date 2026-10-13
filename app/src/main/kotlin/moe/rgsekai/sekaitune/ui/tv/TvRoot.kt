@@ -36,6 +36,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import moe.rgsekai.sekaitune.BuildConfig
 import moe.rgsekai.sekaitune.playback.PlayerConnection
 import moe.rgsekai.sekaitune.ui.screens.LOGIN_ROUTE
@@ -43,6 +45,7 @@ import moe.rgsekai.sekaitune.ui.screens.Screens
 import moe.rgsekai.sekaitune.ui.screens.navigationBuilder
 import moe.rgsekai.sekaitune.ui.tv.components.TvTab
 import moe.rgsekai.sekaitune.ui.tv.components.TvTopBar
+import moe.rgsekai.sekaitune.ui.tv.screens.TvArtistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvHomeScreen
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.viewmodels.HomeViewModel
@@ -176,6 +179,22 @@ fun TvRoot(
                     scrollBehavior = topAppBarScrollBehavior,
                     latestVersionName = { BuildConfig.VERSION_NAME },
                 )
+
+                // TV-optimized Artist screen
+                composable(
+                    route = "artist/{artistId}",
+                    arguments = listOf(
+                        navArgument("artistId") {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) {
+                    TvArtistScreen(
+                        navController = navController,
+                        playerConnection = playerConnection,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
             }
         }
     }

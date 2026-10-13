@@ -54,8 +54,11 @@ fun TvShelfRow(
     items: List<TvShelfItem>,
     modifier: Modifier = Modifier,
     isFirstShelf: Boolean = false,
+    isLastShelf: Boolean = false,
     upFocusRequester: FocusRequester? = null,
     firstItemFocusRequester: FocusRequester? = null,
+    leftFocusRequester: FocusRequester? = null,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 32.dp,
 ) {
     if (items.isEmpty()) return
 
@@ -71,20 +74,20 @@ fun TvShelfRow(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 32.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = horizontalPadding, vertical = 6.dp),
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         LazyRow(
             state = listState,
-            contentPadding = PaddingValues(horizontal = 32.dp),
+            contentPadding = PaddingValues(horizontal = horizontalPadding),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
             itemsIndexed(
                 items = items,
-                key = { _, item -> item.id },
+                key = { index, item -> "${item.id}_$index" },
             ) { index, item ->
                 val itemModifier = Modifier
                     .then(
@@ -100,8 +103,13 @@ fun TvShelfRow(
                         when (keyEvent.key) {
                             Key.DirectionLeft -> {
                                 if (index == 0) {
-                                    // At the left end of the list: consume key to retain focus
-                                    true
+                                    if (leftFocusRequester != null) {
+                                        leftFocusRequester.safeRequestFocus()
+                                        true
+                                    } else {
+                                        // At the left end of the list: consume key to retain focus
+                                        true
+                                    }
                                 } else {
                                     false
                                 }
@@ -119,6 +127,14 @@ fun TvShelfRow(
                                     // Returning up to the TV top bar safely
                                     val moved = upFocusRequester.safeRequestFocus()
                                     if (moved) true else false
+                                } else {
+                                    false
+                                }
+                            }
+                            Key.DirectionDown -> {
+                                if (isLastShelf) {
+                                    // At the last row: stay put and consume key
+                                    true
                                 } else {
                                     false
                                 }
