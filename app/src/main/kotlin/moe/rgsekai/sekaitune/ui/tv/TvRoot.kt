@@ -151,23 +151,15 @@ fun TvRoot(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        val isSettingsRoute = currentRoute == "settings" || currentRoute.startsWith("settings/") || currentRoute == "stats"
-
-        // TV Content Area: hosts NavHost with TvHomeScreen as TV start destination
-        Box(
+        // TV Content Area: hosts NavHost wrapped with TvDpadLayer for generic D-pad navigation
+        TvDpadLayer(
+            navController = navController,
+            currentRoute = currentRoute,
+            upFocusRequester = topBarFocusRequester,
+            contentFocusRequester = contentFocusRequester,
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .then(
-                    if (isSettingsRoute) {
-                        Modifier
-                    } else {
-                        Modifier.tvContentFocusHandoff(
-                            upFocusRequester = topBarFocusRequester,
-                            contentFocusRequester = contentFocusRequester,
-                        )
-                    },
-                ),
+                .fillMaxWidth(),
         ) {
             NavHost(
                 navController = navController,
