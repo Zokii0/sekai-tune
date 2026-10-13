@@ -45,8 +45,13 @@ import moe.rgsekai.sekaitune.ui.screens.Screens
 import moe.rgsekai.sekaitune.ui.screens.navigationBuilder
 import moe.rgsekai.sekaitune.ui.tv.components.TvTab
 import moe.rgsekai.sekaitune.ui.tv.components.TvTopBar
+import moe.rgsekai.sekaitune.ui.tv.screens.TvAlbumScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvArtistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvAutoPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvHomeScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvSpotifyPlaylistScreen
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.viewmodels.HomeViewModel
 
@@ -192,6 +197,85 @@ fun TvRoot(
                     TvArtistScreen(
                         navController = navController,
                         playerConnection = playerConnection,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Album screen
+                composable(
+                    route = "album/{albumId}",
+                    arguments = listOf(
+                        navArgument("albumId") {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) {
+                    TvAlbumScreen(
+                        navController = navController,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Online Playlist screen
+                composable(
+                    route = "online_playlist/{playlistId}",
+                    arguments = listOf(
+                        navArgument("playlistId") {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) {
+                    TvOnlinePlaylistScreen(
+                        navController = navController,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Local Playlist screen
+                composable(
+                    route = "local_playlist/{playlistId}",
+                    arguments = listOf(
+                        navArgument("playlistId") {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) {
+                    TvLocalPlaylistScreen(
+                        navController = navController,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Auto Playlist screen (liked, downloaded, uploaded)
+                composable(
+                    route = "auto_playlist/{playlist}?tab={tab}",
+                    arguments = listOf(
+                        navArgument("playlist") {
+                            type = NavType.StringType
+                        },
+                        navArgument("tab") {
+                            type = NavType.StringType
+                            defaultValue = "downloaded"
+                        },
+                    ),
+                ) {
+                    TvAutoPlaylistScreen(
+                        navController = navController,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Spotify Playlist screen
+                composable(
+                    route = "spotify_playlist/{playlistId}",
+                    arguments = listOf(
+                        navArgument("playlistId") {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) {
+                    TvSpotifyPlaylistScreen(
+                        navController = navController,
                         upFocusRequester = topBarFocusRequester,
                     )
                 }
