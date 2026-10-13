@@ -151,14 +151,22 @@ fun TvRoot(
             modifier = Modifier.fillMaxWidth(),
         )
 
+        val isSettingsRoute = currentRoute == "settings" || currentRoute.startsWith("settings/") || currentRoute == "stats"
+
         // TV Content Area: hosts NavHost with TvHomeScreen as TV start destination
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .tvContentFocusHandoff(
-                    upFocusRequester = topBarFocusRequester,
-                    contentFocusRequester = contentFocusRequester,
+                .then(
+                    if (isSettingsRoute) {
+                        Modifier
+                    } else {
+                        Modifier.tvContentFocusHandoff(
+                            upFocusRequester = topBarFocusRequester,
+                            contentFocusRequester = contentFocusRequester,
+                        )
+                    },
                 ),
         ) {
             NavHost(
@@ -287,6 +295,7 @@ fun TvRoot(
                     TvSettingsScreen(
                         navController = navController,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -295,6 +304,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -303,6 +313,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -311,6 +322,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.CANVAS,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -319,6 +331,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.PLAYER,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -327,6 +340,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.LYRICS,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -335,6 +349,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.CONTENT,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -343,6 +358,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.PRIVACY,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -351,6 +367,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.STORAGE,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -359,6 +376,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.BACKUP_RESTORE,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -367,6 +385,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.INTEGRATIONS,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -375,6 +394,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.INTERNET,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -383,6 +403,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.ADVANCED,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -391,6 +412,7 @@ fun TvRoot(
                         navController = navController,
                         initialCategory = TvSettingsCategory.ABOUT,
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -400,6 +422,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/liquid_glass",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -409,6 +432,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/liquid_glass",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -418,6 +442,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/ambient_mode",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -427,6 +452,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/icon",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -436,6 +462,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/aod_customized",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -445,6 +472,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/palette_picker",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -454,6 +482,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/lyrics_animations",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -463,6 +492,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/appearance/theme_creator",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -472,6 +502,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.PLAYER,
                         activeSubRoute = "settings/player/chiper",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -481,6 +512,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.INTEGRATIONS,
                         activeSubRoute = "settings/music_together",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -490,6 +522,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.ADVANCED,
                         activeSubRoute = "settings/misc",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -499,6 +532,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.ADVANCED,
                         activeSubRoute = "settings/logcat",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -508,6 +542,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.ADVANCED,
                         activeSubRoute = "settings/po_token",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -517,6 +552,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.ABOUT,
                         activeSubRoute = "settings/changelog",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
 
@@ -527,6 +563,7 @@ fun TvRoot(
                             initialCategory = TvSettingsCategory.ABOUT,
                             activeSubRoute = "settings/update",
                             upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                         )
                     }
                 }
@@ -537,6 +574,7 @@ fun TvRoot(
                         initialCategory = TvSettingsCategory.ABOUT,
                         activeSubRoute = "settings/support",
                         upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
                     )
                 }
             }

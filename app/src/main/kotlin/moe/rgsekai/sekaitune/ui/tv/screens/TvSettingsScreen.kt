@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -57,6 +59,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.Layout
@@ -64,11 +67,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.BuildConfig
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFocusRequester
 import moe.rgsekai.sekaitune.ui.screens.StatsScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AboutScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AccountSettings
@@ -123,6 +128,88 @@ enum class TvSettingsCategory(
     ABOUT("settings/about"),
 }
 
+@Composable
+private fun tvCategoryTitle(category: TvSettingsCategory): String {
+    return when (category) {
+        TvSettingsCategory.ACCOUNT -> stringResource(R.string.account)
+        TvSettingsCategory.STATS -> stringResource(R.string.settings_stats_title)
+        TvSettingsCategory.APPEARANCE -> stringResource(R.string.appearance)
+        TvSettingsCategory.CANVAS -> stringResource(R.string.SekaiTune_canvas)
+        TvSettingsCategory.PLAYER -> stringResource(R.string.settings_playback_title)
+        TvSettingsCategory.LYRICS -> stringResource(R.string.lyrics)
+        TvSettingsCategory.CONTENT -> stringResource(R.string.content)
+        TvSettingsCategory.PRIVACY -> stringResource(R.string.privacy)
+        TvSettingsCategory.STORAGE -> stringResource(R.string.storage)
+        TvSettingsCategory.BACKUP_RESTORE -> stringResource(R.string.backup_restore)
+        TvSettingsCategory.INTEGRATIONS -> stringResource(R.string.integrations)
+        TvSettingsCategory.INTERNET -> stringResource(R.string.internet)
+        TvSettingsCategory.ADVANCED -> stringResource(R.string.advanced)
+        TvSettingsCategory.ABOUT -> stringResource(R.string.about)
+    }
+}
+
+@Composable
+private fun tvCategoryIcon(category: TvSettingsCategory): Painter {
+    return when (category) {
+        TvSettingsCategory.ACCOUNT -> painterResource(R.drawable.account)
+        TvSettingsCategory.STATS -> painterResource(R.drawable.stats)
+        TvSettingsCategory.APPEARANCE -> painterResource(R.drawable.palette)
+        TvSettingsCategory.CANVAS -> painterResource(R.drawable.slow_motion_video)
+        TvSettingsCategory.PLAYER -> painterResource(R.drawable.music_note)
+        TvSettingsCategory.LYRICS -> painterResource(R.drawable.lyrics)
+        TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
+        TvSettingsCategory.PRIVACY -> painterResource(R.drawable.security)
+        TvSettingsCategory.STORAGE -> painterResource(R.drawable.storage)
+        TvSettingsCategory.BACKUP_RESTORE -> painterResource(R.drawable.backup)
+        TvSettingsCategory.INTEGRATIONS -> painterResource(R.drawable.integration)
+        TvSettingsCategory.INTERNET -> painterResource(R.drawable.wifi_proxy)
+        TvSettingsCategory.ADVANCED -> painterResource(R.drawable.tune)
+        TvSettingsCategory.ABOUT -> painterResource(R.drawable.info)
+    }
+}
+
+@Composable
+private fun tvSubRouteTitle(subRoute: String): String {
+    return when (subRoute) {
+        "settings/appearance/liquid_glass" -> stringResource(R.string.liquid_glass)
+        "settings/appearance/ambient_mode" -> stringResource(R.string.ambient_mode)
+        "settings/appearance/icon" -> stringResource(R.string.app_icon)
+        "settings/appearance/aod_customized" -> stringResource(R.string.aod_customize_title)
+        "settings/appearance/palette_picker" -> stringResource(R.string.color_palette)
+        "settings/appearance/lyrics_animations" -> stringResource(R.string.lyrics_animation_style)
+        "settings/appearance/theme_creator" -> stringResource(R.string.theme_creator_title)
+        "settings/player/chiper" -> stringResource(R.string.mori_cipher_settings_title)
+        "settings/music_together" -> stringResource(R.string.music_together)
+        "settings/misc" -> stringResource(R.string.misc)
+        "settings/logcat" -> stringResource(R.string.debug_logs)
+        "settings/po_token" -> stringResource(R.string.po_token_generation)
+        "settings/changelog" -> stringResource(R.string.changelog)
+        "settings/update" -> stringResource(R.string.updates)
+        "settings/support" -> stringResource(R.string.support)
+        else -> stringResource(R.string.settings)
+    }
+}
+
+private fun tvCategoryTopBarHeight(category: TvSettingsCategory, subRoute: String?): Dp {
+    if (subRoute != null) {
+        return when (subRoute) {
+            "settings/appearance/liquid_glass",
+            "settings/appearance/aod_customized",
+            "settings/player/chiper",
+            "settings/music_together",
+            "settings/po_token",
+            "settings/update" -> 152.dp
+            else -> 64.dp
+        }
+    }
+    return when (category) {
+        TvSettingsCategory.ACCOUNT,
+        TvSettingsCategory.STATS,
+        TvSettingsCategory.ABOUT -> 152.dp
+        else -> 64.dp
+    }
+}
+
 /**
  * TV split-screen Settings layout (BitChord style):
  * - Left column (~30% width): Vertical list of categories in phone settings order.
@@ -140,6 +227,7 @@ fun TvSettingsScreen(
     upFocusRequester: FocusRequester,
     initialCategory: TvSettingsCategory = TvSettingsCategory.ACCOUNT,
     activeSubRoute: String? = null,
+    contentFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
     val categories = remember { TvSettingsCategory.entries }
@@ -150,8 +238,22 @@ fun TvSettingsScreen(
     val categoryFocusRequesters = remember {
         List(categories.size) { FocusRequester() }
     }
+    val rightPaneFirstItemFocusRequester = remember { FocusRequester() }
 
     var isRightPaneFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialCategory) {
+        val targetIndex = categories.indexOf(initialCategory)
+        if (targetIndex >= 0 && targetIndex != selectedIndex) {
+            selectedIndex = targetIndex
+        }
+    }
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex in 0 until categories.size) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
 
     // Intercept back key when focus is in the right pane to return to the left category column
     BackHandler(enabled = isRightPaneFocused) {
@@ -201,11 +303,31 @@ fun TvSettingsScreen(
                         category = category,
                         isSelected = isSelected,
                         focusRequester = categoryFocusRequesters[index],
+                        selectedCategoryFocusRequester = contentFocusRequester,
                         onFocused = {
-                            selectedIndex = index
+                            if (selectedIndex != index) {
+                                selectedIndex = index
+                            }
+                        },
+                        onMoveUp = {
+                            val moved = focusManager.moveFocus(FocusDirection.Up)
+                            if (!moved) {
+                                val target = (index - 1).coerceAtLeast(0)
+                                categoryFocusRequesters[target].safeRequestFocus()
+                            }
+                        },
+                        onMoveDown = {
+                            val moved = focusManager.moveFocus(FocusDirection.Down)
+                            if (!moved) {
+                                val target = (index + 1).coerceAtMost(categories.size - 1)
+                                categoryFocusRequesters[target].safeRequestFocus()
+                            }
                         },
                         onMoveRight = {
-                            focusManager.moveFocus(FocusDirection.Right)
+                            val moved = focusManager.moveFocus(FocusDirection.Right)
+                            if (!moved) {
+                                rightPaneFirstItemFocusRequester.safeRequestFocus()
+                            }
                         },
                         onUpFromFirst = {
                             upFocusRequester.safeRequestFocus()
@@ -226,35 +348,80 @@ fun TvSettingsScreen(
         )
 
         // Right Pane: ~70% width with embedded category content
-        Box(
+        val currentCategory = categories[selectedIndex]
+        val currentTitle = if (activeSubRoute != null) {
+            tvSubRouteTitle(activeSubRoute)
+        } else {
+            tvCategoryTitle(currentCategory)
+        }
+        val currentTopBarHeight = tvCategoryTopBarHeight(currentCategory, activeSubRoute)
+
+        Column(
             modifier = Modifier
                 .fillMaxHeight()
                 .weight(0.70f)
-                .padding(start = 16.dp, end = 20.dp, top = 8.dp, bottom = 16.dp)
-                .onFocusChanged {
-                    isRightPaneFocused = it.hasFocus
-                },
+                .padding(start = 16.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
         ) {
-            val currentCategory = categories[selectedIndex]
+            // Category title header at the top of the right pane (since phone top bar is hidden)
+            Text(
+                text = currentTitle,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp),
+            )
 
-            CompositionLocalProvider(
-                LocalTvSettingsCategoryFocusRequester provides categoryFocusRequesters[selectedIndex],
-            ) {
-                TvSettingsSubScreenWrapper(
-                    shiftTopBar = activeSubRoute != null || currentCategory != TvSettingsCategory.STATS,
-                ) {
-                    when {
-                        activeSubRoute != null -> {
-                            TvSettingsSubRouteContent(
-                                subRoute = activeSubRoute,
-                                navController = navController,
-                            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .onFocusChanged {
+                        isRightPaneFocused = it.hasFocus
+                    }
+                    .focusProperties {
+                        left = categoryFocusRequesters[selectedIndex]
+                    }
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
+                        when (keyEvent.key) {
+                            Key.DirectionLeft -> {
+                                categoryFocusRequesters[selectedIndex].safeRequestFocus()
+                                true
+                            }
+                            Key.DirectionUp -> {
+                                // Top of right pane reached: consume and stay put
+                                true
+                            }
+                            Key.DirectionDown -> {
+                                // Down at the last row stays put and consumes key
+                                true
+                            }
+                            else -> false
                         }
-                        else -> {
-                            TvSettingsCategoryContent(
-                                category = currentCategory,
-                                navController = navController,
-                            )
+                    },
+            ) {
+                key(selectedIndex, activeSubRoute) {
+                    CompositionLocalProvider(
+                        LocalTvSettingsCategoryFocusRequester provides categoryFocusRequesters[selectedIndex],
+                        LocalTvSettingsRightPaneFocusRequester provides rightPaneFirstItemFocusRequester,
+                    ) {
+                        TvSettingsSubScreenWrapper(
+                            topBarHeight = currentTopBarHeight,
+                        ) {
+                            when {
+                                activeSubRoute != null -> {
+                                    TvSettingsSubRouteContent(
+                                        subRoute = activeSubRoute,
+                                        navController = navController,
+                                    )
+                                }
+                                else -> {
+                                    TvSettingsCategoryContent(
+                                        category = currentCategory,
+                                        navController = navController,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -271,7 +438,10 @@ private fun TvSettingsCategoryRow(
     category: TvSettingsCategory,
     isSelected: Boolean,
     focusRequester: FocusRequester,
+    selectedCategoryFocusRequester: FocusRequester?,
     onFocused: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onMoveRight: () -> Unit,
     onUpFromFirst: () -> Unit,
     isFirst: Boolean,
@@ -281,40 +451,14 @@ private fun TvSettingsCategoryRow(
     val interactionSource = remember { MutableInteractionSource() }
     val isItemFocused by interactionSource.collectIsFocusedAsState()
 
-    val title = when (category) {
-        TvSettingsCategory.ACCOUNT -> stringResource(R.string.account)
-        TvSettingsCategory.STATS -> stringResource(R.string.settings_stats_title)
-        TvSettingsCategory.APPEARANCE -> stringResource(R.string.appearance)
-        TvSettingsCategory.CANVAS -> stringResource(R.string.SekaiTune_canvas)
-        TvSettingsCategory.PLAYER -> stringResource(R.string.settings_playback_title)
-        TvSettingsCategory.LYRICS -> stringResource(R.string.lyrics)
-        TvSettingsCategory.CONTENT -> stringResource(R.string.content)
-        TvSettingsCategory.PRIVACY -> stringResource(R.string.privacy)
-        TvSettingsCategory.STORAGE -> stringResource(R.string.storage)
-        TvSettingsCategory.BACKUP_RESTORE -> stringResource(R.string.backup_restore)
-        TvSettingsCategory.INTEGRATIONS -> stringResource(R.string.integrations)
-        TvSettingsCategory.INTERNET -> stringResource(R.string.internet)
-        TvSettingsCategory.ADVANCED -> stringResource(R.string.advanced)
-        TvSettingsCategory.ABOUT -> stringResource(R.string.about)
+    LaunchedEffect(isItemFocused) {
+        if (isItemFocused) {
+            onFocused()
+        }
     }
 
-    val icon: Painter = when (category) {
-        TvSettingsCategory.ACCOUNT -> painterResource(R.drawable.account)
-        TvSettingsCategory.STATS -> painterResource(R.drawable.stats)
-        TvSettingsCategory.APPEARANCE -> painterResource(R.drawable.palette)
-        TvSettingsCategory.CANVAS -> painterResource(R.drawable.slow_motion_video)
-        TvSettingsCategory.PLAYER -> painterResource(R.drawable.music_note)
-        TvSettingsCategory.LYRICS -> painterResource(R.drawable.lyrics)
-        TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
-        TvSettingsCategory.PRIVACY -> painterResource(R.drawable.security)
-        TvSettingsCategory.STORAGE -> painterResource(R.drawable.storage)
-        TvSettingsCategory.BACKUP_RESTORE -> painterResource(R.drawable.backup)
-        TvSettingsCategory.INTEGRATIONS -> painterResource(R.drawable.integration)
-        TvSettingsCategory.INTERNET -> painterResource(R.drawable.wifi_proxy)
-        TvSettingsCategory.ADVANCED -> painterResource(R.drawable.tune)
-        TvSettingsCategory.ABOUT -> painterResource(R.drawable.info)
-    }
-
+    val title = tvCategoryTitle(category)
+    val icon = tvCategoryIcon(category)
     val itemShape = RoundedCornerShape(12.dp)
 
     val containerColor by animateColorAsState(
@@ -337,32 +481,40 @@ private fun TvSettingsCategoryRow(
         color = containerColor,
         modifier = modifier
             .fillMaxWidth()
-            .focusRequester(focusRequester)
-            .tvFocusOutline(shape = itemShape)
-            .focusable(interactionSource = interactionSource)
-            .onFocusChanged {
-                if (it.isFocused) {
+            .onFocusChanged { focusState ->
+                if (focusState.isFocused || focusState.hasFocus) {
                     onFocused()
                 }
             }
+            .focusRequester(focusRequester)
+            .then(
+                if (isSelected && selectedCategoryFocusRequester != null) {
+                    Modifier.focusRequester(selectedCategoryFocusRequester)
+                } else {
+                    Modifier
+                },
+            )
+            .tvFocusOutline(shape = itemShape)
+            .focusable(interactionSource = interactionSource)
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (keyEvent.key) {
                     Key.DirectionUp -> {
                         if (isFirst) {
                             onUpFromFirst()
-                            true
                         } else {
-                            false
+                            onMoveUp()
                         }
+                        true
                     }
                     Key.DirectionDown -> {
                         if (isLast) {
                             // Down at the last category stays put and consumes key
                             true
                         } else {
-                            false
+                            onMoveDown()
                         }
+                        true
                     }
                     Key.DirectionRight, Key.DirectionCenter, Key.Enter, Key.Spacebar, Key.NumPadEnter -> {
                         onMoveRight()
@@ -406,8 +558,8 @@ private fun TvSettingsCategoryRow(
  */
 @Composable
 fun TvSettingsSubScreenWrapper(
+    topBarHeight: Dp = 64.dp,
     modifier: Modifier = Modifier,
-    shiftTopBar: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Box(
@@ -415,24 +567,28 @@ fun TvSettingsSubScreenWrapper(
             .fillMaxSize()
             .clipToBounds(),
     ) {
-        if (shiftTopBar) {
-            Layout(
-                content = content,
-                modifier = Modifier.fillMaxSize(),
-            ) { measurables, constraints ->
-                val topBarHeight = 64.dp.roundToPx()
-                val placeable = measurables.first().measure(
-                    constraints.copy(
-                        minHeight = constraints.maxHeight + topBarHeight,
-                        maxHeight = constraints.maxHeight + topBarHeight,
-                    ),
-                )
-                layout(constraints.maxWidth, constraints.maxHeight) {
-                    placeable.placeRelative(0, -topBarHeight)
-                }
+        // Non-focusable top bar barrier area where the phone top bar sits
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(0.dp)
+                .focusProperties { canFocus = false },
+        )
+
+        Layout(
+            content = content,
+            modifier = Modifier.fillMaxSize(),
+        ) { measurables, constraints ->
+            val topBarPx = topBarHeight.roundToPx()
+            val placeable = measurables.first().measure(
+                constraints.copy(
+                    minHeight = constraints.maxHeight + topBarPx,
+                    maxHeight = constraints.maxHeight + topBarPx,
+                ),
+            )
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                placeable.placeRelative(0, -topBarPx)
             }
-        } else {
-            content()
         }
     }
 }

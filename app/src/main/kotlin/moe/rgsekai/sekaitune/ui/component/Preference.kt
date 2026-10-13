@@ -70,6 +70,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -120,6 +121,7 @@ val LocalPreferenceGroupPosition = compositionLocalOf<PreferenceGroupPosition?> 
 
 val LocalTvSliderAdjustment = compositionLocalOf<((Boolean) -> Unit)?> { null }
 val LocalTvSettingsCategoryFocusRequester = compositionLocalOf<FocusRequester?> { null }
+val LocalTvSettingsRightPaneFocusRequester = compositionLocalOf<FocusRequester?> { null }
 
 private val PreferenceGroupLargeCorner = 28.dp
 private val PreferenceGroupSmallCorner = 6.dp
@@ -211,8 +213,11 @@ fun PreferenceEntry(
 
     val isTv = LocalIsTv.current
     val leftCategoryFocusRequester = LocalTvSettingsCategoryFocusRequester.current
+    val rightPaneFocusRequester = LocalTvSettingsRightPaneFocusRequester.current
     val focusManager = LocalFocusManager.current
     val sliderAdjustment = LocalTvSliderAdjustment.current
+
+    val isFirstInGroup = groupPosition == PreferenceGroupPosition.First || groupPosition == PreferenceGroupPosition.Single
 
     val tvModifier = if (isTv) {
         Modifier
@@ -241,10 +246,7 @@ fun PreferenceEntry(
                         }
                     }
                     Key.DirectionUp -> {
-                        val moved = focusManager.moveFocus(FocusDirection.Up)
-                        if (!moved && leftCategoryFocusRequester != null) {
-                            leftCategoryFocusRequester.safeRequestFocus()
-                        }
+                        focusManager.moveFocus(FocusDirection.Up)
                         true
                     }
                     Key.DirectionDown -> {
