@@ -69,13 +69,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.runtime.rememberCoroutineScope
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.constants.EnableBetterLyricsKey
@@ -241,10 +234,6 @@ fun LyricsSettings(
         )
     }
 
-    val scrollState = rememberScrollState()
-    val coroutineScope = rememberCoroutineScope()
-    val topBarFocusRequester = remember { FocusRequester() }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -253,11 +242,6 @@ fun LyricsSettings(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -274,8 +258,7 @@ fun LyricsSettings(
                 .windowInsetsPadding(
                     LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
                 )
-                .tvDpadScroll(scrollState, coroutineScope)
-                .verticalScroll(scrollState)
+                .verticalScroll(rememberScrollState())
                 .padding(bottom = SettingsDimensions.ScreenBottomPadding),
         ) {
             var showLyricsTextSizeDialog by rememberSaveable { mutableStateOf(false) }
@@ -339,15 +322,7 @@ fun LyricsSettings(
                         onValueChange = { tempTextSize = it },
                         valueRange = 16f..36f,
                         steps = 19,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .tvSliderDpad(
-                                    value = tempTextSize,
-                                    onValueChange = { tempTextSize = it },
-                                    step = 1f,
-                                    valueRange = 16f..36f,
-                                ),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -414,15 +389,7 @@ fun LyricsSettings(
                         onValueChange = { tempLineSpacing = it },
                         valueRange = 1.0f..2.0f,
                         steps = 19,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .tvSliderDpad(
-                                    value = tempLineSpacing,
-                                    onValueChange = { tempLineSpacing = it },
-                                    step = 0.1f,
-                                    valueRange = 1.0f..2.0f,
-                                ),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }

@@ -44,6 +44,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
@@ -72,9 +74,11 @@ fun TvTopBar(
     onTabSelected: (TvTab) -> Unit,
     modifier: Modifier = Modifier,
     firstItemFocusRequester: FocusRequester? = null,
+    selectedTabFocusRequester: FocusRequester? = null,
     downFocusRequester: FocusRequester? = null,
 ) {
     val tabs = remember { TvTab.values() }
+    val focusManager = LocalFocusManager.current
 
     Surface(
         color = Color.Transparent,
@@ -113,7 +117,9 @@ fun TvTopBar(
 
                 val pillModifier = Modifier
                     .then(
-                        if (index == 0 && firstItemFocusRequester != null) {
+                        if (isSelected && selectedTabFocusRequester != null) {
+                            Modifier.focusRequester(selectedTabFocusRequester)
+                        } else if (index == 0 && firstItemFocusRequester != null) {
                             Modifier.focusRequester(firstItemFocusRequester)
                         } else {
                             Modifier
@@ -133,10 +139,11 @@ fun TvTopBar(
                                 true // Contain focus, don't escape off-screen
                             }
                             Key.DirectionDown -> {
-                                if (downFocusRequester != null) {
-                                    downFocusRequester.safeRequestFocus()
+                                val moved = downFocusRequester?.safeRequestFocus() ?: false
+                                if (moved) {
+                                    true
                                 } else {
-                                    false
+                                    focusManager.moveFocus(FocusDirection.Down)
                                 }
                             }
                             else -> false

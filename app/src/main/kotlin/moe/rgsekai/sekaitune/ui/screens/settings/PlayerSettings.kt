@@ -28,14 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
-import moe.rgsekai.sekaitune.ui.utils.settingsFirstContentItem
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarBack
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -238,18 +230,6 @@ fun PlayerSettings(navController: NavController) {
         )
     }
 
-    val scrollState = rememberScrollState()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val firstItemFocusRequester = remember { FocusRequester() }
-    val isTv = LocalIsTv.current
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(isTv) {
-        if (isTv) {
-            topBarFocusRequester.requestFocus()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -258,12 +238,6 @@ fun PlayerSettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .settingsTopBarBack(
-                                    firstContentItemRequester = firstItemFocusRequester,
-                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -280,16 +254,11 @@ fun PlayerSettings(navController: NavController) {
             Modifier
                 .padding(top = topPadding)
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-                .verticalScroll(scrollState)
-                .tvDpadScroll(scrollState, coroutineScope),
+                .verticalScroll(rememberScrollState()),
         ) {
             PreferenceGroup(title = stringResource(R.string.player_section_audio_streaming)) {
                 item {
                     EnumListPreference(
-                        modifier =
-                            Modifier
-                                .focusRequester(firstItemFocusRequester)
-                                .settingsFirstContentItem(topBarFocusRequester),
                         title = { Text(stringResource(R.string.audio_quality)) },
                         icon = { Icon(painterResource(R.drawable.graphic_eq), null) },
                         selectedValue = audioQuality,

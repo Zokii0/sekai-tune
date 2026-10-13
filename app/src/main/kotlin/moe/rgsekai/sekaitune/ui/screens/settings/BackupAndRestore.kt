@@ -62,11 +62,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -204,9 +199,6 @@ fun BackupAndRestore(
             }
         }
 
-    val scrollState = rememberScrollState()
-    val topBarFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -215,11 +207,6 @@ fun BackupAndRestore(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -245,8 +232,7 @@ fun BackupAndRestore(
             Modifier
                 .padding(top = topPadding)
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-                .verticalScroll(scrollState)
-                .tvDpadScroll(scrollState, coroutineScope),
+                .verticalScroll(rememberScrollState()),
         ) {
             PreferenceGroup(title = stringResource(R.string.internal_service)) {
                 item {

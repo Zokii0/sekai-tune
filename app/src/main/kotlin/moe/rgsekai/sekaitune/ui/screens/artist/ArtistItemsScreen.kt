@@ -17,26 +17,16 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvDpadGridScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -102,12 +92,6 @@ fun ArtistItemsScreen(
     val title by viewModel.title.collectAsStateWithLifecycle()
     val itemsPage by viewModel.itemsPage.collectAsStateWithLifecycle()
     val itemsLayout by viewModel.itemsLayout.collectAsStateWithLifecycle()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val contentFocusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(Unit) {
-        topBarFocusRequester.requestFocus()
-    }
 
     LaunchedEffect(lazyListState) {
         snapshotFlow {
@@ -139,16 +123,12 @@ fun ArtistItemsScreen(
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-            modifier =
-                Modifier
-                    .focusGroup()
-                    .tvDpadListScroll(lazyListState, coroutineScope),
         ) {
-            itemsIndexed(
+            items(
                 items = itemsPage?.items.orEmpty().distinctBy { it.id },
-                key = { _, it -> "artist_items_${it.contentKey}" },
-                contentType = { _, it -> it.contentType },
-            ) { index, item ->
+                key = { "artist_items_${it.contentKey}" },
+                contentType = { it.contentType },
+            ) { item ->
                 YouTubeListItem(
                     item = item,
                     isActive =
@@ -206,15 +186,7 @@ fun ArtistItemsScreen(
                     },
                     modifier =
                         Modifier
-                            .then(
-                                if (index == 0) {
-                                    Modifier
-                                        .focusRequester(contentFocusRequester)
-                                        .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState)
-                                } else {
-                                    Modifier
-                                },
-                            ).clickable {
+                            .clickable {
                                 when (item) {
                                     is SongItem -> {
                                         if (item.id == mediaMetadata?.id) {
@@ -266,16 +238,12 @@ fun ArtistItemsScreen(
             state = lazyGridState,
             columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-            modifier =
-                Modifier
-                    .focusGroup()
-                    .tvDpadGridScroll(lazyGridState, coroutineScope),
         ) {
-            itemsIndexed(
+            items(
                 items = itemsPage?.items.orEmpty().distinctBy { it.id },
-                key = { _, it -> "artist_items_${it.contentKey}" },
-                contentType = { _, it -> it.contentType },
-            ) { index, item ->
+                key = { "artist_items_${it.contentKey}" },
+                contentType = { it.contentType },
+            ) { item ->
                 YouTubeGridItem(
                     item = item,
                     isActive =
@@ -289,15 +257,7 @@ fun ArtistItemsScreen(
                     coroutineScope = coroutineScope,
                     modifier =
                         Modifier
-                            .then(
-                                if (index == 0) {
-                                    Modifier
-                                        .focusRequester(contentFocusRequester)
-                                        .tvFocusBridge(up = topBarFocusRequester, lazyGridState = lazyGridState)
-                                } else {
-                                    Modifier
-                                },
-                            ).combinedClickable(
+                            .combinedClickable(
                                 onClick = {
                                     when (item) {
                                         is SongItem -> {
@@ -379,16 +339,6 @@ fun ArtistItemsScreen(
             IconButton(
                 onClick = navController::navigateUp,
                 onLongClick = navController::backToMain,
-                modifier =
-                    Modifier
-                        .focusRequester(topBarFocusRequester)
-                        .tvFocusBridge(
-                            down = contentFocusRequester,
-                            lazyListState = lazyListState,
-                            lazyGridState = lazyGridState,
-                            targetDownIndex = 0,
-                        )
-                        .tvFocusOutline(shape = androidx.compose.foundation.shape.CircleShape),
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),

@@ -24,6 +24,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -129,6 +136,7 @@ fun TvRoot(
                 }
             },
             firstItemFocusRequester = topBarFocusRequester,
+            selectedTabFocusRequester = topBarFocusRequester,
             downFocusRequester = contentFocusRequester,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -137,7 +145,11 @@ fun TvRoot(
         Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .tvContentFocusHandoff(
+                    upFocusRequester = topBarFocusRequester,
+                    contentFocusRequester = contentFocusRequester,
+                ),
         ) {
             NavHost(
                 navController = navController,
@@ -167,4 +179,35 @@ fun TvRoot(
             }
         }
     }
+}
+
+/**
+ * Focus handoff helper connecting the TV top bar and content area:
+ * - Directs focus to [contentFocusRequester] or allows Down focus movement into the container.
+ * - Sets focusProperties.up to [upFocusRequester] (the selected top bar tab).
+ * - On unconsumed Up key event at the top of content, returns focus safely to [upFocusRequester].
+ * - Never crashes if the content screen has nothing focusable.
+ */
+fun Modifier.tvContentFocusHandoff(
+    upFocusRequester: FocusRequester,
+    contentFocusRequester: FocusRequester? = null,
+): Modifier {
+    return this
+        .then(
+            if (contentFocusRequester != null) {
+                Modifier.focusRequester(contentFocusRequester)
+            } else {
+                Modifier
+            },
+        )
+        .focusProperties {
+            up = upFocusRequester
+        }
+        .onKeyEvent { keyEvent ->
+            if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionUp) {
+                upFocusRequester.safeRequestFocus()
+            } else {
+                false
+            }
+        }
 }

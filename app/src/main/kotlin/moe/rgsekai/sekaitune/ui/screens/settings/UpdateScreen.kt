@@ -36,13 +36,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -321,9 +314,6 @@ fun UpdateScreen(
         }
     }
 
-    val lazyListState = rememberLazyListState()
-    val topBarFocusRequester = remember { FocusRequester() }
-
     Scaffold(
         modifier =
             Modifier
@@ -351,11 +341,6 @@ fun UpdateScreen(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(lazyListState = lazyListState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -374,7 +359,6 @@ fun UpdateScreen(
         },
     ) { paddingValues ->
         LazyColumn(
-            state = lazyListState,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -383,9 +367,7 @@ fun UpdateScreen(
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
                         ),
-                    )
-                    .tvDpadListScroll(lazyListState, coroutineScope)
-                    .padding(horizontal = 16.dp),
+                    ).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -721,8 +703,7 @@ private fun UpdateActionPanel(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .tvFocusOutline(),
+                        .heightIn(min = 48.dp),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.update),
@@ -738,8 +719,7 @@ private fun UpdateActionPanel(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .tvFocusOutline(),
+                        .heightIn(min = 48.dp),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.sync),
@@ -762,9 +742,7 @@ private fun UpdateControlsPanel(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .widthIn(max = 840.dp)
-                .tvFocusOutline(shape = MaterialTheme.shapes.extraLarge)
-                .clickable { onUpdateNotificationChange(!enableUpdateNotification) },
+                .widthIn(max = 840.dp),
         shape = MaterialTheme.shapes.extraLarge,
         colors =
             CardDefaults.cardColors(

@@ -32,21 +32,12 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -98,27 +89,15 @@ fun YouTubeBrowseScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val browseResult by viewModel.result.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val contentFocusRequester = remember { FocusRequester() }
-    val lazyListState = rememberLazyListState()
-    val lazyGridState = rememberLazyGridState()
 
-    LaunchedEffect(Unit) {
-        topBarFocusRequester.requestFocus()
-    }
+    val coroutineScope = rememberCoroutineScope()
 
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
     ) {
+        val lazyGridState = rememberLazyGridState()
         LazyColumn(
-            state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .focusGroup()
-                    .tvDpadListScroll(lazyListState, coroutineScope),
         ) {
             if (browseResult == null) {
                 item {
@@ -211,12 +190,10 @@ fun YouTubeBrowseScreen(
                         }
                     } else {
                         item {
-                            LazyRow(
-                                modifier = Modifier.focusGroup(),
-                            ) {
-                                itemsIndexed(
+                            LazyRow {
+                                items(
                                     items = it.items,
-                                ) { index, item ->
+                                ) { item ->
                                     YouTubeGridItem(
                                         item = item,
                                         isActive =
@@ -228,15 +205,7 @@ fun YouTubeBrowseScreen(
                                         coroutineScope = coroutineScope,
                                         modifier =
                                             Modifier
-                                                .then(
-                                                    if (index == 0) {
-                                                        Modifier
-                                                            .focusRequester(contentFocusRequester)
-                                                            .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState)
-                                                    } else {
-                                                        Modifier
-                                                    },
-                                                ).combinedClickable(
+                                                .combinedClickable(
                                                     onClick = {
                                                         when (item) {
                                                             is AlbumItem -> navController.navigate("album/${item.id}")
@@ -299,16 +268,6 @@ fun YouTubeBrowseScreen(
             IconButton(
                 onClick = navController::navigateUp,
                 onLongClick = navController::backToMain,
-                modifier =
-                    Modifier
-                        .focusRequester(topBarFocusRequester)
-                        .tvFocusBridge(
-                            down = contentFocusRequester,
-                            lazyListState = lazyListState,
-                            lazyGridState = lazyGridState,
-                            targetDownIndex = 0,
-                        )
-                        .tvFocusOutline(shape = androidx.compose.foundation.shape.CircleShape),
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),

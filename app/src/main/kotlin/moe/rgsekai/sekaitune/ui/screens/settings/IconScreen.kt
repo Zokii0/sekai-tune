@@ -57,11 +57,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
@@ -198,9 +193,6 @@ private fun IconScreenContent(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val topBarFocusRequester = remember { FocusRequester() }
-
     Scaffold(
         modifier =
             Modifier
@@ -220,12 +212,7 @@ private fun IconScreenContent(
                     IconButton(
                         onClick = onNavigateUp,
                         onLongClick = onNavigateHome,
-                        modifier =
-                            Modifier
-                                .padding(start = 5.dp)
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(lazyListState = lazyListState)
-                                .tvFocusOutline(),
+                        modifier = Modifier.padding(start = 5.dp),
                         colors = IconButtonDefaults.filledTonalIconButtonColors(),
                     ) {
                         Icon(
@@ -280,7 +267,6 @@ private fun IconScreenContent(
             is IconScreenState.Success -> {
                 AppIconList(
                     model = state.model,
-                    lazyListState = lazyListState,
                     contentPadding =
                         PaddingValues(
                             start = SettingsDimensions.ScreenHorizontalPadding,
@@ -307,7 +293,6 @@ private fun IconScreenContent(
 @Composable
 private fun AppIconList(
     model: IconScreenUiModel,
-    lazyListState: androidx.compose.foundation.lazy.LazyListState,
     contentPadding: PaddingValues,
     onSelectIcon: (String) -> Unit,
     onOpenAuthorProfile: (String) -> Unit,
@@ -317,10 +302,8 @@ private fun AppIconList(
     onSortOrderChange: (AppIconSortOrder) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     LazyColumn(
-        state = lazyListState,
-        modifier = modifier.selectableGroup().tvDpadListScroll(lazyListState, coroutineScope),
+        modifier = modifier.selectableGroup(),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -642,7 +625,6 @@ private fun AppIconRow(
                 .widthIn(max = IconListMaxWidth)
                 .fillMaxWidth()
                 .heightIn(min = 104.dp)
-                .tvFocusOutline(shape = rowShapes.shape)
                 .then(selectedBorder),
         colors =
             ListItemDefaults.segmentedColors(

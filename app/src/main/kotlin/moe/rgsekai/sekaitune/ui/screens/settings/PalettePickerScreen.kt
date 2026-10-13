@@ -78,12 +78,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -282,9 +276,6 @@ fun ThemeCreatorScreen(navController: NavController) {
         }
     }
 
-    val scrollState = rememberScrollState()
-    val topBarFocusRequester = remember { FocusRequester() }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -293,11 +284,6 @@ fun ThemeCreatorScreen(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(painter = painterResource(R.drawable.arrow_back), contentDescription = null)
                     }
@@ -311,15 +297,10 @@ fun ThemeCreatorScreen(navController: NavController) {
                             neutral = ThemePalettes.Default.neutral
                         },
                         shapes = ButtonDefaults.shapes(),
-                        modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(20.dp)),
                     ) {
                         Text(text = stringResource(R.string.reset))
                     }
-                    TextButton(
-                        onClick = { applyThemeToPrefs() },
-                        shapes = ButtonDefaults.shapes(),
-                        modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(20.dp)),
-                    ) {
+                    TextButton(onClick = { applyThemeToPrefs() }, shapes = ButtonDefaults.shapes()) {
                         Text(text = stringResource(R.string.save))
                     }
                 },
@@ -333,8 +314,7 @@ fun ThemeCreatorScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(paddingValues)
                     .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
-                    .tvDpadScroll(scrollState, scope)
-                    .verticalScroll(scrollState),
+                    .verticalScroll(rememberScrollState()),
         ) {
             SimpleThemePreview(
                 palette = currentPalette,
@@ -515,7 +495,6 @@ private fun SeedChip(
         modifier =
             modifier
                 .clip(RoundedCornerShape(999.dp))
-                .tvFocusOutline(shape = RoundedCornerShape(999.dp))
                 .clickable(onClick = onClick),
         color = container,
         contentColor = content,
@@ -685,15 +664,7 @@ private fun RgbSlider(
                     activeTrackColor = color,
                     inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                 ),
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .tvSliderDpad(
-                        value = value.toFloat(),
-                        onValueChange = { onValueChange(it.toInt().coerceIn(0, 255)) },
-                        step = 1f,
-                        valueRange = 0f..255f,
-                    ),
+            modifier = Modifier.weight(1f),
         )
         Text(text = value.toString(), style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(44.dp))
     }

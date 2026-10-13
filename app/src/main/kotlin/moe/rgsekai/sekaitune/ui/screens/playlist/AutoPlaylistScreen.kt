@@ -35,11 +35,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
@@ -77,7 +73,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
@@ -180,7 +175,6 @@ fun AutoPlaylistScreen(
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
-    val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isPlaying.collectAsStateWithLifecycle()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsStateWithLifecycle()
@@ -251,10 +245,6 @@ fun AutoPlaylistScreen(
         remember(songs) {
             songs.map { item -> ItemWrapper(item) }.toMutableStateList()
         }
-
-    val topBarFocusRequester = remember { FocusRequester() }
-    val contentFocusRequester = remember { FocusRequester() }
-    val firstSongFocusRequester = remember { FocusRequester() }
 
     var selection by remember { mutableStateOf(false) }
     val selectedCount by remember(wrappedSongs) {
@@ -579,7 +569,6 @@ fun AutoPlaylistScreen(
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-            modifier = Modifier.tvDpadListScroll(lazyListState, coroutineScope),
         ) {
             if (playlistType != PlaylistType.UPLOADED && songs.isEmpty()) {
                 item(
@@ -716,17 +705,7 @@ fun AutoPlaylistScreen(
                                             }
                                         }
                                     },
-                                    modifier =
-                                        Modifier
-                                            .size(48.dp)
-                                            .focusRequester(contentFocusRequester)
-                                            .tvFocusBridge(
-                                                up = topBarFocusRequester,
-                                                down = firstSongFocusRequester,
-                                                lazyListState = lazyListState,
-                                                targetDownIndex = 2,
-                                            )
-                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                    modifier = Modifier.size(48.dp),
                                     shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -785,14 +764,7 @@ fun AutoPlaylistScreen(
                                     modifier =
                                         Modifier
                                             .weight(1f)
-                                            .height(48.dp)
-                                            .tvFocusBridge(
-                                                up = topBarFocusRequester,
-                                                down = firstSongFocusRequester,
-                                                lazyListState = lazyListState,
-                                                targetDownIndex = 2,
-                                            )
-                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                            .height(48.dp),
                                     shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -831,14 +803,7 @@ fun AutoPlaylistScreen(
                                     modifier =
                                         Modifier
                                             .weight(1f)
-                                            .height(48.dp)
-                                            .tvFocusBridge(
-                                                up = topBarFocusRequester,
-                                                down = firstSongFocusRequester,
-                                                lazyListState = lazyListState,
-                                                targetDownIndex = 2,
-                                            )
-                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                            .height(48.dp),
                                     shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -862,16 +827,7 @@ fun AutoPlaylistScreen(
                                             items = songs.map { it.toMediaItem() },
                                         )
                                     },
-                                    modifier =
-                                        Modifier
-                                            .size(48.dp)
-                                            .tvFocusBridge(
-                                                up = topBarFocusRequester,
-                                                down = firstSongFocusRequester,
-                                                lazyListState = lazyListState,
-                                                targetDownIndex = 2,
-                                            )
-                                            .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                    modifier = Modifier.size(48.dp),
                                     shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                                     colors =
                                         ToggleButtonDefaults.toggleButtonColors(
@@ -1048,10 +1004,6 @@ fun AutoPlaylistScreen(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .then(
-                                        if (index == 0) Modifier.focusRequester(firstSongFocusRequester) else Modifier
-                                    )
-                                    .tvFocusOutline(shape = RoundedCornerShape(12.dp))
                                     .combinedClickable(
                                         onClick = {
                                             if (!selection || selectedCount == 0) {
@@ -1185,15 +1137,6 @@ fun AutoPlaylistScreen(
                             navController.backToMain()
                         }
                     },
-                    modifier =
-                        Modifier
-                            .focusRequester(topBarFocusRequester)
-                            .tvFocusBridge(
-                                down = contentFocusRequester,
-                                lazyListState = lazyListState,
-                                targetDownIndex = 1,
-                            )
-                            .tvFocusOutline(shape = CircleShape),
                 ) {
                     Icon(
                         painter =
@@ -1215,14 +1158,6 @@ fun AutoPlaylistScreen(
                                 wrappedSongs.forEach { it.isSelected = true }
                             }
                         },
-                        modifier =
-                            Modifier
-                                .tvFocusBridge(
-                                    down = contentFocusRequester,
-                                    lazyListState = lazyListState,
-                                    targetDownIndex = 1,
-                                )
-                                .tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter =
@@ -1249,14 +1184,6 @@ fun AutoPlaylistScreen(
                                 )
                             }
                         },
-                        modifier =
-                            Modifier
-                                .tvFocusBridge(
-                                    down = contentFocusRequester,
-                                    lazyListState = lazyListState,
-                                    targetDownIndex = 1,
-                                )
-                                .tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.more_vert),
@@ -1266,14 +1193,6 @@ fun AutoPlaylistScreen(
                 } else if (!isSearching) {
                     androidx.compose.material3.IconButton(
                         onClick = { isSearching = true },
-                        modifier =
-                            Modifier
-                                .tvFocusBridge(
-                                    down = contentFocusRequester,
-                                    lazyListState = lazyListState,
-                                    targetDownIndex = 1,
-                                )
-                                .tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.search),

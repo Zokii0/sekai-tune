@@ -46,7 +46,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 
 @Composable
 fun NewActionButton(
@@ -86,7 +85,6 @@ fun NewActionButton(
             modifier
                 .fillMaxWidth()
                 .heightIn(min = 96.dp)
-                .tvFocusOutline(shape = buttonShape)
                 .then(
                     if (isGlass) {
                         Modifier.liquidGlass(
@@ -162,7 +160,7 @@ fun NewMenuItem(
         Surface(
             onClick = onClick,
             enabled = enabled,
-            modifier = modifier.fillMaxWidth().tvFocusOutline(shape = MaterialTheme.shapes.large),
+            modifier = modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             color = Color.Transparent,
         ) {

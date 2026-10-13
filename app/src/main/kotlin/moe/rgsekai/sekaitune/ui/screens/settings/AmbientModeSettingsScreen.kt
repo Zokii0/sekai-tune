@@ -25,11 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -48,10 +44,6 @@ import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.component.SwitchPreference
 import moe.rgsekai.sekaitune.ui.utils.backToMain
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import kotlin.math.roundToInt
 
@@ -65,9 +57,6 @@ fun AmbientModeSettingsScreen(navController: NavController) {
     val (showTitle, onShowTitleChange) = rememberPreference(AmbientShowTitleKey, defaultValue = true)
     val (showArtist, onShowArtistChange) = rememberPreference(AmbientShowArtistKey, defaultValue = true)
     val (showLyrics, onShowLyricsChange) = rememberPreference(AmbientShowLyricsKey, defaultValue = true)
-    val scrollState = rememberScrollState()
-    val coroutineScope = rememberCoroutineScope()
-    val topBarFocusRequester = remember { FocusRequester() }
 
     Scaffold(
         topBar = {
@@ -77,11 +66,6 @@ fun AmbientModeSettingsScreen(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -98,8 +82,7 @@ fun AmbientModeSettingsScreen(navController: NavController) {
             modifier =
                 Modifier
                     .padding(top = topPadding)
-                    .verticalScroll(scrollState)
-                    .tvDpadScroll(scrollState, coroutineScope)
+                    .verticalScroll(rememberScrollState())
                     .windowInsetsPadding(
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
@@ -118,15 +101,7 @@ fun AmbientModeSettingsScreen(navController: NavController) {
                                 value = artScale,
                                 onValueChange = onArtScaleChange,
                                 valueRange = 0.3f..0.95f,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .tvSliderDpad(
-                                            value = artScale,
-                                            onValueChange = onArtScaleChange,
-                                            step = 0.05f,
-                                            valueRange = 0.3f..0.95f,
-                                        ),
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         },
                     )

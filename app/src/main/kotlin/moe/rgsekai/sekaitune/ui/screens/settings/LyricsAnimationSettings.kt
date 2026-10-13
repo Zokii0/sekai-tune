@@ -9,7 +9,6 @@ package moe.rgsekai.sekaitune.ui.screens.settings
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -24,11 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
@@ -41,12 +36,7 @@ import moe.rgsekai.sekaitune.constants.LyricsV2LrcBounceEnabledKey
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
-import moe.rgsekai.sekaitune.ui.component.SwitchPreference
 import moe.rgsekai.sekaitune.ui.utils.backToMain
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import moe.rgsekai.sekaitune.utils.rememberPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,9 +46,6 @@ fun LyricsAnimationSettings(navController: NavController) {
     val (glowFactor, onGlowFactorChange) = rememberPreference(LyricsV2GlowFactorKey, defaultValue = 1f)
     val (fillTransitionWidth, onFillTransitionWidthChange) = rememberPreference(LyricsV2FillTransitionWidthKey, defaultValue = 8f)
     val (lrcBounceEnabled, onLrcBounceEnabledChange) = rememberPreference(LyricsV2LrcBounceEnabledKey, defaultValue = true)
-    val scrollState = rememberScrollState()
-    val coroutineScope = rememberCoroutineScope()
-    val topBarFocusRequester = remember { FocusRequester() }
 
     Scaffold(
         topBar = {
@@ -68,11 +55,6 @@ fun LyricsAnimationSettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -89,8 +71,7 @@ fun LyricsAnimationSettings(navController: NavController) {
             modifier =
                 Modifier
                     .padding(top = topPadding)
-                    .verticalScroll(scrollState)
-                    .tvDpadScroll(scrollState, coroutineScope)
+                    .verticalScroll(rememberScrollState())
                     .windowInsetsPadding(
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
@@ -99,12 +80,16 @@ fun LyricsAnimationSettings(navController: NavController) {
         ) {
             PreferenceGroup(title = "Animation Tuning") {
                 item {
-                    SwitchPreference(
+                    PreferenceEntry(
                         title = { Text("Line Bounce Effect") },
                         description = "Enable bounce animation for line-synced (LRC) lyrics",
                         icon = { Icon(painterResource(R.drawable.animation), null) },
-                        checked = lrcBounceEnabled,
-                        onCheckedChange = onLrcBounceEnabledChange,
+                        trailingContent = {
+                            Switch(
+                                checked = lrcBounceEnabled,
+                                onCheckedChange = onLrcBounceEnabledChange,
+                            )
+                        },
                     )
                 }
 
@@ -118,15 +103,6 @@ fun LyricsAnimationSettings(navController: NavController) {
                                 value = bounceFactor,
                                 onValueChange = onBounceFactorChange,
                                 valueRange = 0f..2f,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .tvSliderDpad(
-                                            value = bounceFactor,
-                                            onValueChange = onBounceFactorChange,
-                                            step = 0.1f,
-                                            valueRange = 0f..2f,
-                                        ),
                             )
                         },
                     )
@@ -142,15 +118,6 @@ fun LyricsAnimationSettings(navController: NavController) {
                                 value = glowFactor,
                                 onValueChange = onGlowFactorChange,
                                 valueRange = 0f..2f,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .tvSliderDpad(
-                                            value = glowFactor,
-                                            onValueChange = onGlowFactorChange,
-                                            step = 0.1f,
-                                            valueRange = 0f..2f,
-                                        ),
                             )
                         },
                     )
@@ -166,15 +133,6 @@ fun LyricsAnimationSettings(navController: NavController) {
                                 value = fillTransitionWidth,
                                 onValueChange = onFillTransitionWidthChange,
                                 valueRange = 2f..24f,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .tvSliderDpad(
-                                            value = fillTransitionWidth,
-                                            onValueChange = onFillTransitionWidthChange,
-                                            step = 1f,
-                                            valueRange = 2f..24f,
-                                        ),
                             )
                         },
                     )
@@ -183,3 +141,7 @@ fun LyricsAnimationSettings(navController: NavController) {
         }
     }
 }
+
+
+
+

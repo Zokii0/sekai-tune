@@ -131,8 +131,6 @@ import moe.rgsekai.sekaitune.ui.menu.YouTubeAlbumMenu
 import moe.rgsekai.sekaitune.ui.menu.YouTubeArtistMenu
 import moe.rgsekai.sekaitune.ui.menu.YouTubePlaylistMenu
 import moe.rgsekai.sekaitune.ui.menu.YouTubeSongMenu
-import androidx.compose.foundation.focusGroup
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -151,7 +149,6 @@ fun HomeCategoryChips(
             modifier
                 .fillMaxWidth()
                 .heightIn(min = 68.dp)
-                .focusGroup()
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
@@ -160,7 +157,6 @@ fun HomeCategoryChips(
             FilterChip(
                 selected = selected,
                 onClick = { onChipSelected(chip) },
-                modifier = Modifier.tvFocusOutline(shape = CircleShape),
                 label = {
                     Text(
                         text = chip.title,
@@ -291,8 +287,7 @@ fun QuickPicksSection(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(heroHeight)
-                            .focusGroup(),
+                            .height(heroHeight),
                 ) { index ->
                     val song = distinctQuickPicks[index]
                     val isActive = song.id == mediaMetadata?.id
@@ -318,8 +313,7 @@ fun QuickPicksSection(
                                         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
                                     ),
                                     MaterialTheme.shapes.extraLarge,
-                                )
-                                .tvFocusOutline(shape = MaterialTheme.shapes.extraLarge)
+                                ).focusable()
                                 .combinedClickable(
                                     onClick = {
                                         if (isActive) {
@@ -684,8 +678,7 @@ fun SpeedDialSection(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(gridHeight)
-                            .focusGroup(),
+                            .height(gridHeight),
                 ) { page ->
                     Column(
                         verticalArrangement = Arrangement.spacedBy(spacing),
@@ -726,7 +719,7 @@ fun SpeedDialSection(
                                                     Modifier
                                                         .size(tileSize)
                                                         .clip(MaterialTheme.shapes.large)
-                                                        .tvFocusOutline(shape = MaterialTheme.shapes.large)
+                                                        .focusable()
                                                         .combinedClickable(
                                                             onClick = {
                                                                 when (localItem) {
@@ -862,7 +855,6 @@ private fun SpeedDialRandomTile(
         modifier =
             modifier
                 .aspectRatio(1f)
-                .tvFocusOutline(shape = MaterialTheme.shapes.large)
                 .combinedClickable(onClick = onClick),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -916,8 +908,7 @@ fun KeepListeningSection(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(gridHeight)
-                .focusGroup(),
+                .height(gridHeight),
     ) {
         items(
             items = keepListening,
@@ -976,8 +967,7 @@ fun ForgottenFavoritesSection(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(ListItemHeight * rows)
-                .focusGroup(),
+                .height(ListItemHeight * rows),
     ) {
         items(
             items = distinctForgottenFavorites,
@@ -1012,6 +1002,7 @@ fun ForgottenFavoritesSection(
                 modifier =
                     Modifier
                         .width(horizontalLazyGridItemWidth)
+                        .focusable()
                         .combinedClickable(
                             onClick = {
                                 if (song.id == mediaMetadata?.id) {
@@ -1065,7 +1056,7 @@ fun AccountPlaylistsSection(
             WindowInsets.systemBars
                 .only(WindowInsetsSides.Horizontal)
                 .asPaddingValues(),
-        modifier = modifier.focusGroup(),
+        modifier = modifier,
     ) {
         items(
             items = distinctPlaylists,
@@ -1107,7 +1098,7 @@ fun SimilarRecommendationsSection(
             WindowInsets.systemBars
                 .only(WindowInsetsSides.Horizontal)
                 .asPaddingValues(),
-        modifier = modifier.focusGroup(),
+        modifier = modifier,
     ) {
         items(
             items = recommendation.items,
@@ -1149,7 +1140,7 @@ fun HomePageSectionContent(
             WindowInsets.systemBars
                 .only(WindowInsetsSides.Horizontal)
                 .asPaddingValues(),
-        modifier = modifier.focusGroup(),
+        modifier = modifier,
     ) {
         items(
             items = section.items,
@@ -1196,6 +1187,7 @@ private fun YouTubeGridItemWrapper(
         thumbnailRatio = 1f,
         modifier =
             modifier
+                .focusable()
                 .combinedClickable(
                     onClick = {
                         when (item) {
@@ -1285,6 +1277,7 @@ private fun LocalGridItem(
                 modifier =
                     modifier
                         .fillMaxWidth()
+                        .focusable()
                         .combinedClickable(
                             onClick = {
                                 if (item.id == mediaMetadata?.id) {
@@ -1318,6 +1311,7 @@ private fun LocalGridItem(
                 modifier =
                     modifier
                         .fillMaxWidth()
+                        .focusable()
                         .combinedClickable(
                             onClick = { navController.navigate("album/${item.id}") },
                             onLongClick = {
@@ -1340,6 +1334,7 @@ private fun LocalGridItem(
                 modifier =
                     modifier
                         .fillMaxWidth()
+                        .focusable()
                         .combinedClickable(
                             onClick = { navController.navigate("artist/${item.id}") },
                             onLongClick = {
@@ -1530,24 +1525,21 @@ fun HomeQuickActionsPill(
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp)
-                .height(48.dp)
-                .focusGroup(),
+                .height(48.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val mtShape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 8.dp, bottomEnd = 8.dp)
         // Music Together (Left half)
         Surface(
             onClick = onMusicTogetherClick,
-            shape = mtShape,
+            shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 8.dp, bottomEnd = 8.dp),
             color = glassColor,
             border = glassBorder,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier =
                 Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .tvFocusOutline(shape = mtShape),
+                    .fillMaxHeight(),
         ) {
             Row(
                 modifier =
@@ -1575,19 +1567,17 @@ fun HomeQuickActionsPill(
             }
         }
 
-        val shuffleShape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 24.dp, bottomEnd = 24.dp)
         // Shuffle (Right half)
         Surface(
             onClick = onShuffleClick,
-            shape = shuffleShape,
+            shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 24.dp, bottomEnd = 24.dp),
             color = glassColor,
             border = glassBorder,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier =
                 Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .tvFocusOutline(shape = shuffleShape),
+                    .fillMaxHeight(),
         ) {
             Row(
                 modifier =

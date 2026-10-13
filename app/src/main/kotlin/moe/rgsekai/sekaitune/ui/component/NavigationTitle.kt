@@ -31,9 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import moe.rgsekai.sekaitune.R
 
-import androidx.compose.foundation.shape.RoundedCornerShape
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-
 @Composable
 fun NavigationTitle(
     title: String,
@@ -50,7 +47,7 @@ fun NavigationTitle(
             modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                .then(if (onClick != null) Modifier.tvFocusOutline(shape = RoundedCornerShape(12.dp)).focusable() else Modifier)
+                .then(if (onClick != null) Modifier.focusable() else Modifier)
                 .clickable(enabled = onClick != null) {
                     onClick?.invoke()
                 }.padding(horizontal = 12.dp, vertical = 12.dp),

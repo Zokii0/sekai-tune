@@ -22,18 +22,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,7 +59,6 @@ import moe.rgsekai.sekaitune.spotify.YtmArtistResolution
 import moe.rgsekai.sekaitune.ui.component.ExpressivePullToRefreshBox
 import moe.rgsekai.sekaitune.ui.component.SpotifyLibraryArtistListItem
 import moe.rgsekai.sekaitune.ui.component.SpotifyLibraryPlaylistListItem
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.rememberPreference
 
 private enum class SpotifySection {
@@ -91,9 +85,6 @@ fun LibrarySpotifyPlaylistsScreen(
             if (showSpotifyPlaylists) SpotifySection.PLAYLISTS else SpotifySection.ARTISTS,
         )
     }
-
-    val playlistsTabFocusRequester = remember { FocusRequester() }
-    val artistsTabFocusRequester = remember { FocusRequester() }
 
     var resolvingArtistId by remember { mutableStateOf<String?>(null) }
 
@@ -128,8 +119,7 @@ fun LibrarySpotifyPlaylistsScreen(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp)
-                            .focusGroup(),
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -137,23 +127,11 @@ fun LibrarySpotifyPlaylistsScreen(
                         text = stringResource(R.string.spotify_playlists_tab),
                         isSelected = activeSection == SpotifySection.PLAYLISTS,
                         onClick = { selectedSection = SpotifySection.PLAYLISTS },
-                        modifier =
-                            Modifier
-                                .focusRequester(playlistsTabFocusRequester)
-                                .focusProperties {
-                                    right = artistsTabFocusRequester
-                                },
                     )
                     SpotifyPillTab(
                         text = stringResource(R.string.spotify_artists_tab),
                         isSelected = activeSection == SpotifySection.ARTISTS,
                         onClick = { selectedSection = SpotifySection.ARTISTS },
-                        modifier =
-                            Modifier
-                                .focusRequester(artistsTabFocusRequester)
-                                .focusProperties {
-                                    left = playlistsTabFocusRequester
-                                },
                     )
                 }
             }
@@ -182,22 +160,14 @@ fun LibrarySpotifyPlaylistsScreen(
                         }
                     }
 
-                    itemsIndexed(
+                    items(
                         items = playlists,
-                        key = { _, playlist -> playlist.id },
-                        contentType = { _, _ -> "spotify_playlist" },
-                    ) { index, playlist ->
+                        key = { playlist -> playlist.id },
+                        contentType = { "spotify_playlist" },
+                    ) { playlist ->
                         SpotifyLibraryPlaylistListItem(
                             playlist = playlist,
                             navController = navController,
-                            modifier =
-                                if (index == 0 && showSpotifyPlaylists && showSpotifyFollowArtist) {
-                                    Modifier.focusProperties {
-                                        up = playlistsTabFocusRequester
-                                    }
-                                } else {
-                                    Modifier
-                                },
                         )
                     }
                 } else {
@@ -212,22 +182,14 @@ fun LibrarySpotifyPlaylistsScreen(
                         }
                     }
 
-                    itemsIndexed(
+                    items(
                         items = followedArtists,
-                        key = { _, artist -> artist.id },
-                        contentType = { _, _ -> "spotify_artist" },
-                    ) { index, artist ->
+                        key = { artist -> artist.id },
+                        contentType = { "spotify_artist" },
+                    ) { artist ->
                         SpotifyLibraryArtistListItem(
                             artist = artist,
                             isResolving = resolvingArtistId == artist.id,
-                            modifier =
-                                if (index == 0 && showSpotifyPlaylists && showSpotifyFollowArtist) {
-                                    Modifier.focusProperties {
-                                        up = artistsTabFocusRequester
-                                    }
-                                } else {
-                                    Modifier
-                                },
                             onClick = {
                                 if (resolvingArtistId != null) return@SpotifyLibraryArtistListItem
                                 resolvingArtistId = artist.id
@@ -286,7 +248,6 @@ private fun SpotifyPillTab(
     Box(
         modifier =
             modifier
-                .tvFocusOutline(shape = CircleShape)
                 .clip(CircleShape)
                 .background(backgroundColor)
                 .clickable(onClick = onClick)

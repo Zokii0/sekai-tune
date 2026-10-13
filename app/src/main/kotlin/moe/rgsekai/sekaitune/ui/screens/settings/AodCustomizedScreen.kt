@@ -51,18 +51,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -246,10 +239,6 @@ fun AodCustomizedScreen(navController: NavController) {
             )
         }
 
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-    val topBarFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
-
     Scaffold(
         modifier =
             Modifier
@@ -276,11 +265,6 @@ fun AodCustomizedScreen(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(lazyListState = lazyListState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -298,12 +282,10 @@ fun AodCustomizedScreen(navController: NavController) {
         },
     ) { paddingValues ->
         LazyColumn(
-            state = lazyListState,
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .tvDpadListScroll(lazyListState, coroutineScope)
                     .windowInsetsPadding(
                         LocalPlayerAwareWindowInsets.current.only(
                             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
@@ -944,7 +926,6 @@ private fun AodShapeOption(
         modifier =
             modifier
                 .heightIn(min = 112.dp)
-                .tvFocusOutline(shape = MaterialTheme.shapes.large)
                 .selectable(
                     selected = selected,
                     onClick = onClick,
@@ -1034,18 +1015,7 @@ private fun AodSliderPreference(
                         activeTrackColor = MaterialTheme.colorScheme.primary,
                         thumbColor = MaterialTheme.colorScheme.primary,
                     ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .tvSliderDpad(
-                            value = sliderValue,
-                            onValueChange = { newVal ->
-                                sliderValue = newVal
-                                onValueChange(newVal.coerceIn(valueRange.start, valueRange.endInclusive))
-                            },
-                            step = (valueRange.endInclusive - valueRange.start) / (if (steps > 0) (steps + 1) else 20),
-                            valueRange = valueRange,
-                        ),
+                modifier = Modifier.fillMaxWidth(),
             )
         },
     )
@@ -1087,18 +1057,7 @@ private fun AodIntSliderPreference(
                         activeTrackColor = MaterialTheme.colorScheme.primary,
                         thumbColor = MaterialTheme.colorScheme.primary,
                     ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .tvSliderDpad(
-                            value = sliderValue,
-                            onValueChange = { newVal ->
-                                sliderValue = newVal
-                                onValueChange(newVal.roundToInt().coerceIn(valueRange.first, valueRange.last))
-                            },
-                            step = 1f,
-                            valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
-                        ),
+                modifier = Modifier.fillMaxWidth(),
             )
         },
     )

@@ -78,12 +78,6 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -150,13 +144,8 @@ import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.InfoLabel
 import moe.rgsekai.sekaitune.ui.component.TextFieldDialog
 import moe.rgsekai.sekaitune.ui.screens.buildLoginRoute
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
 import moe.rgsekai.sekaitune.ui.utils.backToMain
-import moe.rgsekai.sekaitune.ui.utils.settingsFirstContentItem
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarAction
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarBack
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.PreferenceStore
 import moe.rgsekai.sekaitune.utils.SavedAccount
 import moe.rgsekai.sekaitune.utils.Updater
@@ -307,21 +296,6 @@ fun AccountSettings(
         onSavedAccountsJsonChange(encodeSavedAccounts(existing.filter { it.id != account.id }))
     }
 
-    val isTv = LocalIsTv.current
-    val listState = rememberLazyListState()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val firstButtonFocusRequester = remember { FocusRequester() }
-    val keyIconFocusRequester = remember { FocusRequester() }
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(isTv) {
-        if (isTv) {
-            try {
-                topBarFocusRequester.requestFocus()
-            } catch (_: Exception) {}
-        }
-    }
-
     Scaffold(
         modifier =
             Modifier
@@ -345,13 +319,6 @@ fun AccountSettings(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .settingsTopBarBack(
-                                    firstContentItemRequester = firstButtonFocusRequester,
-                                    onRightActionRequester = keyIconFocusRequester,
-                                ),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -362,13 +329,6 @@ fun AccountSettings(
                 actions = {
                     OutlinedIconButton(
                         onClick = { showTokenEditor = true },
-                        modifier =
-                            Modifier
-                                .focusRequester(keyIconFocusRequester)
-                                .settingsTopBarAction(
-                                    backButtonRequester = topBarFocusRequester,
-                                    firstContentItemRequester = firstButtonFocusRequester,
-                                ),
                         colors =
                             IconButtonDefaults.outlinedIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -414,11 +374,9 @@ fun AccountSettings(
     ) { innerPadding ->
         val playerInsets = LocalPlayerAwareWindowInsets.current
         LazyColumn(
-            state = listState,
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .tvDpadListScroll(listState, coroutineScope)
                     .windowInsetsPadding(
                         playerInsets.only(
                             WindowInsetsSides.Horizontal,
@@ -445,8 +403,6 @@ fun AccountSettings(
                     activeInnerTubeCookie = innerTubeCookie,
                     activeDataSyncId = dataSyncId,
                     accountChannelsState = accountChannelsState,
-                    firstButtonFocusRequester = firstButtonFocusRequester,
-                    topBarFocusRequester = topBarFocusRequester,
                     onPrimaryAction = {
                         if (isLoggedIn) {
                             navController.navigate("account")
@@ -681,10 +637,7 @@ private fun ProfileIdentityCard(
     onSwitchAccountChannel: (AccountChannelUiModel) -> Unit,
     onRemoveAccount: (SavedAccount) -> Unit,
     onAddAnotherAccount: () -> Unit,
-    firstButtonFocusRequester: FocusRequester? = null,
-    topBarFocusRequester: FocusRequester? = null,
 ) {
-    val isTv = LocalIsTv.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -699,7 +652,23 @@ private fun ProfileIdentityCard(
         label = "accountMenuChevron",
     )
 
-    val cardContent: @Composable () -> Unit = {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
+        shape = CardShape,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        onClick = onPrimaryAction,
+        interactionSource = interactionSource,
+    ) {
         Column(
             modifier =
                 Modifier
@@ -868,15 +837,6 @@ private fun ProfileIdentityCard(
                         leadingButton = {
                             SplitButtonDefaults.ElevatedLeadingButton(
                                 onClick = onPrimaryAction,
-                                modifier =
-                                    if (firstButtonFocusRequester != null) {
-                                        Modifier
-                                            .focusRequester(firstButtonFocusRequester)
-                                            .settingsFirstContentItem(backButtonRequester = topBarFocusRequester)
-                                            .tvFocusOutline(shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
-                                    } else {
-                                        Modifier.tvFocusOutline(shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
-                                    },
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -908,7 +868,6 @@ private fun ProfileIdentityCard(
                                 checked = accountMenuExpanded,
                                 onCheckedChange = { accountMenuExpanded = it },
                                 enabled = isLoggedIn || savedAccounts.accounts.isNotEmpty(),
-                                modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -1120,7 +1079,6 @@ private fun ProfileIdentityCard(
                 OutlinedButton(
                     onClick = onSecondaryAction,
                     shapes = ButtonDefaults.shapes(),
-                    modifier = Modifier.tvFocusOutline(shape = RoundedCornerShape(16.dp)),
                 ) {
                     Text(
                         text = if (isLoggedIn) stringResource(R.string.action_logout) else stringResource(R.string.advanced_login),
@@ -1128,46 +1086,6 @@ private fun ProfileIdentityCard(
                     )
                 }
             }
-        }
-    }
-
-    if (isTv) {
-        Card(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    },
-            shape = CardShape,
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        ) {
-            cardContent()
-        }
-    } else {
-        Card(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    },
-            shape = CardShape,
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            onClick = onPrimaryAction,
-            interactionSource = interactionSource,
-        ) {
-            cardContent()
         }
     }
 }
@@ -1314,9 +1232,7 @@ internal fun ExpressiveActionRow(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }
-                .tvFocusOutline(shape = InnerTileShape)
-                .clip(InnerTileShape)
+                }.clip(InnerTileShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
@@ -1387,7 +1303,6 @@ internal fun ExpressiveSwitchRow(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 6.dp, vertical = 2.dp)
-                .tvFocusOutline(shape = InnerTileShape)
                 .clip(InnerTileShape)
                 .background(containerColor)
                 .clickable { onCheckedChange(!checked) },

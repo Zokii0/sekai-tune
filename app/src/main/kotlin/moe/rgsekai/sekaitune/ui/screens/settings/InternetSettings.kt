@@ -56,11 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -178,9 +173,6 @@ fun InternetSettings(navController: NavController) {
             else -> stringResource(R.string.ip_rotation_desc)
         }
 
-    val scrollState = rememberScrollState()
-    val topBarFocusRequester = remember { FocusRequester() }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -189,11 +181,6 @@ fun InternetSettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -210,8 +197,7 @@ fun InternetSettings(navController: NavController) {
             Modifier
                 .padding(top = topPadding)
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-                .tvDpadScroll(scrollState, scope)
-                .verticalScroll(scrollState),
+                .verticalScroll(rememberScrollState()),
         ) {
             InternetWarningBox()
 

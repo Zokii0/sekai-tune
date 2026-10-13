@@ -19,11 +19,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.focusGroup
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,6 +79,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -169,7 +166,6 @@ import moe.rgsekai.sekaitune.ui.utils.sendAddMissingDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendPauseDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendRemoveDownloads
 import moe.rgsekai.sekaitune.ui.utils.sendResumeDownloads
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
 import android.widget.Toast
 import moe.rgsekai.sekaitune.LocalDownloadUtil
 import moe.rgsekai.sekaitune.LocalResolveUploadedCatalogMatchUseCase
@@ -248,8 +244,6 @@ fun LocalPlaylistScreen(
             }
         }
 
-    val contentFocusRequester = remember { FocusRequester() }
-    val topBarFocusRequester = remember { FocusRequester() }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(isSearching) {
         if (isSearching) {
@@ -733,7 +727,6 @@ fun LocalPlaylistScreen(
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime).asPaddingValues(),
-            modifier = Modifier.tvDpadListScroll(lazyListState, coroutineScope),
         ) {
             playlist?.let { playlist ->
                 if (playlist.songCount == 0 && playlist.playlist.remoteSongCount == 0) {
@@ -745,8 +738,8 @@ fun LocalPlaylistScreen(
                     }
                 } else {
                     if (!isSearching) {
-                        // Hero Header - Info
-                        item(key = "header_info") {
+                        // Hero Header
+                        item(key = "header") {
                             Column(
                                 modifier =
                                     Modifier
@@ -910,23 +903,14 @@ fun LocalPlaylistScreen(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
-                        }
+                                Spacer(modifier = Modifier.height(24.dp))
 
-                        // Action Buttons Row
-                        item(key = "header_actions") {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
+                                // Action Buttons Row
                                 Row(
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 24.dp)
-                                            .focusRequester(contentFocusRequester)
-                                            .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState),
+                                            .padding(horizontal = 24.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
@@ -934,12 +918,7 @@ fun LocalPlaylistScreen(
                                         ToggleButton(
                                             checked = false,
                                             onCheckedChange = { showDeletePlaylistDialog = true },
-                                            modifier =
-                                                Modifier
-                                                    .size(48.dp)
-                                                    .focusRequester(contentFocusRequester)
-                                                    .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState)
-                                                    .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                            modifier = Modifier.size(48.dp),
                                             shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                                             colors =
                                                 ToggleButtonDefaults.toggleButtonColors(
@@ -964,12 +943,7 @@ fun LocalPlaylistScreen(
                                                     update(playlist.playlist.toggleLike())
                                                 }
                                             },
-                                            modifier =
-                                                Modifier
-                                                    .size(48.dp)
-                                                    .focusRequester(contentFocusRequester)
-                                                    .tvFocusBridge(up = topBarFocusRequester, lazyListState = lazyListState)
-                                                    .tvFocusOutline(shape = RoundedCornerShape(24.dp)),
+                                            modifier = Modifier.size(48.dp),
                                             shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                                             colors =
                                                 ToggleButtonDefaults.toggleButtonColors(
@@ -1669,15 +1643,6 @@ fun LocalPlaylistScreen(
                             navController.backToMain()
                         }
                     },
-                    modifier =
-                        Modifier
-                            .focusRequester(topBarFocusRequester)
-                            .tvFocusBridge(
-                                down = contentFocusRequester,
-                                lazyListState = lazyListState,
-                                targetDownIndex = 1,
-                            )
-                            .tvFocusOutline(shape = CircleShape),
                 ) {
                     Icon(
                         painter =
@@ -1737,14 +1702,6 @@ fun LocalPlaylistScreen(
                     IconButton(
                         onClick = { isSearching = true },
                         onLongClick = {},
-                        modifier =
-                            Modifier
-                                .tvFocusBridge(
-                                    down = contentFocusRequester,
-                                    lazyListState = lazyListState,
-                                    targetDownIndex = 1,
-                                )
-                                .tvFocusOutline(shape = CircleShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.search),

@@ -57,12 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -108,23 +103,13 @@ private fun CanvasSettingsContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scrollState = rememberScrollState()
-    val topBarFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
-
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.SekaiTune_canvas)) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBack,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusBridge(scrollState = scrollState)
-                                .tvFocusOutline(),
-                    ) {
+                    IconButton(onClick = onBack) {
                         Icon(painterResource(R.drawable.arrow_back), null)
                     }
                 },
@@ -141,7 +126,7 @@ private fun CanvasSettingsContent(
             CanvasSettingsState.Loading -> Box(contentModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            is CanvasSettingsState.Success -> CanvasSettingsBody(state.model, onAction, scrollState, contentModifier)
+            is CanvasSettingsState.Success -> CanvasSettingsBody(state.model, onAction, contentModifier)
             CanvasSettingsState.Empty -> CanvasSettingsFailure(R.string.canvas_settings_load_failed, onAction, contentModifier)
             is CanvasSettingsState.Error -> CanvasSettingsFailure(state.messageRes, onAction, contentModifier)
         }
@@ -152,7 +137,6 @@ private fun CanvasSettingsContent(
 private fun CanvasSettingsBody(
     model: CanvasSettingsUiModel,
     onAction: (CanvasSettingsAction) -> Unit,
-    scrollState: androidx.compose.foundation.ScrollState,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -191,11 +175,9 @@ private fun CanvasSettingsBody(
     val onCacheLimit = remember(onAction) { { onAction(CanvasSettingsAction.ShowCacheLimit) } }
     val onClear = remember(onAction) { { onAction(CanvasSettingsAction.ShowClearCache) } }
     val sources = remember { CanvasSource.entries.toList() }
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     Column(
         modifier = modifier
-            .verticalScroll(scrollState)
-            .tvDpadScroll(scrollState, coroutineScope)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = SettingsDimensions.ScreenHorizontalPadding)
             .padding(top = SettingsDimensions.SectionSpacing, bottom = SettingsDimensions.ScreenBottomPadding),
         verticalArrangement = remember { Arrangement.spacedBy(SettingsDimensions.SectionSpacing) },
@@ -495,7 +477,6 @@ private fun CanvasChoiceRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .tvFocusOutline(shape = shape)
                 .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
                 .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,

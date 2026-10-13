@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,15 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.runtime.rememberCoroutineScope
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
-import moe.rgsekai.sekaitune.ui.utils.settingsFirstContentItem
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarBack
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.LocalDatabase
@@ -160,18 +150,6 @@ fun PrivacySettings(navController: NavController) {
         )
     }
 
-    val scrollState = rememberScrollState()
-    val coroutineScope = rememberCoroutineScope()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val firstItemFocusRequester = remember { FocusRequester() }
-    val isTv = LocalIsTv.current
-
-    LaunchedEffect(isTv) {
-        if (isTv) {
-            topBarFocusRequester.requestFocus()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -180,12 +158,6 @@ fun PrivacySettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .settingsTopBarBack(
-                                    firstContentItemRequester = firstItemFocusRequester,
-                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -202,16 +174,11 @@ fun PrivacySettings(navController: NavController) {
             Modifier
                 .padding(top = topPadding)
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-                .tvDpadScroll(scrollState, coroutineScope)
-                .verticalScroll(scrollState),
+                .verticalScroll(rememberScrollState()),
         ) {
             PreferenceGroup(title = stringResource(R.string.listen_history)) {
                 item {
                     SwitchPreference(
-                        modifier =
-                            Modifier
-                                .focusRequester(firstItemFocusRequester)
-                                .settingsFirstContentItem(topBarFocusRequester),
                         title = { Text(stringResource(R.string.pause_listen_history)) },
                         icon = { Icon(painterResource(R.drawable.history), null) },
                         checked = pauseListenHistory,

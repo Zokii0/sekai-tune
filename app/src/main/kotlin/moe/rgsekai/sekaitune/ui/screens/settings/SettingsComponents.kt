@@ -12,20 +12,7 @@ package moe.rgsekai.sekaitune.ui.screens.settings
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -105,7 +92,6 @@ fun SettingsProfileHeader(
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = SettingsDimensions.ScreenHorizontalPadding)
-                .tvFocusOutline(shape = RoundedCornerShape(SettingsDimensions.BannerCardCornerRadius))
                 .clickable(onClick = onClick),
         shape = RoundedCornerShape(SettingsDimensions.BannerCardCornerRadius),
         colors =
@@ -193,56 +179,8 @@ fun SettingsPermissionBanner(
     onRequestPermission: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isTv = LocalIsTv.current
-    val focusManager = LocalFocusManager.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) SettingsAnimations.PressScale else 1f,
-        animationSpec = SettingsAnimations.pressSpring(),
-        label = "permissionScale",
-    )
-
     Card(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .scale(scale)
-                .then(
-                    if (isTv) {
-                        Modifier
-                            .tvFocusOutline(
-                                shape = RoundedCornerShape(SettingsDimensions.BannerCardCornerRadius),
-                                interactionSource = interactionSource,
-                            )
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = onRequestPermission,
-                            )
-                            .onPreviewKeyEvent { keyEvent ->
-                                if (keyEvent.type == KeyEventType.KeyDown) {
-                                    when (keyEvent.key) {
-                                        Key.DirectionDown, Key.PageDown -> {
-                                            if (focusManager.moveFocus(FocusDirection.Down)) {
-                                                true
-                                            } else {
-                                                focusManager.moveFocus(FocusDirection.Next)
-                                            }
-                                        }
-                                        Key.DirectionUp, Key.PageUp -> {
-                                            if (focusManager.moveFocus(FocusDirection.Up)) {
-                                                true
-                                            } else {
-                                                focusManager.moveFocus(FocusDirection.Previous)
-                                            }
-                                        }
-                                        else -> false
-                                    }
-                                } else false
-                            }
-                    } else Modifier
-                ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(SettingsDimensions.BannerCardCornerRadius),
         colors =
             CardDefaults.cardColors(
@@ -300,12 +238,6 @@ fun SettingsPermissionBanner(
 
             Button(
                 onClick = onRequestPermission,
-                modifier =
-                    Modifier.then(
-                        if (isTv) {
-                            Modifier.focusProperties { canFocus = false }
-                        } else Modifier
-                    ),
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -344,10 +276,7 @@ fun SettingsUpdateBanner(
             modifier
                 .fillMaxWidth()
                 .scale(scale)
-                .tvFocusOutline(
-                    shape = RoundedCornerShape(SettingsDimensions.BannerCardCornerRadius),
-                    interactionSource = interactionSource,
-                )
+                .focusable()
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -489,7 +418,7 @@ fun SettingsRow(
                         scaleX = scale
                         scaleY = scale
                     }.background(MaterialTheme.colorScheme.primary.copy(alpha = bgAlpha))
-                    .tvFocusOutline(shape = RoundedCornerShape(12.dp))
+                    .focusable()
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
@@ -643,8 +572,6 @@ fun SettingsSegmentedItem(
         label = "settingsSegmentScale",
     )
 
-    val isTv = LocalIsTv.current
-    val focusManager = LocalFocusManager.current
     Card(
         modifier =
             modifier
@@ -652,25 +579,8 @@ fun SettingsSegmentedItem(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }
-                .tvFocusOutline(shape = shape)
-                .then(
-                    if (isTv) {
-                        Modifier.onPreviewKeyEvent { keyEvent ->
-                            if (keyEvent.type == KeyEventType.KeyDown) {
-                                when (keyEvent.key) {
-                                    Key.DirectionDown, Key.PageDown -> {
-                                        focusManager.moveFocus(FocusDirection.Down)
-                                    }
-                                    Key.DirectionUp, Key.PageUp -> {
-                                        focusManager.moveFocus(FocusDirection.Up)
-                                    }
-                                    else -> false
-                                }
-                            } else false
-                        }
-                    } else Modifier
-                )
+                }.clip(shape)
+                .focusable()
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -902,12 +812,8 @@ fun SettingsSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester? = null,
 ) {
     val clearSearch = remember(onQueryChange) { { onQueryChange("") } }
-    val isTv = LocalIsTv.current
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
 
     SearchBar(
         inputField = {
@@ -941,46 +847,6 @@ fun SettingsSearchBar(
                         }
                     }
                 },
-                modifier =
-                    Modifier
-                        .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-                        .tvFocusOutline(shape = CircleShape)
-                        .onFocusChanged { focusState ->
-                            if (isTv && focusState.isFocused) {
-                                keyboardController?.hide()
-                            }
-                        }
-                        .then(
-                            if (isTv) {
-                                Modifier.onPreviewKeyEvent { keyEvent ->
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        when (keyEvent.key) {
-                                            Key.DirectionDown, Key.PageDown -> {
-                                                keyboardController?.hide()
-                                                if (focusManager.moveFocus(FocusDirection.Down)) {
-                                                    true
-                                                } else {
-                                                    focusManager.moveFocus(FocusDirection.Next)
-                                                }
-                                            }
-                                            Key.DirectionUp, Key.PageUp -> {
-                                                keyboardController?.hide()
-                                                if (focusManager.moveFocus(FocusDirection.Up)) {
-                                                    true
-                                                } else {
-                                                    focusManager.moveFocus(FocusDirection.Previous)
-                                                }
-                                            }
-                                            Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
-                                                keyboardController?.show()
-                                                false
-                                            }
-                                            else -> false
-                                        }
-                                    } else false
-                                }
-                            } else Modifier
-                        ),
             )
         },
         expanded = false,
@@ -1013,7 +879,7 @@ fun SettingsSearchResultItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .tvFocusOutline(shape = shape)
+                .clip(shape)
                 .clickable(onClick = onClick),
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,

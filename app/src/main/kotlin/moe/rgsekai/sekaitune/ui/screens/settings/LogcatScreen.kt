@@ -39,6 +39,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import moe.rgsekai.sekaitune.ui.component.GlassDropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
@@ -57,12 +58,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.component.GlassDropdownMenu
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -218,15 +213,11 @@ private fun LogcatScreenContent(
             }
         }
 
-    val topBarFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
-
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LogcatTopBar(
                 model = model,
-                topBarFocusRequester = topBarFocusRequester,
-                listState = listState,
                 onNavigateBack = onNavigateBack,
                 onNavigateBackLongClick = onNavigateBackLongClick,
                 onTogglePaused = onTogglePaused,
@@ -331,8 +322,6 @@ private fun LogcatScreenContent(
 @Composable
 private fun LogcatTopBar(
     model: LogcatUiModel?,
-    topBarFocusRequester: androidx.compose.ui.focus.FocusRequester,
-    listState: androidx.compose.foundation.lazy.LazyListState,
     onNavigateBack: () -> Unit,
     onNavigateBackLongClick: () -> Unit,
     onTogglePaused: () -> Unit,
@@ -361,11 +350,6 @@ private fun LogcatTopBar(
             SekaiTuneIconButton(
                 onClick = onNavigateBack,
                 onLongClick = onNavigateBackLongClick,
-                modifier =
-                    Modifier
-                        .focusRequester(topBarFocusRequester)
-                        .tvFocusBridge(lazyListState = listState)
-                        .tvFocusOutline(),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
@@ -517,15 +501,13 @@ private fun LogcatLogContent(
                         .weight(1f),
             )
         } else {
-            val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
             LazyColumn(
                 state = listState,
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .nestedScroll(logUserScrollConnection)
-                        .tvDpadListScroll(listState, coroutineScope),
+                        .nestedScroll(logUserScrollConnection),
                 contentPadding = PaddingValues(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
@@ -558,17 +540,16 @@ private fun LogcatEntryItem(
     val levelColor = entry.level.color
     val onClick = remember(entry.id, onToggleExpanded) { { onToggleExpanded(entry.id) } }
     val onLongClick = remember(entry.id, onCopy) { { onCopy(entry.id) } }
-    val shapes = ListItemDefaults.segmentedShapes(index = index, count = count)
     SegmentedListItem(
         onClick = onClick,
         onLongClick = onLongClick,
         onLongClickLabel = stringResource(R.string.copy_log_entry),
-        shapes = shapes,
+        shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
         colors =
             ListItemDefaults.segmentedColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             ),
-        modifier = Modifier.fillMaxWidth().tvFocusOutline(shape = shapes.shape),
+        modifier = Modifier.fillMaxWidth(),
         overlineContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -49,14 +49,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
-import moe.rgsekai.sekaitune.ui.utils.settingsFirstContentItem
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarBack
-import moe.rgsekai.sekaitune.ui.utils.tvDpadScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -367,20 +359,6 @@ fun AppearanceSettings(navController: NavController) {
         }
     }
 
-    val isTv = LocalIsTv.current
-    val scrollState = rememberScrollState()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val firstItemFocusRequester = remember { FocusRequester() }
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(isTv) {
-        if (isTv) {
-            try {
-                topBarFocusRequester.requestFocus()
-            } catch (_: Exception) {}
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -389,12 +367,6 @@ fun AppearanceSettings(navController: NavController) {
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .settingsTopBarBack(
-                                    firstContentItemRequester = firstItemFocusRequester,
-                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.arrow_back),
@@ -411,8 +383,7 @@ fun AppearanceSettings(navController: NavController) {
             Modifier
                 .padding(top = topPadding)
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-                .verticalScroll(scrollState)
-                .tvDpadScroll(scrollState, coroutineScope),
+                .verticalScroll(rememberScrollState()),
         ) {
             PreferenceGroup(title = stringResource(R.string.theme)) {
                 item {
@@ -421,10 +392,6 @@ fun AppearanceSettings(navController: NavController) {
                         icon = { Icon(painterResource(R.drawable.palette), null) },
                         checked = dynamicTheme,
                         onCheckedChange = onDynamicThemeChange,
-                        modifier =
-                            Modifier
-                                .focusRequester(firstItemFocusRequester)
-                                .settingsFirstContentItem(backButtonRequester = topBarFocusRequester),
                     )
                 }
 

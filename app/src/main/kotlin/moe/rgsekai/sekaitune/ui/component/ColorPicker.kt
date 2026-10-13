@@ -48,8 +48,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import moe.rgsekai.sekaitune.R
 
 /**
@@ -276,7 +274,6 @@ private fun PresetSwatch(
     modifier =
       Modifier.size(32.dp)
         .clip(CircleShape)
-        .tvFocusOutline(shape = CircleShape)
         .background(color)
         .border(
           width = if (isSelected) 2.dp else 1.dp,
@@ -350,13 +347,6 @@ private fun HueSlider(
       Modifier.fillMaxWidth()
         .height(24.dp)
         .clip(RoundedCornerShape(12.dp))
-        .tvFocusOutline(shape = RoundedCornerShape(12.dp))
-        .tvSliderDpad(
-          value = hue,
-          onValueChange = onChange,
-          step = 5f,
-          valueRange = 0f..360f,
-        )
         .pointerInput(Unit) {
           detectTapGestures { offset -> onChange((offset.x / size.width).coerceIn(0f, 1f) * 360f) }
         }

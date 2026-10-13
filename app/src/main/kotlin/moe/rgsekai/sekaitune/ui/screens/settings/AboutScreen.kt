@@ -62,7 +62,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,29 +73,20 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
 import moe.rgsekai.sekaitune.ui.utils.backToMain
-import moe.rgsekai.sekaitune.ui.utils.settingsFirstContentItem
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarAction
-import moe.rgsekai.sekaitune.ui.utils.settingsTopBarBack
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.viewmodels.AboutDependencyLicenseUiCollection
 import moe.rgsekai.sekaitune.viewmodels.AboutDependencyLicensesUiState
 import moe.rgsekai.sekaitune.viewmodels.AboutDialog
@@ -162,19 +152,7 @@ private fun AboutScreenContent(
     onRetryTranslationContributors: () -> Unit,
     onRetryDependencyLicenses: () -> Unit,
 ) {
-    val isTv = LocalIsTv.current
     val listState = rememberLazyListState()
-    val topBarFocusRequester = remember { FocusRequester() }
-    val firstChipFocusRequester = remember { FocusRequester() }
-    val overflowMenuFocusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(isTv) {
-        if (isTv) {
-            try {
-                topBarFocusRequester.requestFocus()
-            } catch (_: Exception) {}
-        }
-    }
 
     Scaffold(
         modifier =
@@ -193,13 +171,6 @@ private fun AboutScreenContent(
                 },
                 navigationIcon = {
                     IconButton(
-                        modifier =
-                            Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .settingsTopBarBack(
-                                    firstContentItemRequester = firstChipFocusRequester,
-                                    onRightActionRequester = overflowMenuFocusRequester,
-                                ),
                         onClick = onNavigateUp,
                         onLongClick = onNavigateHome,
                     ) {
@@ -217,13 +188,6 @@ private fun AboutScreenContent(
                 actions = {
                     if (state is AboutScreenState.Success) {
                         AboutOverflowMenu(
-                            modifier =
-                                Modifier
-                                    .focusRequester(overflowMenuFocusRequester)
-                                    .settingsTopBarAction(
-                                        backButtonRequester = topBarFocusRequester,
-                                        firstContentItemRequester = firstChipFocusRequester,
-                                    ),
                             expanded = state.model.isOverflowMenuExpanded,
                             onShowMenu = onShowOverflowMenu,
                             onDismissMenu = onDismissOverflowMenu,
@@ -269,8 +233,6 @@ private fun AboutScreenContent(
                 AboutSuccessContent(
                     model = state.model,
                     onOpenUri = onOpenUri,
-                    firstChipFocusRequester = firstChipFocusRequester,
-                    topBarFocusRequester = topBarFocusRequester,
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -803,13 +765,10 @@ private fun AboutSuccessContent(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues,
     listState: LazyListState,
-    firstChipFocusRequester: FocusRequester? = null,
-    topBarFocusRequester: FocusRequester? = null,
 ) {
-    val coroutineScope = rememberCoroutineScope()
     LazyColumn(
         state = listState,
-        modifier = modifier.tvDpadListScroll(listState, coroutineScope),
+        modifier = modifier,
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -819,8 +778,6 @@ private fun AboutSuccessContent(
                     model = model,
                     onOpenUri = onOpenUri,
                     modifier = Modifier.fillMaxWidth(),
-                    firstChipFocusRequester = firstChipFocusRequester,
-                    topBarFocusRequester = topBarFocusRequester,
                 )
             }
         }
@@ -856,8 +813,6 @@ private fun AboutIdentityCard(
     model: AboutUiModel,
     onOpenUri: (String) -> Unit,
     modifier: Modifier = Modifier,
-    firstChipFocusRequester: FocusRequester? = null,
-    topBarFocusRequester: FocusRequester? = null,
 ) {
     Card(
         modifier = modifier,
@@ -908,8 +863,6 @@ private fun AboutIdentityCard(
             LinkChipRow(
                 links = model.primaryLinks,
                 onOpenUri = onOpenUri,
-                firstChipFocusRequester = firstChipFocusRequester,
-                topBarFocusRequester = topBarFocusRequester,
             )
         }
     }
@@ -952,8 +905,6 @@ private fun LinkChipRow(
     links: AboutLinkCollection,
     onOpenUri: (String) -> Unit,
     modifier: Modifier = Modifier,
-    firstChipFocusRequester: FocusRequester? = null,
-    topBarFocusRequester: FocusRequester? = null,
 ) {
     FlowRow(
         modifier = modifier.fillMaxWidth(),
@@ -968,19 +919,8 @@ private fun LinkChipRow(
                     { onOpenUri(link.url) }
                 }
 
-            val chipModifier =
-                if (i == 0 && firstChipFocusRequester != null) {
-                    Modifier
-                        .focusRequester(firstChipFocusRequester)
-                        .settingsFirstContentItem(backButtonRequester = topBarFocusRequester)
-                        .tvFocusOutline()
-                } else {
-                    Modifier.tvFocusOutline()
-                }
-
             AssistChip(
                 onClick = onClick,
-                modifier = chipModifier,
                 leadingIcon = {
                     Icon(
                         painter = painterResource(link.iconResId),
@@ -1118,7 +1058,6 @@ private fun TeamMemberListItem(
             modifier
                 .fillMaxWidth()
                 .heightIn(min = minHeight)
-                .tvFocusOutline()
                 .then(itemClickModifier),
         colors = ListItemDefaults.colors(containerColor = containerColor),
         leadingContent = {

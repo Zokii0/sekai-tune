@@ -5,7 +5,7 @@
  * Do not remove or alter this notice. - Per GPL-3.0 Section 4 & Section 5
  */
 
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 
 package moe.rgsekai.sekaitune.ui.component
 
@@ -18,26 +18,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
-import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
-import moe.rgsekai.sekaitune.ui.utils.tvSliderDpad
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -217,15 +202,7 @@ fun PreferenceEntry(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = PreferenceEntryMinHeight)
-                    .then(
-                        if (isEnabled && (onClick != null || onLongClick != null)) {
-                            Modifier
-                                .tvFocusOutline(shape = resolvedShape, interactionSource = interactionSource)
-                                .focusable()
-                        } else {
-                            Modifier
-                        },
-                    )
+                    .then(if (isEnabled && (onClick != null || onLongClick != null)) Modifier.focusable() else Modifier)
                     .then(
                         if (onLongClick != null) {
                             Modifier.combinedClickable(
@@ -340,13 +317,11 @@ fun <T> SegmentedPreference(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 values.forEachIndexed { index, value ->
-                    val itemShape = SegmentedButtonDefaults.itemShape(index = index, count = values.size)
                     SegmentedButton(
-                        shape = itemShape,
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = values.size),
                         onClick = { onValueSelected(value) },
                         selected = value == selectedValue,
                         enabled = isEnabled,
-                        modifier = Modifier.tvFocusOutline(shape = itemShape),
                         colors =
                             SegmentedButtonDefaults.colors(
                                 activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -409,8 +384,6 @@ fun <T> ListPreference(
     onValueSelected: (T) -> Unit,
     isEnabled: Boolean = true,
 ) {
-    val isTv = LocalIsTv.current
-    val rowFocusRequester = remember { FocusRequester() }
     var showBottomSheet by remember {
         mutableStateOf(false)
     }
@@ -426,16 +399,7 @@ fun <T> ListPreference(
             valueDescription = valueDescription,
             isValueEnabled = isValueEnabled,
             sheetState = sheetState,
-            onDismiss = {
-                showBottomSheet = false
-                if (isTv) {
-                    coroutineScope.launch {
-                        try {
-                            rowFocusRequester.requestFocus()
-                        } catch (_: Exception) {}
-                    }
-                }
-            },
+            onDismiss = { showBottomSheet = false },
             onValueSelected = { value ->
                 onValueSelected(value)
                 coroutineScope
@@ -443,20 +407,13 @@ fun <T> ListPreference(
                         sheetState.hide()
                     }.invokeOnCompletion {
                         showBottomSheet = false
-                        if (isTv) {
-                            coroutineScope.launch {
-                                try {
-                                    rowFocusRequester.requestFocus()
-                                } catch (_: Exception) {}
-                            }
-                        }
                     }
             },
         )
     }
 
     PreferenceEntry(
-        modifier = modifier.focusRequester(rowFocusRequester),
+        modifier = modifier,
         title = title,
         description = description,
         icon = icon,
@@ -516,42 +473,19 @@ private fun <T> PreferenceSelectionBottomSheet(
     onDismiss: () -> Unit,
     onValueSelected: (T) -> Unit,
 ) {
-    val isTv = LocalIsTv.current
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-    val selectedIndex = remember(values, selectedValue) {
-        values.indexOf(selectedValue).coerceAtLeast(0)
-    }
-    val selectedFocusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(isTv) {
-        if (isTv) {
-            if (selectedIndex in values.indices) {
-                try {
-                    listState.scrollToItem(selectedIndex)
-                } catch (_: Exception) {}
-            }
-            try {
-                selectedFocusRequester.requestFocus()
-            } catch (_: Exception) {}
-        }
-    }
-
     GlassModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = if (isTv) null else {
-            {
-                BottomSheetDefaults.DragHandle(
-                    width = 48.dp,
-                    height = 5.dp,
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
-                )
-            }
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                width = 48.dp,
+                height = 5.dp,
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+            )
         },
     ) {
         Column(
@@ -559,7 +493,7 @@ private fun <T> PreferenceSelectionBottomSheet(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 26.dp)
-                    .padding(bottom = if (isTv) 16.dp else 12.dp),
+                    .padding(bottom = 12.dp),
         ) {
             ProvideTextStyle(
                 MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
@@ -568,36 +502,31 @@ private fun <T> PreferenceSelectionBottomSheet(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(top = if (isTv) 10.dp else 18.dp, bottom = if (isTv) 12.dp else 22.dp),
+                            .padding(top = 18.dp, bottom = 22.dp),
                 ) {
                     title()
                 }
             }
 
             LazyColumn(
-                state = listState,
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(max = if (isTv) 280.dp else 520.dp)
-                        .tvDpadListScroll(listState, coroutineScope),
-                verticalArrangement = Arrangement.spacedBy(if (isTv) 8.dp else 12.dp),
-                contentPadding = PaddingValues(bottom = if (isTv) 16.dp else 24.dp),
+                        .heightIn(max = 520.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
             ) {
                 itemsIndexed(
                     items = values,
                     key = { index, value -> preferenceOptionKey(index, value) },
                     contentType = { _, _ -> "preference_option" },
-                ) { index, value ->
-                    val isSelected = value == selectedValue
-                    val isInitialTarget = isTv && index == selectedIndex
+                ) { _, value ->
                     PreferenceSelectionOption(
                         text = valueText(value),
                         description = valueDescription?.invoke(value),
-                        selected = isSelected,
+                        selected = value == selectedValue,
                         enabled = isValueEnabled(value),
                         onClick = { onValueSelected(value) },
-                        modifier = if (isInitialTarget) Modifier.focusRequester(selectedFocusRequester) else Modifier,
                     )
                 }
             }
@@ -612,9 +541,7 @@ private fun PreferenceSelectionOption(
     selected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    val isTv = LocalIsTv.current
     val glassConfig = LocalGlassEffectConfig.current
     val isGlass = glassConfig.isEnabledFor(GlassComponent.POPUP_MENU)
     val isLight = MaterialTheme.colorScheme.surface.luminance() > 0.5f
@@ -646,18 +573,9 @@ private fun PreferenceSelectionOption(
         color = containerColor,
         border = if (isGlass && rimColor != null) BorderStroke(1.dp, rimColor) else null,
         modifier =
-            modifier
+            Modifier
                 .fillMaxWidth()
-                .heightIn(min = if (description == null) (if (isTv) 56.dp else 72.dp) else (if (isTv) 76.dp else 96.dp))
-                .tvFocusOutline(shape = shape)
-                .onKeyEvent { keyEvent ->
-                    if (keyEvent.type == KeyEventType.KeyDown &&
-                        (keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter || keyEvent.key == Key.DirectionCenter)
-                    ) {
-                        onClick()
-                        true
-                    } else false
-                }
+                .heightIn(min = if (description == null) 72.dp else 96.dp)
                 .alpha(if (enabled) 1f else 0.5f)
                 .then(
                     if (isGlass) {
@@ -675,7 +593,7 @@ private fun PreferenceSelectionOption(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = if (isTv) 12.dp else 20.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
@@ -758,7 +676,6 @@ fun SwitchPreference(
     onCheckedChange: (Boolean) -> Unit,
     isEnabled: Boolean = true,
 ) {
-    val isTv = LocalIsTv.current
     PreferenceEntry(
         modifier = modifier,
         title = title,
@@ -769,7 +686,6 @@ fun SwitchPreference(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = isEnabled,
-                modifier = if (isTv) Modifier.focusProperties { canFocus = false } else Modifier,
                 thumbContent = {
                     AnimatedContent(
                         targetState = checked,
@@ -968,15 +884,7 @@ fun SliderPreference(
 
                     Slider(
                         state = sliderState,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .tvSliderDpad(
-                                    value = sliderValue,
-                                    onValueChange = { sliderValue = it },
-                                    step = 1f,
-                                    valueRange = HISTORY_DURATION_RANGE,
-                                ),
+                        modifier = Modifier.fillMaxWidth(),
                         track = {
                             SliderDefaults.Track(
                                 sliderState = sliderState,
@@ -1089,15 +997,7 @@ fun CrossfadeSliderPreference(
 
                     Slider(
                         state = crossfadeSliderState,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .tvSliderDpad(
-                                    value = sliderValue,
-                                    onValueChange = { sliderValue = it.coerceIn(0f, 10f) },
-                                    step = 0.5f,
-                                    valueRange = 0f..10f,
-                                ),
+                        modifier = Modifier.fillMaxWidth(),
                         track = {
                             SliderDefaults.Track(
                                 sliderState = crossfadeSliderState,
@@ -1204,17 +1104,7 @@ fun NumberPickerPreference(
 
                     Slider(
                         state = pickerSliderState,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .tvSliderDpad(
-                                    value = sliderValue,
-                                    onValueChange = {
-                                        sliderValue = it.coerceIn(minValue.toFloat(), maxValue.toFloat())
-                                    },
-                                    step = 1f,
-                                    valueRange = minValue.toFloat()..maxValue.toFloat(),
-                                ),
+                        modifier = Modifier.fillMaxWidth(),
                         track = {
                             SliderDefaults.Track(
                                 sliderState = pickerSliderState,

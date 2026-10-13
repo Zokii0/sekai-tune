@@ -108,11 +108,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import moe.rgsekai.sekaitune.ui.utils.tvDpadListScroll
-import moe.rgsekai.sekaitune.ui.utils.tvFocusBridge
-import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Logout
 import androidx.navigation.NavController
@@ -191,8 +186,6 @@ fun MusicTogetherScreen(
         MusicTogetherDialogs(model = model, viewModel = viewModel)
     }
 
-    val topBarFocusRequester = remember { FocusRequester() }
-
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
@@ -203,8 +196,6 @@ fun MusicTogetherScreen(
                         onLongClick = navController::backToMain,
                         modifier =
                             Modifier
-                                .focusRequester(topBarFocusRequester)
-                                .tvFocusOutline(shape = CircleShape)
                                 .padding(horizontal = 4.dp)
                                 .size(40.dp),
                         colors =
@@ -223,7 +214,6 @@ fun MusicTogetherScreen(
                         onClick = { navController.navigate("settings/buddies") },
                         modifier =
                             Modifier
-                                .tvFocusOutline(shape = CircleShape)
                                 .padding(horizontal = 4.dp)
                                 .size(40.dp),
                         colors =
@@ -337,8 +327,6 @@ private fun MusicTogetherContent(
         }
     }
 
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-
     if (useSupportingPane) {
         Row(
             modifier =
@@ -353,8 +341,7 @@ private fun MusicTogetherContent(
                     Modifier
                         .weight(1.25f)
                         .fillMaxHeight()
-                        .widthIn(max = 720.dp)
-                        .tvDpadListScroll(listState, coroutineScope),
+                        .widthIn(max = 720.dp),
                 contentPadding = PaddingValues(bottom = MusicTogetherSpacing.lg + LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(MusicTogetherSpacing.sm),
             ) {
@@ -442,7 +429,7 @@ private fun MusicTogetherContent(
         val playerBottomPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize().tvDpadListScroll(listState, coroutineScope),
+            modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(
                     start = MusicTogetherSpacing.sm,
