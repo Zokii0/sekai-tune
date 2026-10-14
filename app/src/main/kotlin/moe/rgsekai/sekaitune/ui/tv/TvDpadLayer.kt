@@ -177,16 +177,22 @@ fun TvDpadLayer(
     val isSettingsRoute = currentRoute == "settings" || currentRoute?.startsWith("settings/") == true || currentRoute == "stats"
     var isContentFocused by remember { mutableStateOf(false) }
 
+    val isTopBarRoute = currentRoute == TV_HOME_ROUTE ||
+        currentRoute == "new_release" ||
+        currentRoute == "mood_and_genres" ||
+        currentRoute == "library" ||
+        currentRoute == "ambient_mode" ||
+        currentRoute == "search" ||
+        currentRoute == "settings" ||
+        currentRoute == "settings/account"
+
     // Initial focus on route change: wait for composition and let child screens set their own focus first
     LaunchedEffect(currentRoute) {
         delay(60)
-        if (!isContentFocused) {
+        if (!isTopBarRoute && !isContentFocused) {
             val requested = contentFocusRequester?.safeRequestFocus() ?: false
             if (!requested) {
-                val movedDown = focusManager.moveFocus(FocusDirection.Down)
-                if (!movedDown) {
-                    focusManager.moveFocus(FocusDirection.Next)
-                }
+                focusManager.moveFocus(FocusDirection.Down)
             }
         }
     }

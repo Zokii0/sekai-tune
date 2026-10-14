@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -80,6 +81,11 @@ fun TvTopBar(
     val tabs = remember { TvTab.values() }
     val focusManager = LocalFocusManager.current
 
+    // Request focus on the active tab whenever selectedTab changes
+    LaunchedEffect(selectedTab) {
+        selectedTabFocusRequester?.safeRequestFocus()
+    }
+
     Surface(
         color = Color.Transparent,
         modifier = modifier
@@ -94,6 +100,7 @@ fun TvTopBar(
                 val interactionSource = remember { MutableInteractionSource() }
                 val isFocused by interactionSource.collectIsFocusedAsState()
                 val isSelected = tab == selectedTab
+                val defaultTabFocusRequester = remember { FocusRequester() }
 
                 val pillShape = RoundedCornerShape(percent = 50)
 
@@ -119,10 +126,10 @@ fun TvTopBar(
                     .then(
                         if (isSelected && selectedTabFocusRequester != null) {
                             Modifier.focusRequester(selectedTabFocusRequester)
-                        } else if (index == 0 && firstItemFocusRequester != null) {
+                        } else if (index == 0 && selectedTabFocusRequester == null && firstItemFocusRequester != null) {
                             Modifier.focusRequester(firstItemFocusRequester)
                         } else {
-                            Modifier
+                            Modifier.focusRequester(defaultTabFocusRequester)
                         },
                     )
                     .onPreviewKeyEvent { keyEvent ->
@@ -170,7 +177,13 @@ fun TvTopBar(
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = { onTabSelected(tab) },
+                        onClick = {
+                            if (isSelected) {
+                                selectedTabFocusRequester?.safeRequestFocus()
+                            } else {
+                                onTabSelected(tab)
+                            }
+                        },
                     )
                     .focusable(interactionSource = interactionSource)
                     .padding(horizontal = 16.dp, vertical = 10.dp)

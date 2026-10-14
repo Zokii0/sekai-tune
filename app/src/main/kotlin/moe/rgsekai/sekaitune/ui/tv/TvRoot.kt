@@ -48,6 +48,7 @@ import moe.rgsekai.sekaitune.ui.tv.components.TvTopBar
 import moe.rgsekai.sekaitune.ui.tv.screens.TvAlbumScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvArtistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvAutoPlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvExploreScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvHomeScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
@@ -145,7 +146,6 @@ fun TvRoot(
                     }
                 }
             },
-            firstItemFocusRequester = topBarFocusRequester,
             selectedTabFocusRequester = topBarFocusRequester,
             downFocusRequester = contentFocusRequester,
             modifier = Modifier.fillMaxWidth(),
@@ -186,6 +186,15 @@ fun TvRoot(
                     scrollBehavior = topAppBarScrollBehavior,
                     latestVersionName = { BuildConfig.VERSION_NAME },
                 )
+
+                // TV-optimized Explore / New Releases screen
+                composable(Screens.NewRelease.route) {
+                    TvExploreScreen(
+                        navController = navController,
+                        firstShelfFocusRequester = contentFocusRequester,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
 
                 // TV-optimized Artist screen
                 composable(
