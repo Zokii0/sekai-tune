@@ -22,6 +22,7 @@ import androidx.media3.common.MediaItem
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import moe.rgsekai.sekaitune.LocalPlayerConnection
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.spotify.SpotifyMapper
@@ -75,8 +76,10 @@ fun TvSpotifyPlaylistScreen(
         val boundedStartIndex = startIndex.coerceIn(queueTracks.indices)
         val preloadTrack = queueTracks[boundedStartIndex]
 
-        coroutineScope.launch(Dispatchers.IO) {
-            val preloadItem = SpotifyPlaybackResolver.resolveToMetadata(preloadTrack)
+        coroutineScope.launch {
+            val preloadItem = withContext(Dispatchers.IO) {
+                SpotifyPlaybackResolver.resolveToMetadata(preloadTrack)
+            }
             playerConnection?.playQueue(
                 SpotifyPlaylistQueue(
                     playlistId = currentPlaylist.id,
@@ -112,8 +115,10 @@ fun TvSpotifyPlaylistScreen(
                     }
                 },
                 onLongClick = {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        val mediaItem = SpotifyPlaybackResolver.resolveToMediaItem(track)
+                    coroutineScope.launch {
+                        val mediaItem = withContext(Dispatchers.IO) {
+                            SpotifyPlaybackResolver.resolveToMediaItem(track)
+                        }
                         selectedTrackWithMediaItem = Pair(track, mediaItem)
                     }
                 },

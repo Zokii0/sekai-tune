@@ -53,6 +53,7 @@ import moe.rgsekai.sekaitune.ui.tv.screens.TvArtistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvAutoPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvExploreScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvHomeScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvLibraryScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsCategory
@@ -203,6 +204,15 @@ fun TvRoot(
                 // TV-optimized Explore / New Releases screen
                 composable(Screens.NewRelease.route) {
                     TvExploreScreen(
+                        navController = navController,
+                        firstShelfFocusRequester = contentFocusRequester,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Library screen (Playlists & Spotify Playlists)
+                composable(Screens.Library.route) {
+                    TvLibraryScreen(
                         navController = navController,
                         firstShelfFocusRequester = contentFocusRequester,
                         upFocusRequester = topBarFocusRequester,
