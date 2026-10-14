@@ -1516,6 +1516,7 @@ class MainActivity : ComponentActivity() {
                     var showStarDialog by remember { mutableStateOf(false) }
 
                     LaunchedEffect(Unit) {
+                        if (isTvDevice) return@LaunchedEffect
                         kotlinx.coroutines.delay(3000)
 
                         withContext(Dispatchers.IO) {
@@ -1545,7 +1546,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    if (showStarDialog) {
+                    if (showStarDialog && !isTvDevice) {
                         StarDialog(
                             onDismissRequest = { showStarDialog = false },
                             onSupport = {

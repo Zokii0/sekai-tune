@@ -144,24 +144,31 @@ fun TvTopBar(
                     .onPreviewKeyEvent { keyEvent ->
                         if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
-                        when (keyEvent.key) {
-                            Key.DirectionLeft -> {
+                        val keyCode = keyEvent.nativeKeyEvent.keyCode
+                        val isDown = keyEvent.key == Key.DirectionDown || keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN
+                        val isLeft = keyEvent.key == Key.DirectionLeft || keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT
+                        val isRight = keyEvent.key == Key.DirectionRight || keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT
+                        val isUp = keyEvent.key == Key.DirectionUp || keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
+                        val isBack = keyEvent.key == Key.Escape || keyEvent.key == Key.Back || keyCode == android.view.KeyEvent.KEYCODE_BACK || keyCode == android.view.KeyEvent.KEYCODE_ESCAPE
+
+                        when {
+                            isLeft -> {
                                 if (index == 0) true else false
                             }
-                            Key.DirectionRight -> {
+                            isRight -> {
                                 if (index == tabs.size - 1) true else false
                             }
-                            Key.DirectionUp -> {
+                            isUp -> {
                                 true // Contain focus, don't escape off-screen
                             }
-                            Key.DirectionDown -> {
+                            isDown -> {
                                 val moved = downFocusRequester?.safeRequestFocus() ?: false
                                 if (!moved) {
                                     focusManager.moveFocus(FocusDirection.Down)
                                 }
                                 true
                             }
-                            Key.Escape -> {
+                            isBack -> {
                                 if (backDispatcher != null) {
                                     backDispatcher.onBackPressed()
                                     true
@@ -186,7 +193,10 @@ fun TvTopBar(
                         indication = null,
                         onClick = {
                             if (isSelected) {
-                                selectedTabFocusRequester?.safeRequestFocus()
+                                val moved = downFocusRequester?.safeRequestFocus() ?: false
+                                if (!moved) {
+                                    selectedTabFocusRequester?.safeRequestFocus()
+                                }
                             } else {
                                 onTabSelected(tab)
                             }

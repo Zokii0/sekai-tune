@@ -461,12 +461,29 @@ fun TvNowPlayingScreen(
         }
 
     // Focus requesters for Modes 1 & 2 (Split / Full Art)
-    val albumArtFocusRequester = remember { FocusRequester() }
+    val defaultAlbumArtFocusRequester = remember { FocusRequester() }
+    val defaultFullLyricsLikeFocusRequester = remember { FocusRequester() }
+
+    val albumArtFocusRequester = remember(firstFocusRequester, viewMode) {
+        if (viewMode != TvNowPlayingViewMode.FULL_LYRICS && firstFocusRequester != null) {
+            firstFocusRequester
+        } else {
+            defaultAlbumArtFocusRequester
+        }
+    }
+
+    val fullLyricsLikeFocusRequester = remember(firstFocusRequester, viewMode) {
+        if (viewMode == TvNowPlayingViewMode.FULL_LYRICS && firstFocusRequester != null) {
+            firstFocusRequester
+        } else {
+            defaultFullLyricsLikeFocusRequester
+        }
+    }
+
     val likeFocusRequester = remember { FocusRequester() }
     val viewModeFocusRequester = remember { FocusRequester() }
 
     // Focus requesters for Mode 3 (Full Lyrics)
-    val fullLyricsLikeFocusRequester = remember { FocusRequester() }
     val fullLyricsViewModeFocusRequester = remember { FocusRequester() }
 
     val albumArtInteractionSource = remember { MutableInteractionSource() }
@@ -498,26 +515,7 @@ fun TvNowPlayingScreen(
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .then(
-                if (firstFocusRequester != null) {
-                    Modifier
-                        .focusRequester(firstFocusRequester)
-                        .focusProperties {
-                            enter = {
-                                if (viewMode == TvNowPlayingViewMode.FULL_LYRICS) {
-                                    fullLyricsLikeFocusRequester
-                                } else {
-                                    albumArtFocusRequester
-                                }
-                            }
-                        }
-                        .focusable()
-                } else {
-                    Modifier
-                },
-            ),
+        modifier = modifier.fillMaxSize(),
     ) {
         AmbientGlowBackground(mediaMetadata = mediaMetadata, modifier = Modifier.fillMaxSize())
 
