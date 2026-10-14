@@ -46,6 +46,8 @@ import moe.rgsekai.sekaitune.playback.PlayerConnection
 import moe.rgsekai.sekaitune.ui.screens.LOGIN_ROUTE
 import moe.rgsekai.sekaitune.ui.screens.Screens
 import moe.rgsekai.sekaitune.ui.screens.navigationBuilder
+import moe.rgsekai.sekaitune.ui.screens.search.OnlineSearchResultArgument
+import moe.rgsekai.sekaitune.ui.screens.search.OnlineSearchResultRoute
 import moe.rgsekai.sekaitune.ui.screens.search.OnlineSearchResultRoutePrefix
 import moe.rgsekai.sekaitune.ui.tv.components.TvTab
 import moe.rgsekai.sekaitune.ui.tv.components.TvTopBar
@@ -58,6 +60,7 @@ import moe.rgsekai.sekaitune.ui.tv.screens.TvLibraryScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvNowPlayingScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlineSearchResultScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSearchScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsCategory
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsScreen
@@ -234,6 +237,22 @@ fun TvRoot(
                 // TV-optimized Search screen (search field only)
                 composable(Screens.Search.route) {
                     TvSearchScreen(
+                        navController = navController,
+                        firstFocusRequester = contentFocusRequester,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Search Results screen (songs only, no chips, no section header, no dead space)
+                composable(
+                    route = OnlineSearchResultRoute,
+                    arguments = listOf(
+                        navArgument(OnlineSearchResultArgument) {
+                            type = NavType.StringType
+                        },
+                    ),
+                ) {
+                    TvOnlineSearchResultScreen(
                         navController = navController,
                         firstFocusRequester = contentFocusRequester,
                         upFocusRequester = topBarFocusRequester,
