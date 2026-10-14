@@ -46,6 +46,7 @@ import moe.rgsekai.sekaitune.playback.PlayerConnection
 import moe.rgsekai.sekaitune.ui.screens.LOGIN_ROUTE
 import moe.rgsekai.sekaitune.ui.screens.Screens
 import moe.rgsekai.sekaitune.ui.screens.navigationBuilder
+import moe.rgsekai.sekaitune.ui.screens.search.OnlineSearchResultRoutePrefix
 import moe.rgsekai.sekaitune.ui.tv.components.TvTab
 import moe.rgsekai.sekaitune.ui.tv.components.TvTopBar
 import moe.rgsekai.sekaitune.ui.tv.screens.TvAlbumScreen
@@ -57,6 +58,7 @@ import moe.rgsekai.sekaitune.ui.tv.screens.TvLibraryScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvNowPlayingScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvSearchScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsCategory
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSpotifyPlaylistScreen
@@ -97,7 +99,7 @@ fun TvRoot(
         currentRoute == Screens.NewRelease.route || currentRoute == Screens.MoodAndGenres.route -> TvTab.EXPLORE
         currentRoute == Screens.Library.route -> TvTab.LIBRARY
         currentRoute == "ambient_mode" -> TvTab.NOW_PLAYING
-        currentRoute == Screens.Search.route || currentRoute.startsWith("online_search") -> TvTab.SEARCH
+        currentRoute == Screens.Search.route || currentRoute.startsWith(OnlineSearchResultRoutePrefix) || currentRoute.startsWith("online_search") -> TvTab.SEARCH
         currentRoute == LOGIN_ROUTE || currentRoute == "account" || currentRoute == "settings/account" -> TvTab.PROFILE
         currentRoute == "settings" || currentRoute.startsWith("settings/") -> TvTab.SETTINGS
         else -> null
@@ -223,6 +225,15 @@ fun TvRoot(
                 // TV-optimized Now Playing screen
                 composable("ambient_mode") {
                     TvNowPlayingScreen(
+                        navController = navController,
+                        firstFocusRequester = contentFocusRequester,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Search screen (search field only)
+                composable(Screens.Search.route) {
+                    TvSearchScreen(
                         navController = navController,
                         firstFocusRequester = contentFocusRequester,
                         upFocusRequester = topBarFocusRequester,

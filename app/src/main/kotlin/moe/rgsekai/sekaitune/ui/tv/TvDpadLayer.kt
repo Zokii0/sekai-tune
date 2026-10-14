@@ -236,13 +236,6 @@ fun TvDpadLayer(
     ) {
         Box(
             modifier = modifier
-                .then(
-                    if (contentFocusRequester != null) {
-                        Modifier.focusRequester(contentFocusRequester)
-                    } else {
-                        Modifier
-                    },
-                )
                 .onFocusChanged { focusState ->
                     isContentFocused = focusState.hasFocus
                 }

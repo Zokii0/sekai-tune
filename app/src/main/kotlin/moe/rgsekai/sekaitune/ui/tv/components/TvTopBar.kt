@@ -156,11 +156,10 @@ fun TvTopBar(
                             }
                             Key.DirectionDown -> {
                                 val moved = downFocusRequester?.safeRequestFocus() ?: false
-                                if (moved) {
-                                    true
-                                } else {
+                                if (!moved) {
                                     focusManager.moveFocus(FocusDirection.Down)
                                 }
+                                true
                             }
                             Key.Escape -> {
                                 if (backDispatcher != null) {
