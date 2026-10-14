@@ -55,6 +55,7 @@ import moe.rgsekai.sekaitune.ui.tv.screens.TvExploreScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvHomeScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLibraryScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvLocalPlaylistScreen
+import moe.rgsekai.sekaitune.ui.tv.screens.TvNowPlayingScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvOnlinePlaylistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsCategory
 import moe.rgsekai.sekaitune.ui.tv.screens.TvSettingsScreen
@@ -215,6 +216,15 @@ fun TvRoot(
                     TvLibraryScreen(
                         navController = navController,
                         firstShelfFocusRequester = contentFocusRequester,
+                        upFocusRequester = topBarFocusRequester,
+                    )
+                }
+
+                // TV-optimized Now Playing screen
+                composable("ambient_mode") {
+                    TvNowPlayingScreen(
+                        navController = navController,
+                        firstFocusRequester = contentFocusRequester,
                         upFocusRequester = topBarFocusRequester,
                     )
                 }
