@@ -23,6 +23,7 @@ import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.db.entities.Song
 import moe.rgsekai.sekaitune.extensions.toMediaItem
 import moe.rgsekai.sekaitune.playback.queues.LocalAlbumRadio
+import moe.rgsekai.sekaitune.ui.tv.TV_HOME_ROUTE
 import moe.rgsekai.sekaitune.ui.tv.components.TvDetailLayout
 import moe.rgsekai.sekaitune.ui.tv.components.TvSongItem
 import moe.rgsekai.sekaitune.ui.tv.components.TvSongMenu
@@ -111,7 +112,14 @@ fun TvAlbumScreen(
         playEnabled = albumWithSongs?.songs?.isNotEmpty() == true,
         shuffleEnabled = albumWithSongs?.songs?.isNotEmpty() == true,
         upFocusRequester = upFocusRequester,
-        onBack = { navController.navigateUp() },
+        onBack = {
+            if (!navController.popBackStack()) {
+                navController.navigate(TV_HOME_ROUTE) {
+                    popUpTo(TV_HOME_ROUTE) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        },
         modifier = modifier,
     )
 

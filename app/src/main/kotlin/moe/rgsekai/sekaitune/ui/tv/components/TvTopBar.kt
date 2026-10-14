@@ -7,6 +7,7 @@
 
 package moe.rgsekai.sekaitune.ui.tv.components
 
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -32,9 +33,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -69,6 +72,7 @@ enum class TvTab(
  * Focused item renders as a filled high-contrast pill.
  * Down D-pad moves into content; Up D-pad from content returns to the top bar.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TvTopBar(
     selectedTab: TvTab,
@@ -80,11 +84,7 @@ fun TvTopBar(
 ) {
     val tabs = remember { TvTab.values() }
     val focusManager = LocalFocusManager.current
-
-    // Request focus on the active tab whenever selectedTab changes
-    LaunchedEffect(selectedTab) {
-        selectedTabFocusRequester?.safeRequestFocus()
-    }
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     Surface(
         color = Color.Transparent,
@@ -93,6 +93,15 @@ fun TvTopBar(
             .padding(horizontal = 32.dp, vertical = 16.dp),
     ) {
         Row(
+            modifier = Modifier.then(
+                if (selectedTabFocusRequester != null) {
+                    Modifier.focusProperties {
+                        enter = { selectedTabFocusRequester }
+                    }
+                } else {
+                    Modifier
+                },
+            ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -153,13 +162,12 @@ fun TvTopBar(
                                     focusManager.moveFocus(FocusDirection.Down)
                                 }
                             }
-                            Key.Back, Key.Escape -> {
-                                val moved = downFocusRequester?.safeRequestFocus() ?: false
-                                if (moved) {
+                            Key.Escape -> {
+                                if (backDispatcher != null) {
+                                    backDispatcher.onBackPressed()
                                     true
                                 } else {
-                                    val movedDown = focusManager.moveFocus(FocusDirection.Down)
-                                    if (!movedDown) focusManager.moveFocus(FocusDirection.Next) else true
+                                    false
                                 }
                             }
                             else -> false

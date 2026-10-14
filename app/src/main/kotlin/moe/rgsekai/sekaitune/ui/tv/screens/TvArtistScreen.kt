@@ -8,6 +8,7 @@
 package moe.rgsekai.sekaitune.ui.tv.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -78,6 +79,7 @@ import coil3.request.crossfade
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.rgsekai.sekaitune.R
+import moe.rgsekai.sekaitune.ui.tv.TV_HOME_ROUTE
 import moe.rgsekai.sekaitune.extensions.toMediaItem
 import moe.rgsekai.sekaitune.innertube.models.AlbumItem
 import moe.rgsekai.sekaitune.innertube.models.ArtistItem
@@ -126,9 +128,16 @@ fun TvArtistScreen(
 
     var lastFocusedActionRequester by remember { mutableStateOf(playButtonFocusRequester) }
 
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
     // Intercept hardware and remote Back key
     BackHandler {
-        navController.navigateUp()
+        if (!navController.popBackStack()) {
+            navController.navigate(TV_HOME_ROUTE) {
+                popUpTo(TV_HOME_ROUTE) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
     }
 
     // Collect data from existing ArtistViewModel
@@ -284,8 +293,15 @@ fun TvArtistScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .onPreviewKeyEvent { keyEvent ->
-                if (keyEvent.type == KeyEventType.KeyDown && (keyEvent.key == Key.Back || keyEvent.key == Key.Escape)) {
-                    navController.navigateUp()
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Escape) {
+                    if (backDispatcher != null) {
+                        backDispatcher.onBackPressed()
+                    } else if (!navController.popBackStack()) {
+                        navController.navigate(TV_HOME_ROUTE) {
+                            popUpTo(TV_HOME_ROUTE) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                     true
                 } else {
                     false

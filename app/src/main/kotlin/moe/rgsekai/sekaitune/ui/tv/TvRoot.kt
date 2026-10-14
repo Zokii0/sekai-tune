@@ -21,7 +21,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -85,7 +88,9 @@ fun TvRoot(
         topBarFocusRequester.safeRequestFocus()
     }
 
-    val selectedTab = when {
+    var lastTopTab by rememberSaveable { mutableStateOf(TvTab.HOME) }
+
+    val topTabForCurrentRoute = when {
         currentRoute == TV_HOME_ROUTE || currentRoute == Screens.Home.route -> TvTab.HOME
         currentRoute == Screens.NewRelease.route || currentRoute == Screens.MoodAndGenres.route -> TvTab.EXPLORE
         currentRoute == Screens.Library.route -> TvTab.LIBRARY
@@ -93,8 +98,16 @@ fun TvRoot(
         currentRoute == Screens.Search.route || currentRoute.startsWith("online_search") -> TvTab.SEARCH
         currentRoute == LOGIN_ROUTE || currentRoute == "account" || currentRoute == "settings/account" -> TvTab.PROFILE
         currentRoute == "settings" || currentRoute.startsWith("settings/") -> TvTab.SETTINGS
-        else -> TvTab.HOME
+        else -> null
     }
+
+    LaunchedEffect(topTabForCurrentRoute) {
+        if (topTabForCurrentRoute != null) {
+            lastTopTab = topTabForCurrentRoute
+        }
+    }
+
+    val selectedTab = topTabForCurrentRoute ?: lastTopTab
 
     Column(
         modifier = modifier

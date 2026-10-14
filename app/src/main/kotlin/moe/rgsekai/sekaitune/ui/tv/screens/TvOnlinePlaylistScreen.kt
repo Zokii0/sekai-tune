@@ -25,6 +25,7 @@ import moe.rgsekai.sekaitune.innertube.models.SongItem
 import moe.rgsekai.sekaitune.innertube.models.WatchEndpoint
 import moe.rgsekai.sekaitune.models.toMediaMetadata
 import moe.rgsekai.sekaitune.playback.queues.YouTubeQueue
+import moe.rgsekai.sekaitune.ui.tv.TV_HOME_ROUTE
 import moe.rgsekai.sekaitune.ui.tv.components.TvDetailLayout
 import moe.rgsekai.sekaitune.ui.tv.components.TvSongItem
 import moe.rgsekai.sekaitune.ui.tv.components.TvSongMenu
@@ -130,7 +131,14 @@ fun TvOnlinePlaylistScreen(
         playEnabled = playlist?.playEndpoint != null || playlistSongs.isNotEmpty(),
         shuffleEnabled = playlist?.shuffleEndpoint != null || playlistSongs.isNotEmpty(),
         upFocusRequester = upFocusRequester,
-        onBack = { navController.navigateUp() },
+        onBack = {
+            if (!navController.popBackStack()) {
+                navController.navigate(TV_HOME_ROUTE) {
+                    popUpTo(TV_HOME_ROUTE) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        },
         modifier = modifier,
     )
 

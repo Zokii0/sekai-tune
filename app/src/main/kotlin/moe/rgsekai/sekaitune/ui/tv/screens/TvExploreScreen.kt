@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.tv.components.TvShelfItem
 import moe.rgsekai.sekaitune.ui.tv.components.TvShelfRow
+import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.viewmodels.NewReleaseUiState
 import moe.rgsekai.sekaitune.viewmodels.NewReleaseViewModel
 
@@ -63,6 +66,18 @@ fun TvExploreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+
+    LaunchedEffect(Unit) {
+        delay(60)
+        firstShelfFocusRequester?.safeRequestFocus()
+    }
+
+    LaunchedEffect(uiState) {
+        if (uiState is NewReleaseUiState.Success) {
+            delay(50)
+            firstShelfFocusRequester?.safeRequestFocus()
+        }
+    }
 
     when (val state = uiState) {
         NewReleaseUiState.Loading -> {

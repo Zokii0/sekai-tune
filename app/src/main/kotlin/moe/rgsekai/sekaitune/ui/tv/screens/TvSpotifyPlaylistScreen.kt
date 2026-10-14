@@ -29,6 +29,7 @@ import moe.rgsekai.sekaitune.spotify.SpotifyPlaybackResolver
 import moe.rgsekai.sekaitune.spotify.SpotifyPlaylistQueue
 import moe.rgsekai.sekaitune.spotify.SpotifyPlaylistViewModel
 import moe.rgsekai.sekaitune.spotify.models.SpotifyTrack
+import moe.rgsekai.sekaitune.ui.tv.TV_HOME_ROUTE
 import moe.rgsekai.sekaitune.ui.tv.components.TvDetailLayout
 import moe.rgsekai.sekaitune.ui.tv.components.TvSongItem
 import moe.rgsekai.sekaitune.ui.tv.components.TvSongMenu
@@ -137,7 +138,14 @@ fun TvSpotifyPlaylistScreen(
         playEnabled = tracks.isNotEmpty(),
         shuffleEnabled = tracks.isNotEmpty(),
         upFocusRequester = upFocusRequester,
-        onBack = { navController.navigateUp() },
+        onBack = {
+            if (!navController.popBackStack()) {
+                navController.navigate(TV_HOME_ROUTE) {
+                    popUpTo(TV_HOME_ROUTE) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        },
         modifier = modifier,
     )
 

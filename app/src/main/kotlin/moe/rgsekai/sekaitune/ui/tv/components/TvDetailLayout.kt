@@ -8,6 +8,7 @@
 package moe.rgsekai.sekaitune.ui.tv.components
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -130,6 +131,7 @@ fun TvDetailLayout(
 
     var lastFocusedActionRequester by remember { mutableStateOf(playButtonFocusRequester) }
     var lastFocusedSongRequester by remember { mutableStateOf<FocusRequester?>(null) }
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     // Intercept hardware and remote Back key
     BackHandler {
@@ -149,8 +151,12 @@ fun TvDetailLayout(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .onPreviewKeyEvent { keyEvent ->
-                if (keyEvent.type == KeyEventType.KeyDown && (keyEvent.key == Key.Back || keyEvent.key == Key.Escape)) {
-                    onBack()
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Escape) {
+                    if (backDispatcher != null) {
+                        backDispatcher.onBackPressed()
+                    } else {
+                        onBack()
+                    }
                     true
                 } else {
                     false
