@@ -9,11 +9,15 @@ package moe.rgsekai.sekaitune.ui.tv.screens
 
 import android.graphics.Bitmap
 import android.view.KeyEvent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -34,8 +38,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -48,16 +54,19 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -66,7 +75,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import timber.log.Timber
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -123,14 +132,126 @@ import moe.rgsekai.sekaitune.ui.utils.highRes
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
+import timber.log.Timber
 
 /**
- * TV-optimized Now Playing screen with D-pad navigation:
- * - Down from TopBar focuses album art
- * - Enter / OK toggles Play / Pause
- * - Left changes to previous song
- * - Right changes to next song
- * - Up returns focus to TV TopBar
+ * TV Now Playing screen view modes:
+ * - SPLIT: Default view (Album Art + Controls on left, Synchronized Lyrics on right)
+ * - FULL_ART: Centered enlarged Album Art (1:1 aspect ratio), lyrics smoothly hidden, controls below
+ * - FULL_LYRICS: Full-screen Synchronized Lyrics, album art hidden, controls below remain visible
+ */
+enum class TvNowPlayingViewMode {
+    SPLIT,
+    FULL_ART,
+    FULL_LYRICS,
+}
+
+/**
+ * Reusable TV Action Button with focus outline, scale spring animation, and D-pad key navigation.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun TvActionButton(
+    iconRes: Int,
+    contentDescription: String,
+    onClick: () -> Unit,
+    focusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
+    isLikedState: Boolean? = null,
+    focusPropertiesBuilder: FocusProperties.() -> Unit = {},
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isFocused) 1.18f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.75f,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "tvBtnScale",
+    )
+
+    val activePrimary = MaterialTheme.colorScheme.primary
+    val backgroundColor by animateColorAsState(
+        targetValue = when {
+            isFocused -> activePrimary
+            isLikedState == true -> Color(0xFFE91E63).copy(alpha = 0.25f)
+            else -> Color.White.copy(alpha = 0.12f)
+        },
+        animationSpec = tween(150),
+        label = "tvBtnBg",
+    )
+
+    val iconTint by animateColorAsState(
+        targetValue = when {
+            isFocused -> Color.Black
+            isLikedState == true -> Color(0xFFFF4081)
+            else -> Color.White.copy(alpha = 0.88f)
+        },
+        animationSpec = tween(150),
+        label = "tvBtnTint",
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            isFocused -> Color.White.copy(alpha = 0.95f)
+            isLikedState == true -> Color(0xFFFF4081).copy(alpha = 0.6f)
+            else -> Color.Transparent
+        },
+        animationSpec = tween(150),
+        label = "tvBtnBorder",
+    )
+
+    Box(
+        modifier = modifier
+            .size(46.dp)
+            .scale(scale)
+            .focusRequester(focusRequester)
+            .focusProperties(focusPropertiesBuilder)
+            .focusable(interactionSource = interactionSource)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .border(2.dp, borderColor, CircleShape)
+            .pointerInput(Unit) {
+                detectTapGestures { onClick() }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type != KeyEventType.KeyDown && keyEvent.type != KeyEventType.KeyUp) return@onPreviewKeyEvent false
+                val keyCode = keyEvent.nativeKeyEvent.keyCode
+                val isEnter = keyEvent.key == Key.DirectionCenter ||
+                    keyEvent.key == Key.Enter ||
+                    keyEvent.key == Key.NumPadEnter ||
+                    keyEvent.key == Key.Spacebar ||
+                    keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                    keyCode == KeyEvent.KEYCODE_ENTER ||
+                    keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+                    keyCode == KeyEvent.KEYCODE_SPACE
+
+                if (isEnter) {
+                    if (keyEvent.type == KeyEventType.KeyDown) {
+                        onClick()
+                    }
+                    return@onPreviewKeyEvent true
+                }
+                false
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = contentDescription,
+            tint = iconTint,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+/**
+ * TV-optimized Now Playing screen with D-pad navigation, like button, and 3-mode view changer:
+ * 1. Default (Split): Album Art left, Lyrics right
+ * 2. Full Art: Enlarged 1:1 Album Art centered, lyrics hidden
+ * 3. Full Lyrics: Synchronized Lyrics taking main area, album art hidden, controls below remain visible
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -160,6 +281,8 @@ fun TvNowPlayingScreen(
 
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val isPlaying by playerConnection.isPlaying.collectAsState()
+    val currentSong by playerConnection.currentSong.collectAsState(initial = null)
+    val isLiked = currentSong?.song?.liked == true
 
     if (mediaMetadata == null) {
         Box(
@@ -174,6 +297,8 @@ fun TvNowPlayingScreen(
         }
         return
     }
+
+    var viewMode by rememberSaveable { mutableStateOf(TvNowPlayingViewMode.SPLIT) }
 
     val artScale by rememberPreference(AmbientArtScaleKey, 0.85f)
     val ambientCanvasEnabled by rememberPreference(AmbientCanvasEnabledKey, true)
@@ -335,7 +460,15 @@ fun TvNowPlayingScreen(
             }
         }
 
-    val albumArtFocusRequester = firstFocusRequester ?: remember { FocusRequester() }
+    // Focus requesters for Modes 1 & 2 (Split / Full Art)
+    val albumArtFocusRequester = remember { FocusRequester() }
+    val likeFocusRequester = remember { FocusRequester() }
+    val viewModeFocusRequester = remember { FocusRequester() }
+
+    // Focus requesters for Mode 3 (Full Lyrics)
+    val fullLyricsLikeFocusRequester = remember { FocusRequester() }
+    val fullLyricsViewModeFocusRequester = remember { FocusRequester() }
+
     val albumArtInteractionSource = remember { MutableInteractionSource() }
     val isAlbumArtFocused by albumArtInteractionSource.collectIsFocusedAsState()
 
@@ -355,187 +488,121 @@ fun TvNowPlayingScreen(
         label = "tvAlbumArtBorder",
     )
 
+    // Smoothly maintain focus on viewMode change
+    LaunchedEffect(viewMode) {
+        if (viewMode == TvNowPlayingViewMode.FULL_LYRICS) {
+            fullLyricsViewModeFocusRequester.safeRequestFocus()
+        } else {
+            viewModeFocusRequester.safeRequestFocus()
+        }
+    }
+
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .then(
+                if (firstFocusRequester != null) {
+                    Modifier
+                        .focusRequester(firstFocusRequester)
+                        .focusProperties {
+                            enter = {
+                                if (viewMode == TvNowPlayingViewMode.FULL_LYRICS) {
+                                    fullLyricsLikeFocusRequester
+                                } else {
+                                    albumArtFocusRequester
+                                }
+                            }
+                        }
+                        .focusable()
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         AmbientGlowBackground(mediaMetadata = mediaMetadata, modifier = Modifier.fillMaxSize())
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Left Column: Album Art (focusable), Song Info & Progress Bar
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                contentAlignment = Alignment.Center,
-            ) {
+        AnimatedContent(
+            targetState = viewMode == TvNowPlayingViewMode.FULL_LYRICS,
+            transitionSpec = {
+                fadeIn(tween(250)) togetherWith fadeOut(tween(250))
+            },
+            label = "tvNowPlayingMainLayout",
+        ) { isFullLyrics ->
+            if (isFullLyrics) {
+                // Mode 3: Full Synchronized Lyrics taking top/main screen, controls below remain visible
                 Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(start = 48.dp, end = 48.dp, top = 4.dp, bottom = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxHeight(),
                 ) {
-                    // Album Art Container with TV D-pad focus & controls
+                    // Synchronized Lyrics taking main area
                     Box(
                         modifier = Modifier
-                            .weight(1f, fill = false)
-                            .fillMaxHeight(artScale.coerceIn(0.4f, 0.95f))
-                            .aspectRatio(1f)
-                            .scale(albumArtScale)
-                            .focusRequester(albumArtFocusRequester)
+                            .weight(1f)
+                            .fillMaxWidth()
                             .focusProperties {
-                                left = FocusRequester.Cancel
-                                right = FocusRequester.Cancel
-                                down = FocusRequester.Cancel
-                                if (upFocusRequester != null) {
-                                    up = upFocusRequester
-                                }
-                            }
-                            .focusable(interactionSource = albumArtInteractionSource)
-                            .clip(RoundedCornerShape(22.dp))
-                            .border(
-                                width = 3.dp,
-                                color = animatedBorderColor,
-                                shape = RoundedCornerShape(22.dp),
-                            )
-                            .pointerInput(Unit) {
-                                detectTapGestures {
-                                    playerConnection.player.togglePlayPause()
-                                }
-                            }
-                            .onPreviewKeyEvent { keyEvent ->
-                                val keyCode = keyEvent.nativeKeyEvent.keyCode
-                                val isEnterKey = keyEvent.key == Key.DirectionCenter ||
-                                    keyEvent.key == Key.Enter ||
-                                    keyEvent.key == Key.NumPadEnter ||
-                                    keyEvent.key == Key.Spacebar ||
-                                    keyEvent.key == Key.MediaPlayPause ||
-                                    keyEvent.key == Key.MediaPlay ||
-                                    keyEvent.key == Key.MediaPause ||
-                                    keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
-                                    keyCode == KeyEvent.KEYCODE_ENTER ||
-                                    keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
-                                    keyCode == KeyEvent.KEYCODE_BUTTON_A ||
-                                    keyCode == KeyEvent.KEYCODE_SPACE ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_PLAY ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE
-
-                                val isLeftKey = keyEvent.key == Key.DirectionLeft ||
-                                    keyEvent.key == Key.MediaPrevious ||
-                                    keyEvent.key == Key.MediaRewind ||
-                                    keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_REWIND
-
-                                val isRightKey = keyEvent.key == Key.DirectionRight ||
-                                    keyEvent.key == Key.MediaNext ||
-                                    keyEvent.key == Key.MediaFastForward ||
-                                    keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
-                                    keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
-
-                                val isUpKey = keyEvent.key == Key.DirectionUp || keyCode == KeyEvent.KEYCODE_DPAD_UP
-                                val isDownKey = keyEvent.key == Key.DirectionDown || keyCode == KeyEvent.KEYCODE_DPAD_DOWN
-
-                                if (isEnterKey) {
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        Timber.d("TvNowPlaying: Play/Pause toggled via Enter/OK")
-                                        playerConnection.player.togglePlayPause()
-                                    }
-                                    return@onPreviewKeyEvent true
-                                }
-
-                                if (isLeftKey) {
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        Timber.d("TvNowPlaying: seekToPrevious via Left")
-                                        playerConnection.seekToPrevious()
-                                    }
-                                    return@onPreviewKeyEvent true
-                                }
-
-                                if (isRightKey) {
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        Timber.d("TvNowPlaying: seekToNext via Right")
-                                        playerConnection.seekToNext()
-                                    }
-                                    return@onPreviewKeyEvent true
-                                }
-
-                                if (isUpKey) {
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        Timber.d("TvNowPlaying: Move focus up to TopBar")
-                                        upFocusRequester?.safeRequestFocus()
-                                    }
-                                    return@onPreviewKeyEvent true
-                                }
-
-                                if (isDownKey) {
-                                    return@onPreviewKeyEvent true
-                                }
-
-                                false
+                                canFocus = false
+                                enter = { FocusRequester.Cancel }
                             },
                         contentAlignment = Alignment.Center,
                     ) {
-                        AsyncImage(
-                            model = rememberOfflineArtworkImageRequest(displayUrl),
-                            contentDescription = "Album Art",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-
-                        if (canvasRenderMode !is CanvasRenderMode.None) {
-                            CanvasArtworkPlayer(
-                                renderMode = canvasRenderMode,
-                                isPlaying = isPlaying,
-                                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
-                                modifier = Modifier.fillMaxSize(),
-                            )
+                        when (lyricsMode) {
+                            LyricsMode.V2 -> {
+                                LyricsV2(
+                                    sliderPositionProvider = { sliderPosition },
+                                    lyricsSyncOffset = 0,
+                                    textColorOverride = Color.White,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                            LyricsMode.ENHANCED -> {
+                                LyricsEnhanced(
+                                    sliderPositionProvider = { sliderPosition },
+                                    lyricsSyncOffset = 0,
+                                    textColorOverride = Color.White,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // Song Info (Title & Artist)
-                    if (showTitle || showArtist) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        if (showTitle) {
-                            Text(
-                                text = mediaMetadata?.title.orEmpty(),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.85f)
-                                    .basicMarquee(),
-                            )
-                        }
-                        if (showArtist) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.7f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.85f)
-                                    .basicMarquee(),
-                            )
-                        }
+                    if (showTitle) {
+                        Text(
+                            text = mediaMetadata?.title.orEmpty(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth(0.65f)
+                                .basicMarquee(),
+                        )
+                    }
+                    if (showArtist) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth(0.65f)
+                                .basicMarquee(),
+                        )
                     }
 
-                    // Progress Bar
+                    // Progress Bar shifted below
                     if (showProgressBar) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         val currentPos = (sliderPosition ?: position).coerceIn(0L, maxOf(1L, duration))
                         val safeDuration = maxOf(1L, duration)
 
@@ -562,43 +629,385 @@ fun TvNowPlayingScreen(
                                 )
                             },
                             modifier = Modifier
-                                .fillMaxWidth(0.85f)
+                                .fillMaxWidth(0.65f)
                                 .height(22.dp)
                                 .focusProperties { canFocus = false },
                         )
                     }
-                }
-            }
 
-            // Right Column: Synchronized Lyrics
-            if (showLyrics) {
-                Box(
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Buttons Row: Like Button + View Changer Button
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TvActionButton(
+                            iconRes = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
+                            contentDescription = if (isLiked) "Unlike song" else "Like song",
+                            onClick = { playerConnection.toggleLike() },
+                            focusRequester = fullLyricsLikeFocusRequester,
+                            isLikedState = isLiked,
+                            focusPropertiesBuilder = {
+                                left = FocusRequester.Cancel
+                                right = fullLyricsViewModeFocusRequester
+                                down = FocusRequester.Cancel
+                                if (upFocusRequester != null) {
+                                    up = upFocusRequester
+                                }
+                            },
+                        )
+
+                        TvActionButton(
+                            iconRes = R.drawable.lyrics,
+                            contentDescription = "View mode: Lyrics (click for Split View)",
+                            onClick = {
+                                viewMode = TvNowPlayingViewMode.SPLIT
+                            },
+                            focusRequester = fullLyricsViewModeFocusRequester,
+                            focusPropertiesBuilder = {
+                                left = fullLyricsLikeFocusRequester
+                                right = FocusRequester.Cancel
+                                down = FocusRequester.Cancel
+                                if (upFocusRequester != null) {
+                                    up = upFocusRequester
+                                }
+                            },
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            } else {
+                // Mode 1 (SPLIT) & Mode 2 (FULL_ART)
+                val lyricsWeight by animateFloatAsState(
+                    targetValue = if (viewMode == TvNowPlayingViewMode.SPLIT && showLyrics) 1.2f else 0f,
+                    animationSpec = spring(
+                        dampingRatio = 0.85f,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                    label = "tvLyricsWeight",
+                )
+
+                val animatedArtHeightFraction by animateFloatAsState(
+                    targetValue = if (viewMode == TvNowPlayingViewMode.FULL_ART) 0.98f else 0.92f,
+                    animationSpec = spring(
+                        dampingRatio = 0.8f,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                    label = "tvArtHeightFraction",
+                )
+
+                val controlsMaxWidthFraction by animateFloatAsState(
+                    targetValue = if (viewMode == TvNowPlayingViewMode.FULL_ART) 0.52f else 0.88f,
+                    animationSpec = spring(
+                        dampingRatio = 0.8f,
+                        stiffness = Spring.StiffnessMediumLow,
+                    ),
+                    label = "tvControlsWidthFraction",
+                )
+
+                Row(
                     modifier = Modifier
-                        .weight(1.2f)
-                        .fillMaxHeight()
-                        .padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)
-                        .focusProperties {
-                            canFocus = false
-                            enter = { FocusRequester.Cancel }
-                        },
-                    contentAlignment = Alignment.Center,
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    when (lyricsMode) {
-                        LyricsMode.V2 -> {
-                            LyricsV2(
-                                sliderPositionProvider = { sliderPosition ?: position },
-                                lyricsSyncOffset = 0,
-                                textColorOverride = Color.White,
-                                modifier = Modifier.fillMaxSize(),
-                            )
+                    // Left Column (Split) or Center Column (Full Art)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(bottom = 6.dp),
+                        ) {
+                            // Upper area taking weight(1f) to maximize and center Album Art
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight(animatedArtHeightFraction)
+                                        .aspectRatio(1f)
+                                        .scale(albumArtScale)
+                                        .focusRequester(albumArtFocusRequester)
+                                        .focusProperties {
+                                            left = FocusRequester.Cancel
+                                            right = FocusRequester.Cancel
+                                            down = likeFocusRequester
+                                            if (upFocusRequester != null) {
+                                                up = upFocusRequester
+                                            }
+                                        }
+                                        .focusable(interactionSource = albumArtInteractionSource)
+                                        .clip(RoundedCornerShape(22.dp))
+                                        .border(
+                                            width = 3.dp,
+                                            color = animatedBorderColor,
+                                            shape = RoundedCornerShape(22.dp),
+                                        )
+                                        .pointerInput(Unit) {
+                                            detectTapGestures {
+                                                playerConnection.player.togglePlayPause()
+                                            }
+                                        }
+                                        .onPreviewKeyEvent { keyEvent ->
+                                            val keyCode = keyEvent.nativeKeyEvent.keyCode
+                                            val isEnterKey = keyEvent.key == Key.DirectionCenter ||
+                                                keyEvent.key == Key.Enter ||
+                                                keyEvent.key == Key.NumPadEnter ||
+                                                keyEvent.key == Key.Spacebar ||
+                                                keyEvent.key == Key.MediaPlayPause ||
+                                                keyEvent.key == Key.MediaPlay ||
+                                                keyEvent.key == Key.MediaPause ||
+                                                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                                                keyCode == KeyEvent.KEYCODE_ENTER ||
+                                                keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
+                                                keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+                                                keyCode == KeyEvent.KEYCODE_SPACE ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_PLAY ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE
+
+                                            val isLeftKey = keyEvent.key == Key.DirectionLeft ||
+                                                keyEvent.key == Key.MediaPrevious ||
+                                                keyEvent.key == Key.MediaRewind ||
+                                                keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_REWIND
+
+                                            val isRightKey = keyEvent.key == Key.DirectionRight ||
+                                                keyEvent.key == Key.MediaNext ||
+                                                keyEvent.key == Key.MediaFastForward ||
+                                                keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
+                                                keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+
+                                            val isUpKey = keyEvent.key == Key.DirectionUp || keyCode == KeyEvent.KEYCODE_DPAD_UP
+                                            val isDownKey = keyEvent.key == Key.DirectionDown || keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+
+                                            if (isEnterKey) {
+                                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                                    Timber.d("TvNowPlaying: Play/Pause toggled via Enter/OK")
+                                                    playerConnection.player.togglePlayPause()
+                                                }
+                                                return@onPreviewKeyEvent true
+                                            }
+
+                                            if (isLeftKey) {
+                                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                                    Timber.d("TvNowPlaying: seekToPrevious via Left")
+                                                    playerConnection.seekToPrevious()
+                                                }
+                                                return@onPreviewKeyEvent true
+                                            }
+
+                                            if (isRightKey) {
+                                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                                    Timber.d("TvNowPlaying: seekToNext via Right")
+                                                    playerConnection.seekToNext()
+                                                }
+                                                return@onPreviewKeyEvent true
+                                            }
+
+                                            if (isUpKey) {
+                                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                                    Timber.d("TvNowPlaying: Move focus up to TopBar")
+                                                    upFocusRequester?.safeRequestFocus()
+                                                }
+                                                return@onPreviewKeyEvent true
+                                            }
+
+                                            if (isDownKey) {
+                                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                                    likeFocusRequester.safeRequestFocus()
+                                                }
+                                                return@onPreviewKeyEvent true
+                                            }
+
+                                            false
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    AsyncImage(
+                                        model = rememberOfflineArtworkImageRequest(displayUrl),
+                                        contentDescription = "Album Art",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+
+                                    if (canvasRenderMode !is CanvasRenderMode.None) {
+                                        CanvasArtworkPlayer(
+                                            renderMode = canvasRenderMode,
+                                            isPlaying = isPlaying,
+                                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Song Info (Title & Artist)
+                            if (showTitle || showArtist) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                if (showTitle) {
+                                    Text(
+                                        text = mediaMetadata?.title.orEmpty(),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier
+                                            .fillMaxWidth(controlsMaxWidthFraction)
+                                            .basicMarquee(),
+                                    )
+                                }
+                                if (showArtist) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier
+                                            .fillMaxWidth(controlsMaxWidthFraction)
+                                            .basicMarquee(),
+                                    )
+                                }
+                            }
+
+                            // Progress Bar shifted below
+                            if (showProgressBar) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                val currentPos = (sliderPosition ?: position).coerceIn(0L, maxOf(1L, duration))
+                                val safeDuration = maxOf(1L, duration)
+
+                                Slider(
+                                    value = currentPos.toFloat(),
+                                    valueRange = 0f..safeDuration.toFloat(),
+                                    onValueChange = { sliderPosition = it.toLong() },
+                                    onValueChangeFinished = {
+                                        sliderPosition?.let { targetPos ->
+                                            playerConnection.player.seekTo(targetPos)
+                                        }
+                                        sliderPosition = null
+                                    },
+                                    thumb = { Spacer(modifier = Modifier.size(0.dp)) },
+                                    track = { sliderState ->
+                                        PlayerSliderTrack(
+                                            sliderState = sliderState,
+                                            colors =
+                                                SliderDefaults.colors(
+                                                    activeTrackColor = Color.White,
+                                                    inactiveTrackColor = Color.White.copy(alpha = 0.28f),
+                                                ),
+                                            trackHeight = 3.5.dp,
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth(controlsMaxWidthFraction)
+                                        .height(22.dp)
+                                        .focusProperties { canFocus = false },
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Buttons Row: Like Button + View Changer Button
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                TvActionButton(
+                                    iconRes = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
+                                    contentDescription = if (isLiked) "Unlike song" else "Like song",
+                                    onClick = { playerConnection.toggleLike() },
+                                    focusRequester = likeFocusRequester,
+                                    isLikedState = isLiked,
+                                    focusPropertiesBuilder = {
+                                        left = FocusRequester.Cancel
+                                        right = viewModeFocusRequester
+                                        down = FocusRequester.Cancel
+                                        up = albumArtFocusRequester
+                                    },
+                                )
+
+                                TvActionButton(
+                                    iconRes = when (viewMode) {
+                                        TvNowPlayingViewMode.SPLIT -> R.drawable.grid_view
+                                        TvNowPlayingViewMode.FULL_ART -> R.drawable.album
+                                        TvNowPlayingViewMode.FULL_LYRICS -> R.drawable.lyrics
+                                    },
+                                    contentDescription = when (viewMode) {
+                                        TvNowPlayingViewMode.SPLIT -> "View mode: Split (click for Album Art)"
+                                        TvNowPlayingViewMode.FULL_ART -> "View mode: Album Art (click for Lyrics)"
+                                        TvNowPlayingViewMode.FULL_LYRICS -> "View mode: Lyrics (click for Split)"
+                                    },
+                                    onClick = {
+                                        viewMode = when (viewMode) {
+                                            TvNowPlayingViewMode.SPLIT -> TvNowPlayingViewMode.FULL_ART
+                                            TvNowPlayingViewMode.FULL_ART -> TvNowPlayingViewMode.FULL_LYRICS
+                                            TvNowPlayingViewMode.FULL_LYRICS -> TvNowPlayingViewMode.SPLIT
+                                        }
+                                    },
+                                    focusRequester = viewModeFocusRequester,
+                                    focusPropertiesBuilder = {
+                                        left = likeFocusRequester
+                                        right = FocusRequester.Cancel
+                                        down = FocusRequester.Cancel
+                                        up = albumArtFocusRequester
+                                    },
+                                )
+                            }
                         }
-                        LyricsMode.ENHANCED -> {
-                            LyricsEnhanced(
-                                sliderPositionProvider = { sliderPosition ?: position },
-                                lyricsSyncOffset = 0,
-                                textColorOverride = Color.White,
-                                modifier = Modifier.fillMaxSize(),
-                            )
+                    }
+
+                    // Right Column: Synchronized Lyrics in SPLIT mode
+                    if (lyricsWeight > 0.01f) {
+                        Box(
+                            modifier = Modifier
+                                .weight(lyricsWeight)
+                                .fillMaxHeight()
+                                .padding(start = 16.dp, end = 24.dp, top = 4.dp, bottom = 10.dp)
+                                .graphicsLayer { alpha = (lyricsWeight / 1.2f).coerceIn(0f, 1f) }
+                                .focusProperties {
+                                    canFocus = false
+                                    enter = { FocusRequester.Cancel }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            when (lyricsMode) {
+                                LyricsMode.V2 -> {
+                                    LyricsV2(
+                                        sliderPositionProvider = { sliderPosition },
+                                        lyricsSyncOffset = 0,
+                                        textColorOverride = Color.White,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                                LyricsMode.ENHANCED -> {
+                                    LyricsEnhanced(
+                                        sliderPositionProvider = { sliderPosition },
+                                        lyricsSyncOffset = 0,
+                                        textColorOverride = Color.White,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
