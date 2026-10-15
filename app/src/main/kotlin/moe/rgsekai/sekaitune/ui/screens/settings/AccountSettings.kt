@@ -228,6 +228,7 @@ fun AccountSettings(
         YouTube.useLoginForBrowse = useLoginForBrowse
     }
 
+    val isTv = LocalIsTv.current
     val viewModel: HomeViewModel = hiltViewModel()
     val accountNameFromViewModel by viewModel.accountName.collectAsStateWithLifecycle()
     val accountImageUrl by viewModel.accountImageUrl.collectAsStateWithLifecycle()
@@ -440,103 +441,105 @@ fun AccountSettings(
                 )
             }
 
-            if (hasUpdate) {
-                item {
-                    UpdateBannerStrip(
-                        latestVersion = latestVersionName,
-                        onClick = { uriHandler.openUri(Updater.getLatestDownloadUrl()) },
-                    )
-                }
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = isLoggedIn,
-                    enter =
-                        fadeIn(spring(stiffness = Spring.StiffnessLow)) +
-                            expandVertically(
-                                spring(stiffness = Spring.StiffnessLow),
-                            ),
-                    exit = fadeOut() + shrinkVertically(),
-                ) {
-                    ExpressiveSectionCard(title = generalLabel) {
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.add_circle),
-                            title = stringResource(R.string.more_content),
-                            subtitle = stringResource(R.string.use_login_for_browse_desc),
-                            checked = useLoginForBrowse,
-                            onCheckedChange = onUseLoginForBrowseChange,
-                        )
-
-                        ExpressiveDivider()
-
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.cached),
-                            title = stringResource(R.string.yt_sync),
-                            checked = ytmSync,
-                            onCheckedChange = onYtmSyncChange,
-                        )
-
-                        ExpressiveDivider()
-
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.sync),
-                            title = stringResource(R.string.force_sync_on_switch_account),
-                            subtitle = stringResource(R.string.force_sync_on_switch_account_desc),
-                            checked = forceSyncOnAccountSwitch,
-                            onCheckedChange = onForceSyncOnAccountSwitchChange,
+            if (!isTv) {
+                if (hasUpdate) {
+                    item {
+                        UpdateBannerStrip(
+                            latestVersion = latestVersionName,
+                            onClick = { uriHandler.openUri(Updater.getLatestDownloadUrl()) },
                         )
                     }
                 }
-            }
 
-            item {
-                ExpressiveSectionCard(title = stringResource(R.string.integrations)) {
-                    ExpressiveActionRow(
-                        icon = painterResource(R.drawable.integration),
-                        title = stringResource(R.string.integrations),
-                        subtitle = if (spotifyState.isAuthenticated && spotifyState.accountName.isNotBlank()) {
-                            stringResource(R.string.spotify_connected_as, spotifyState.accountName)
-                        } else {
-                            stringResource(R.string.integrations_desc)
-                        },
-                        onClick = { navController.navigate("settings/integrations") },
-                    )
+                item {
+                    AnimatedVisibility(
+                        visible = isLoggedIn,
+                        enter =
+                            fadeIn(spring(stiffness = Spring.StiffnessLow)) +
+                                expandVertically(
+                                    spring(stiffness = Spring.StiffnessLow),
+                                ),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
+                        ExpressiveSectionCard(title = generalLabel) {
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.add_circle),
+                                title = stringResource(R.string.more_content),
+                                subtitle = stringResource(R.string.use_login_for_browse_desc),
+                                checked = useLoginForBrowse,
+                                onCheckedChange = onUseLoginForBrowseChange,
+                            )
+
+                            ExpressiveDivider()
+
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.cached),
+                                title = stringResource(R.string.yt_sync),
+                                checked = ytmSync,
+                                onCheckedChange = onYtmSyncChange,
+                            )
+
+                            ExpressiveDivider()
+
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.sync),
+                                title = stringResource(R.string.force_sync_on_switch_account),
+                                subtitle = stringResource(R.string.force_sync_on_switch_account_desc),
+                                checked = forceSyncOnAccountSwitch,
+                                onCheckedChange = onForceSyncOnAccountSwitchChange,
+                            )
+                        }
+                    }
                 }
-            }
 
-            item {
-                ExpressiveSectionCard(title = stringResource(R.string.music_together)) {
-                    ExpressiveActionRow(
-                        icon = painterResource(R.drawable.fire),
-                        title = stringResource(R.string.music_together),
-                        onClick = { navController.navigate("settings/music_together") },
-                    )
-                }
-            }
-
-            item {
-                ExpressiveSectionCard(title = miscLabel) {
-                    ExpressiveActionRow(
-                        icon = painterResource(R.drawable.token),
-                        title = tokenActionTitle,
-                        subtitle = tokenDescription,
-                        accent = if (isLoggedIn && showToken) MaterialTheme.colorScheme.tertiary else null,
-                        onClick = {
-                            if (!isLoggedIn) {
-                                showTokenEditor = true
-                            } else if (!showToken) {
-                                showToken = true
+                item {
+                    ExpressiveSectionCard(title = stringResource(R.string.integrations)) {
+                        ExpressiveActionRow(
+                            icon = painterResource(R.drawable.integration),
+                            title = stringResource(R.string.integrations),
+                            subtitle = if (spotifyState.isAuthenticated && spotifyState.accountName.isNotBlank()) {
+                                stringResource(R.string.spotify_connected_as, spotifyState.accountName)
                             } else {
-                                showTokenEditor = true
-                            }
-                        },
-                    )
+                                stringResource(R.string.integrations_desc)
+                            },
+                            onClick = { navController.navigate("settings/integrations") },
+                        )
+                    }
                 }
-            }
 
-            item {
-                VersionStamp()
+                item {
+                    ExpressiveSectionCard(title = stringResource(R.string.music_together)) {
+                        ExpressiveActionRow(
+                            icon = painterResource(R.drawable.fire),
+                            title = stringResource(R.string.music_together),
+                            onClick = { navController.navigate("settings/music_together") },
+                        )
+                    }
+                }
+
+                item {
+                    ExpressiveSectionCard(title = miscLabel) {
+                        ExpressiveActionRow(
+                            icon = painterResource(R.drawable.token),
+                            title = tokenActionTitle,
+                            subtitle = tokenDescription,
+                            accent = if (isLoggedIn && showToken) MaterialTheme.colorScheme.tertiary else null,
+                            onClick = {
+                                if (!isLoggedIn) {
+                                    showTokenEditor = true
+                                } else if (!showToken) {
+                                    showToken = true
+                                } else {
+                                    showTokenEditor = true
+                                }
+                            },
+                        )
+                    }
+                }
+
+                item {
+                    VersionStamp()
+                }
             }
         }
     }
@@ -819,10 +822,77 @@ private fun ProfileIdentityCard(
                     }
                 }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(top = 4.dp),
-            ) {
+            if (isTv) {
+                val tvButtonRequester = remember { FocusRequester() }
+                if (isLoggedIn) {
+                    OutlinedButton(
+                        onClick = onSecondaryAction,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier =
+                            Modifier
+                                .padding(top = 4.dp)
+                                .tvSettingsItemFocus(
+                                    shape = RoundedCornerShape(12.dp),
+                                    customFocusRequester = tvButtonRequester,
+                                    onClick = onSecondaryAction,
+                                    isFirstItem = true,
+                                    interceptDirectionLeft = true,
+                                    onMoveRight = {},
+                                    onMoveUp = {},
+                                    onMoveDown = {},
+                                ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.logout),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.action_logout),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = onPrimaryAction,
+                        shape = RoundedCornerShape(12.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(top = 4.dp)
+                                .tvSettingsItemFocus(
+                                    shape = RoundedCornerShape(12.dp),
+                                    customFocusRequester = tvButtonRequester,
+                                    onClick = onPrimaryAction,
+                                    isFirstItem = true,
+                                    interceptDirectionLeft = true,
+                                    onMoveRight = {},
+                                    onMoveUp = {},
+                                    onMoveDown = {},
+                                ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.login),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.login),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
                 val leadingButtonRequester = remember { FocusRequester() }
                 val trailingButtonRequester = remember { FocusRequester() }
                 val logoutButtonRequester = remember { FocusRequester() }
@@ -848,6 +918,7 @@ private fun ProfileIdentityCard(
                                             }
                                         },
                                         onMoveUp = {},
+                                        onMoveDown = {},
                                     ),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
@@ -894,6 +965,7 @@ private fun ProfileIdentityCard(
                                         onMoveLeft = { leadingButtonRequester.safeRequestFocus() },
                                         onMoveRight = { logoutButtonRequester.safeRequestFocus() },
                                         onMoveUp = {},
+                                        onMoveDown = {},
                                     ),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
@@ -1122,6 +1194,7 @@ private fun ProfileIdentityCard(
                             },
                             onMoveRight = {},
                             onMoveUp = {},
+                            onMoveDown = {},
                         ),
                 ) {
                     Text(
@@ -1129,6 +1202,7 @@ private fun ProfileIdentityCard(
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
+            }
             }
         }
     }

@@ -43,6 +43,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.invalidateDraw
+import moe.rgsekai.sekaitune.ui.screens.LOGIN_ROUTE
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
@@ -175,6 +176,7 @@ fun TvDpadLayer(
     val activity = context as? Activity
 
     val isSettingsRoute = currentRoute == "settings" || currentRoute?.startsWith("settings/") == true || currentRoute == "stats"
+    val isLoginRoute = currentRoute == LOGIN_ROUTE || currentRoute?.startsWith("$LOGIN_ROUTE?") == true || currentRoute?.contains("login") == true
     var isContentFocused by remember { mutableStateOf(false) }
 
     val isTopBarRoute = currentRoute == TV_HOME_ROUTE ||
@@ -188,6 +190,7 @@ fun TvDpadLayer(
 
     // Initial focus on route change: wait for composition and let child screens set their own focus first
     LaunchedEffect(currentRoute) {
+        if (isLoginRoute) return@LaunchedEffect
         delay(60)
         if (!isTopBarRoute && !isContentFocused) {
             val requested = contentFocusRequester?.safeRequestFocus() ?: false
@@ -198,7 +201,7 @@ fun TvDpadLayer(
     }
 
     // Root TV BackHandler: pop backstack, navigate to Home tab, or finish
-    BackHandler(enabled = true) {
+    BackHandler(enabled = !isLoginRoute) {
         val canPop = navController.previousBackStackEntry != null
         val isHomeRoute = currentRoute == TV_HOME_ROUTE
 
@@ -240,6 +243,7 @@ fun TvDpadLayer(
                     isContentFocused = focusState.hasFocus
                 }
                 .onKeyEvent { keyEvent ->
+                    if (isLoginRoute) return@onKeyEvent false
                     if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
                     when (keyEvent.key) {
                         Key.DirectionUp -> {

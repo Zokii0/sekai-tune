@@ -8,6 +8,7 @@
 package moe.rgsekai.sekaitune.utils
 
 import android.content.Context
+import android.os.Looper
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
@@ -51,15 +52,34 @@ fun resetAuthWebViewSession(
     webView.stopLoading()
     webView.clearHistory()
     webView.clearFormData()
-    webView.clearCache(true)
-    clearWebAuthStorage(context)
+    if (clearCookies) {
+        webView.clearCache(true)
+        clearWebAuthStorage(context)
+    }
 
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(true)
     cookieManager.setAcceptThirdPartyCookies(webView, true)
+
+    fun invokeOnReady() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            onReady()
+        } else {
+            webView.post { onReady() }
+        }
+    }
+
     if (!clearCookies) {
-        onReady()
+        invokeOnReady()
         return
+    }
+
+    var isReadyCalled = false
+    fun dispatchReady() {
+        if (!isReadyCalled) {
+            isReadyCalled = true
+            invokeOnReady()
+        }
     }
 
     cookieManager.removeSessionCookies {
@@ -67,9 +87,13 @@ fun resetAuthWebViewSession(
             cookieManager.flush()
             cookieManager.setAcceptCookie(true)
             cookieManager.setAcceptThirdPartyCookies(webView, true)
-            onReady()
+            dispatchReady()
         }
     }
+
+    // Safety fallback: if cookie removal callback is delayed or swallowed by Chromium,
+    // dispatch ready after 350ms so WebView never hangs with a blank screen.
+    webView.postDelayed({ dispatchReady() }, 350)
 }
 
 private fun clearWebAuthStorage(context: Context) {
