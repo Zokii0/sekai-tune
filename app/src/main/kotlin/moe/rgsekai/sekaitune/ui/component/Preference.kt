@@ -10,6 +10,7 @@
 package moe.rgsekai.sekaitune.ui.component
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -24,7 +25,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,17 +76,23 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -125,6 +135,52 @@ val LocalTvSliderAdjustment = compositionLocalOf<((Boolean) -> Unit)?> { null }
 val LocalTvSettingsCategoryFocusRequester = compositionLocalOf<FocusRequester?> { null }
 val LocalTvSettingsRightPaneFocusRequester = compositionLocalOf<FocusRequester?> { null }
 val LocalTvSettingsRightPaneFirstItemClaimed = compositionLocalOf { mutableStateOf(false) }
+val LocalTvSettingsCurrentFocusedRequester = compositionLocalOf<MutableState<FocusRequester?>?> { null }
+val LocalTvSettingsInSubScreen = compositionLocalOf { false }
+
+class TvRightPaneFocusTracker {
+    private val items = mutableMapOf<FocusRequester, Float>()
+    var topItemFocusRequester by mutableStateOf<FocusRequester?>(null)
+        private set
+    var bottomItemFocusRequester by mutableStateOf<FocusRequester?>(null)
+        private set
+
+    fun register(requester: FocusRequester, y: Float) {
+        items[requester] = y
+        updateBounds()
+    }
+
+    fun unregister(requester: FocusRequester) {
+        items.remove(requester)
+        updateBounds()
+    }
+
+    private fun updateBounds() {
+        if (items.isEmpty()) {
+            topItemFocusRequester = null
+            bottomItemFocusRequester = null
+            return
+        }
+        var minY = Float.MAX_VALUE
+        var maxY = -Float.MAX_VALUE
+        var topReq: FocusRequester? = null
+        var bottomReq: FocusRequester? = null
+        for ((req, y) in items) {
+            if (y < minY) {
+                minY = y
+                topReq = req
+            }
+            if (y > maxY) {
+                maxY = y
+                bottomReq = req
+            }
+        }
+        topItemFocusRequester = topReq
+        bottomItemFocusRequester = bottomReq
+    }
+}
+
+val LocalTvRightPaneFocusTracker = compositionLocalOf<TvRightPaneFocusTracker?> { null }
 
 private val PreferenceGroupLargeCorner = 28.dp
 private val PreferenceGroupSmallCorner = 6.dp
@@ -218,6 +274,8 @@ fun PreferenceEntry(
     val leftCategoryFocusRequester = LocalTvSettingsCategoryFocusRequester.current
     val rightPaneFocusRequester = LocalTvSettingsRightPaneFocusRequester.current
     val firstItemClaimed = LocalTvSettingsRightPaneFirstItemClaimed.current
+    val currentFocusedRequester = LocalTvSettingsCurrentFocusedRequester.current
+    val focusTracker = LocalTvRightPaneFocusTracker.current
     val focusManager = LocalFocusManager.current
     val sliderAdjustment = LocalTvSliderAdjustment.current
 
@@ -230,8 +288,63 @@ fun PreferenceEntry(
         }
     }
 
+    DisposableEffect(shouldAttachFirstItemRequester) {
+        onDispose {
+            if (shouldAttachFirstItemRequester) {
+                firstItemClaimed.value = false
+            }
+        }
+    }
+
+    val itemFocusRequester = remember { FocusRequester() }
+
+    DisposableEffect(focusTracker, itemFocusRequester) {
+        onDispose {
+            focusTracker?.unregister(itemFocusRequester)
+        }
+    }
+
+    var isRowFocused by remember { mutableStateOf(false) }
+    val isInteractionFocused by interactionSource.collectIsFocusedAsState()
+    val isItemFocused = isTv && (isRowFocused || isInteractionFocused)
+
+    val activeBorderColor = MaterialTheme.colorScheme.primary
+    val focusedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+    val unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+
+    val animatedBorderColor by animateColorAsState(
+        targetValue = if (isItemFocused) activeBorderColor else Color.Transparent,
+        animationSpec = tween(150),
+        label = "prefBorderColor",
+    )
+    val animatedContainerColor by animateColorAsState(
+        targetValue = if (isItemFocused) focusedContainerColor else unfocusedContainerColor,
+        animationSpec = tween(150),
+        label = "prefContainerColor",
+    )
+    val animatedTvScale by animateFloatAsState(
+        targetValue = if (isItemFocused) 1.02f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.75f,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "prefTvScale",
+    )
+
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(isItemFocused) {
+        if (isItemFocused) {
+            runCatching {
+                bringIntoViewRequester.bringIntoView()
+            }
+        }
+    }
+
     val tvModifier = if (isTv) {
         Modifier
+            .focusRequester(itemFocusRequester)
             .then(
                 if (shouldAttachFirstItemRequester && rightPaneFocusRequester != null) {
                     Modifier.focusRequester(rightPaneFocusRequester)
@@ -239,7 +352,17 @@ fun PreferenceEntry(
                     Modifier
                 }
             )
-            .tvFocusOutline(shape = resolvedShape, interactionSource = interactionSource)
+            .onFocusChanged {
+                isRowFocused = it.isFocused || it.hasFocus
+                if (it.isFocused || it.hasFocus) {
+                    currentFocusedRequester?.value = itemFocusRequester
+                    coroutineScope.launch {
+                        runCatching {
+                            bringIntoViewRequester.bringIntoView()
+                        }
+                    }
+                }
+            }
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (keyEvent.key) {
@@ -263,14 +386,22 @@ fun PreferenceEntry(
                         }
                     }
                     Key.DirectionUp -> {
-                        val moved = focusManager.moveFocus(FocusDirection.Up) ||
-                            focusManager.moveFocus(FocusDirection.Previous)
-                        moved
+                        if (focusTracker != null && focusTracker.topItemFocusRequester == itemFocusRequester) {
+                            true
+                        } else if (shouldAttachFirstItemRequester) {
+                            true
+                        } else {
+                            focusManager.moveFocus(FocusDirection.Up)
+                            true
+                        }
                     }
                     Key.DirectionDown -> {
-                        val moved = focusManager.moveFocus(FocusDirection.Down) ||
-                            focusManager.moveFocus(FocusDirection.Next)
-                        moved
+                        if (focusTracker != null && focusTracker.bottomItemFocusRequester == itemFocusRequester) {
+                            true
+                        } else {
+                            focusManager.moveFocus(FocusDirection.Down)
+                            true
+                        }
                     }
                     Key.DirectionCenter, Key.Enter, Key.Spacebar, Key.NumPadEnter -> {
                         if (isEnabled && onClick != null) {
@@ -283,13 +414,6 @@ fun PreferenceEntry(
                     else -> false
                 }
             }
-            .then(
-                if (onClick == null && onLongClick == null && sliderAdjustment != null) {
-                    Modifier.focusable(enabled = isEnabled, interactionSource = interactionSource)
-                } else {
-                    Modifier
-                }
-            )
     } else {
         Modifier
     }
@@ -301,13 +425,7 @@ fun PreferenceEntry(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = PreferenceEntryMinHeight)
-                    .then(
-                        if (!isTv && isEnabled && (onClick != null || onLongClick != null)) {
-                            Modifier.focusable()
-                        } else {
-                            Modifier
-                        }
-                    )
+                    .then(tvModifier)
                     .then(
                         if (onLongClick != null) {
                             Modifier.combinedClickable(
@@ -324,11 +442,14 @@ fun PreferenceEntry(
                                 enabled = isEnabled,
                                 onClick = onClick,
                             )
+                        } else if (isTv && sliderAdjustment != null) {
+                            Modifier.focusable(enabled = isEnabled, interactionSource = interactionSource)
+                        } else if (!isTv && isEnabled && (onClick != null || onLongClick != null)) {
+                            Modifier.focusable()
                         } else {
                             Modifier
                         }
                     ).alpha(if (isEnabled) 1f else 0.5f)
-                    .then(tvModifier)
                     .padding(
                         horizontal = PreferenceEntryHorizontalPadding,
                         vertical = PreferenceEntryVerticalPadding,
@@ -381,9 +502,14 @@ fun PreferenceEntry(
         shape = resolvedShape,
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                containerColor = if (isTv) animatedContainerColor else MaterialTheme.colorScheme.surfaceContainerLow,
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = if (isTv && (isItemFocused || animatedBorderColor != Color.Transparent)) {
+            BorderStroke(2.5.dp, animatedBorderColor)
+        } else {
+            null
+        },
         modifier =
             modifier
                 .fillMaxWidth()
@@ -391,9 +517,22 @@ fun PreferenceEntry(
                     horizontal = if (inGroup) 0.dp else 16.dp,
                     vertical = if (inGroup) 0.dp else 3.dp,
                 )
+                .then(
+                    if (isTv) {
+                        Modifier
+                            .zIndex(if (isItemFocused) 1f else 0f)
+                            .bringIntoViewRequester(bringIntoViewRequester)
+                            .onGloballyPositioned { coordinates ->
+                                focusTracker?.register(itemFocusRequester, coordinates.positionInRoot().y)
+                            }
+                    } else {
+                        Modifier
+                    }
+                )
                 .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    val currentScale = if (isTv) animatedTvScale else scale
+                    scaleX = currentScale
+                    scaleY = currentScale
                 },
     ) {
         rowContent()

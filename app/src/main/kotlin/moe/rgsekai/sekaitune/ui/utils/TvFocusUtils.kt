@@ -20,6 +20,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -80,7 +81,7 @@ fun FocusRequester.safeRequestFocus(): Boolean {
 @OptIn(ExperimentalFoundationApi::class)
 fun Modifier.tvFocusOutline(
     shape: Shape = RoundedCornerShape(12.dp),
-    borderWidth: Dp = 1.75.dp,
+    borderWidth: Dp = 2.5.dp,
     focusedBorderColor: Color? = null,
     scaleOnFocus: Float = 1.045f,
     interactionSource: InteractionSource? = null,
@@ -88,18 +89,21 @@ fun Modifier.tvFocusOutline(
     if (!LocalIsTv.current) return@composed this
 
     var isFocused by remember { mutableStateOf(false) }
+    val isInteractionFocused = interactionSource?.collectIsFocusedAsState()?.value == true
+    val effectivelyFocused = isFocused || isInteractionFocused
+
     val primaryColor = MaterialTheme.colorScheme.primary
-    val activeBorderColor = focusedBorderColor ?: primaryColor.copy(alpha = 0.85f)
+    val activeBorderColor = focusedBorderColor ?: primaryColor
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
 
     val animatedBorderColor by animateColorAsState(
-        targetValue = if (isFocused) activeBorderColor else Color.Transparent,
+        targetValue = if (effectivelyFocused) activeBorderColor else Color.Transparent,
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "tvFocusBorderColor",
     )
     val animatedScale by animateFloatAsState(
-        targetValue = if (isFocused) scaleOnFocus else 1.0f,
+        targetValue = if (effectivelyFocused) scaleOnFocus else 1.0f,
         animationSpec = spring(
             dampingRatio = 0.75f,
             stiffness = Spring.StiffnessMedium,
@@ -110,8 +114,8 @@ fun Modifier.tvFocusOutline(
     this
         .bringIntoViewRequester(bringIntoViewRequester)
         .onFocusChanged {
-            isFocused = it.isFocused
-            if (it.isFocused) {
+            isFocused = it.isFocused || it.hasFocus
+            if (it.isFocused || it.hasFocus) {
                 coroutineScope.launch {
                     runCatching {
                         bringIntoViewRequester.bringIntoView()
@@ -121,7 +125,7 @@ fun Modifier.tvFocusOutline(
         }
         .scale(animatedScale)
         .then(
-            if (isFocused) {
+            if (effectivelyFocused || animatedBorderColor != Color.Transparent) {
                 Modifier.border(
                     BorderStroke(width = borderWidth, color = animatedBorderColor),
                     shape = shape,

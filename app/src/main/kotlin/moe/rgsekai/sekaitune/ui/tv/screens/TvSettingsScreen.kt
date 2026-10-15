@@ -72,9 +72,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.BuildConfig
 import moe.rgsekai.sekaitune.R
+import moe.rgsekai.sekaitune.ui.component.LocalTvRightPaneFocusTracker
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCurrentFocusedRequester
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsInSubScreen
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFirstItemClaimed
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFocusRequester
+import moe.rgsekai.sekaitune.ui.component.TvRightPaneFocusTracker
 import moe.rgsekai.sekaitune.ui.screens.settings.AboutScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AccountSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.AmbientModeSettingsScreen
@@ -219,6 +223,7 @@ fun TvSettingsScreen(
         List(categories.size) { FocusRequester() }
     }
     val rightPaneFirstItemFocusRequester = remember { FocusRequester() }
+    val focusTracker = remember(selectedIndex, activeSubRoute) { TvRightPaneFocusTracker() }
 
     var isRightPaneFocused by remember { mutableStateOf(false) }
 
@@ -306,7 +311,8 @@ fun TvSettingsScreen(
                         onMoveRight = {
                             val moved = focusManager.moveFocus(FocusDirection.Right)
                             if (!moved) {
-                                rightPaneFirstItemFocusRequester.safeRequestFocus()
+                                focusTracker.topItemFocusRequester?.safeRequestFocus()
+                                    ?: rightPaneFirstItemFocusRequester.safeRequestFocus()
                             }
                         },
                         onUpFromFirst = {
@@ -360,6 +366,8 @@ fun TvSettingsScreen(
                     }
                     .focusProperties {
                         left = categoryFocusRequesters[selectedIndex]
+                        up = focusTracker.topItemFocusRequester ?: rightPaneFirstItemFocusRequester
+                        down = focusTracker.bottomItemFocusRequester ?: FocusRequester.Default
                     }
                     .onKeyEvent { keyEvent ->
                         if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
@@ -384,8 +392,10 @@ fun TvSettingsScreen(
                     val firstItemClaimed = remember(selectedIndex, activeSubRoute) { mutableStateOf(false) }
                     CompositionLocalProvider(
                         LocalTvSettingsCategoryFocusRequester provides categoryFocusRequesters[selectedIndex],
-                        LocalTvSettingsRightPaneFocusRequester provides rightPaneFirstItemFocusRequester,
+                        LocalTvSettingsRightPaneFocusRequester provides (focusTracker.topItemFocusRequester ?: rightPaneFirstItemFocusRequester),
                         LocalTvSettingsRightPaneFirstItemClaimed provides firstItemClaimed,
+                        LocalTvRightPaneFocusTracker provides focusTracker,
+                        LocalTvSettingsInSubScreen provides true,
                     ) {
                         TvSettingsSubScreenWrapper(
                             topBarHeight = currentTopBarHeight,
@@ -544,11 +554,12 @@ fun TvSettingsSubScreenWrapper(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clipToBounds(),
-    ) {
+    CompositionLocalProvider(LocalTvSettingsInSubScreen provides true) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .clipToBounds(),
+        ) {
         // Non-focusable top bar barrier area where the phone top bar sits
         Box(
             modifier = Modifier
@@ -573,6 +584,7 @@ fun TvSettingsSubScreenWrapper(
             }
         }
     }
+}
 }
 
 /**
