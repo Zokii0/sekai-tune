@@ -65,8 +65,6 @@ fun FocusRequester.safeRequestFocus(): Boolean {
     return try {
         requestFocus()
         true
-    } catch (e: IllegalStateException) {
-        false
     } catch (e: Exception) {
         false
     }

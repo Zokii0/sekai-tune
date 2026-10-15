@@ -19,7 +19,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.ui.composed
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -181,6 +183,163 @@ class TvRightPaneFocusTracker {
 }
 
 val LocalTvRightPaneFocusTracker = compositionLocalOf<TvRightPaneFocusTracker?> { null }
+
+/**
+ * Modifier for TV Settings right-pane interactive items (action rows, switch rows, action buttons)
+ * that integrates with [LocalTvRightPaneFocusTracker], [LocalTvSettingsCategoryFocusRequester],
+ * [LocalTvSettingsRightPaneFocusRequester], and [tvFocusOutline].
+ * Zero overhead / no-op on non-TV devices.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.tvSettingsItemFocus(
+    shape: Shape = RoundedCornerShape(12.dp),
+    interactionSource: MutableInteractionSource? = null,
+    customFocusRequester: FocusRequester? = null,
+    onClick: (() -> Unit)? = null,
+    isFirstItem: Boolean? = null,
+    interceptDirectionLeft: Boolean = true,
+    onMoveLeft: (() -> Unit)? = null,
+    onMoveRight: (() -> Unit)? = null,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null,
+): Modifier = composed {
+    val isTv = LocalIsTv.current
+    if (!isTv) return@composed this
+
+    val leftCategoryFocusRequester = LocalTvSettingsCategoryFocusRequester.current
+    val rightPaneFocusRequester = LocalTvSettingsRightPaneFocusRequester.current
+    val firstItemClaimed = LocalTvSettingsRightPaneFirstItemClaimed.current
+    val currentFocusedRequester = LocalTvSettingsCurrentFocusedRequester.current
+    val focusTracker = LocalTvRightPaneFocusTracker.current
+    val focusManager = LocalFocusManager.current
+
+    val shouldAttachFirstItemRequester = remember(isTv, rightPaneFocusRequester, isFirstItem) {
+        if (!isTv || rightPaneFocusRequester == null) {
+            false
+        } else if (isFirstItem == true) {
+            firstItemClaimed.value = true
+            true
+        } else if (isFirstItem == false) {
+            false
+        } else if (!firstItemClaimed.value) {
+            firstItemClaimed.value = true
+            true
+        } else {
+            false
+        }
+    }
+
+    DisposableEffect(shouldAttachFirstItemRequester) {
+        onDispose {
+            if (shouldAttachFirstItemRequester) {
+                firstItemClaimed.value = false
+            }
+        }
+    }
+
+    val itemFocusRequester = customFocusRequester ?: remember { FocusRequester() }
+
+    DisposableEffect(focusTracker, itemFocusRequester) {
+        onDispose {
+            focusTracker?.unregister(itemFocusRequester)
+        }
+    }
+
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+    var isFocused by remember { mutableStateOf(false) }
+
+    this
+        .focusRequester(itemFocusRequester)
+        .then(
+            if (shouldAttachFirstItemRequester && rightPaneFocusRequester != null) {
+                Modifier.focusRequester(rightPaneFocusRequester)
+            } else {
+                Modifier
+            }
+        )
+        .onFocusChanged {
+            isFocused = it.isFocused || it.hasFocus
+            if (it.isFocused || it.hasFocus) {
+                currentFocusedRequester?.value = itemFocusRequester
+                coroutineScope.launch {
+                    runCatching {
+                        bringIntoViewRequester.bringIntoView()
+                    }
+                }
+            }
+        }
+        .onPreviewKeyEvent { keyEvent ->
+            if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            when (keyEvent.key) {
+                Key.DirectionLeft -> {
+                    if (onMoveLeft != null) {
+                        onMoveLeft()
+                        true
+                    } else if (interceptDirectionLeft) {
+                        if (leftCategoryFocusRequester != null) {
+                            leftCategoryFocusRequester.safeRequestFocus()
+                            true
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                }
+                Key.DirectionRight -> {
+                    if (onMoveRight != null) {
+                        onMoveRight()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                Key.DirectionUp -> {
+                    if (onMoveUp != null) {
+                        onMoveUp()
+                        true
+                    } else if (focusTracker != null && focusTracker.topItemFocusRequester == itemFocusRequester) {
+                        true
+                    } else if (shouldAttachFirstItemRequester) {
+                        true
+                    } else {
+                        focusManager.moveFocus(FocusDirection.Up)
+                        true
+                    }
+                }
+                Key.DirectionDown -> {
+                    if (onMoveDown != null) {
+                        onMoveDown()
+                        true
+                    } else if (focusTracker != null && focusTracker.bottomItemFocusRequester == itemFocusRequester) {
+                        true
+                    } else {
+                        focusManager.moveFocus(FocusDirection.Down)
+                        true
+                    }
+                }
+                Key.DirectionCenter, Key.Enter, Key.Spacebar, Key.NumPadEnter -> {
+                    if (onClick != null) {
+                        onClick()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                else -> false
+            }
+        }
+        .zIndex(if (isFocused) 1f else 0f)
+        .bringIntoViewRequester(bringIntoViewRequester)
+        .onGloballyPositioned { coordinates ->
+            focusTracker?.register(itemFocusRequester, coordinates.positionInRoot().y)
+        }
+        .tvFocusOutline(
+            shape = shape,
+            interactionSource = interactionSource,
+        )
+}
 
 private val PreferenceGroupLargeCorner = 28.dp
 private val PreferenceGroupSmallCorner = 6.dp

@@ -54,6 +54,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -93,6 +94,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -143,9 +145,13 @@ import moe.rgsekai.sekaitune.ui.component.GlassModalBottomSheet
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.InfoLabel
 import moe.rgsekai.sekaitune.ui.component.TextFieldDialog
+import moe.rgsekai.sekaitune.ui.component.tvSettingsItemFocus
+import androidx.compose.ui.focus.FocusRequester
 import moe.rgsekai.sekaitune.ui.screens.buildLoginRoute
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.utils.PreferenceStore
 import moe.rgsekai.sekaitune.utils.SavedAccount
 import moe.rgsekai.sekaitune.utils.Updater
@@ -638,6 +644,7 @@ private fun ProfileIdentityCard(
     onRemoveAccount: (SavedAccount) -> Unit,
     onAddAnotherAccount: () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -652,23 +659,7 @@ private fun ProfileIdentityCard(
         label = "accountMenuChevron",
     )
 
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                },
-        shape = CardShape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        onClick = onPrimaryAction,
-        interactionSource = interactionSource,
-    ) {
+    val cardContent: @Composable ColumnScope.() -> Unit = {
         Column(
             modifier =
                 Modifier
@@ -832,11 +823,32 @@ private fun ProfileIdentityCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(top = 4.dp),
             ) {
+                val leadingButtonRequester = remember { FocusRequester() }
+                val trailingButtonRequester = remember { FocusRequester() }
+                val logoutButtonRequester = remember { FocusRequester() }
+                val canExpandMenu = isLoggedIn || savedAccounts.accounts.isNotEmpty()
+
                 Box {
                     SplitButtonLayout(
                         leadingButton = {
                             SplitButtonDefaults.ElevatedLeadingButton(
                                 onClick = onPrimaryAction,
+                                modifier =
+                                    Modifier.tvSettingsItemFocus(
+                                        shape = ButtonGroupDefaults.connectedLeadingButtonShapes().shape,
+                                        customFocusRequester = leadingButtonRequester,
+                                        onClick = onPrimaryAction,
+                                        isFirstItem = true,
+                                        interceptDirectionLeft = true,
+                                        onMoveRight = {
+                                            if (canExpandMenu) {
+                                                trailingButtonRequester.safeRequestFocus()
+                                            } else {
+                                                logoutButtonRequester.safeRequestFocus()
+                                            }
+                                        },
+                                        onMoveUp = {},
+                                    ),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -867,7 +879,22 @@ private fun ProfileIdentityCard(
                             SplitButtonDefaults.ElevatedTrailingButton(
                                 checked = accountMenuExpanded,
                                 onCheckedChange = { accountMenuExpanded = it },
-                                enabled = isLoggedIn || savedAccounts.accounts.isNotEmpty(),
+                                enabled = canExpandMenu,
+                                modifier =
+                                    Modifier.tvSettingsItemFocus(
+                                        shape = ButtonGroupDefaults.connectedTrailingButtonShapes().shape,
+                                        customFocusRequester = trailingButtonRequester,
+                                        onClick = {
+                                            if (canExpandMenu) {
+                                                accountMenuExpanded = !accountMenuExpanded
+                                            }
+                                        },
+                                        isFirstItem = false,
+                                        interceptDirectionLeft = false,
+                                        onMoveLeft = { leadingButtonRequester.safeRequestFocus() },
+                                        onMoveRight = { logoutButtonRequester.safeRequestFocus() },
+                                        onMoveUp = {},
+                                    ),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -1079,6 +1106,23 @@ private fun ProfileIdentityCard(
                 OutlinedButton(
                     onClick = onSecondaryAction,
                     shapes = ButtonDefaults.shapes(),
+                    modifier =
+                        Modifier.tvSettingsItemFocus(
+                            shape = ButtonDefaults.outlinedShape,
+                            customFocusRequester = logoutButtonRequester,
+                            onClick = onSecondaryAction,
+                            isFirstItem = false,
+                            interceptDirectionLeft = false,
+                            onMoveLeft = {
+                                if (canExpandMenu) {
+                                    trailingButtonRequester.safeRequestFocus()
+                                } else {
+                                    leadingButtonRequester.safeRequestFocus()
+                                }
+                            },
+                            onMoveRight = {},
+                            onMoveUp = {},
+                        ),
                 ) {
                     Text(
                         text = if (isLoggedIn) stringResource(R.string.action_logout) else stringResource(R.string.advanced_login),
@@ -1087,6 +1131,38 @@ private fun ProfileIdentityCard(
                 }
             }
         }
+    }
+
+    if (isTv) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = CardShape,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            content = cardContent,
+        )
+    } else {
+        Card(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+            shape = CardShape,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            onClick = onPrimaryAction,
+            interactionSource = interactionSource,
+            content = cardContent,
+        )
     }
 }
 
@@ -1110,7 +1186,13 @@ private fun UpdateBannerStrip(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                },
+                }
+                .tvSettingsItemFocus(
+                    shape = CardShape,
+                    interactionSource = interactionSource,
+                    onClick = onClick,
+                    isFirstItem = false,
+                ),
         shape = CardShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         onClick = onClick,
@@ -1233,6 +1315,11 @@ internal fun ExpressiveActionRow(
                     scaleX = scale
                     scaleY = scale
                 }.clip(InnerTileShape)
+                .tvSettingsItemFocus(
+                    shape = InnerTileShape,
+                    interactionSource = interactionSource,
+                    onClick = onClick,
+                )
                 .clickable(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
@@ -1287,6 +1374,8 @@ internal fun ExpressiveSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
+    val isTv = LocalIsTv.current
+    val interactionSource = remember { MutableInteractionSource() }
     val containerColor by animateColorAsState(
         targetValue =
             if (checked) {
@@ -1305,7 +1394,16 @@ internal fun ExpressiveSwitchRow(
                 .padding(horizontal = 6.dp, vertical = 2.dp)
                 .clip(InnerTileShape)
                 .background(containerColor)
-                .clickable { onCheckedChange(!checked) },
+                .tvSettingsItemFocus(
+                    shape = InnerTileShape,
+                    interactionSource = interactionSource,
+                    onClick = { onCheckedChange(!checked) },
+                )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = androidx.compose.material3.ripple(),
+                    onClick = { onCheckedChange(!checked) },
+                ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
@@ -1344,6 +1442,7 @@ internal fun ExpressiveSwitchRow(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
+                modifier = if (isTv) Modifier.focusProperties { canFocus = false } else Modifier,
                 colors =
                     SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,

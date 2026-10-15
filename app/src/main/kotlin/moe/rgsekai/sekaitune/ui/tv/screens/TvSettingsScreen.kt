@@ -218,6 +218,7 @@ fun TvSettingsScreen(
     }
     val rightPaneFirstItemFocusRequester = remember { FocusRequester() }
     val focusTracker = remember(selectedIndex, activeSubRoute) { TvRightPaneFocusTracker() }
+    val currentRightPaneFocusedRequester = remember(selectedIndex, activeSubRoute) { mutableStateOf<FocusRequester?>(null) }
 
     var isRightPaneFocused by remember { mutableStateOf(false) }
 
@@ -303,10 +304,12 @@ fun TvSettingsScreen(
                             }
                         },
                         onMoveRight = {
-                            val moved = focusManager.moveFocus(FocusDirection.Right)
+                            val targetRequester = currentRightPaneFocusedRequester.value
+                                ?: rightPaneFirstItemFocusRequester
+                                ?: focusTracker.topItemFocusRequester
+                            val moved = targetRequester?.safeRequestFocus() == true
                             if (!moved) {
-                                focusTracker.topItemFocusRequester?.safeRequestFocus()
-                                    ?: rightPaneFirstItemFocusRequester.safeRequestFocus()
+                                focusManager.moveFocus(FocusDirection.Right)
                             }
                         },
                         onUpFromFirst = {
@@ -386,8 +389,9 @@ fun TvSettingsScreen(
                     val firstItemClaimed = remember(selectedIndex, activeSubRoute) { mutableStateOf(false) }
                     CompositionLocalProvider(
                         LocalTvSettingsCategoryFocusRequester provides categoryFocusRequesters[selectedIndex],
-                        LocalTvSettingsRightPaneFocusRequester provides (focusTracker.topItemFocusRequester ?: rightPaneFirstItemFocusRequester),
+                        LocalTvSettingsRightPaneFocusRequester provides rightPaneFirstItemFocusRequester,
                         LocalTvSettingsRightPaneFirstItemClaimed provides firstItemClaimed,
+                        LocalTvSettingsCurrentFocusedRequester provides currentRightPaneFocusedRequester,
                         LocalTvRightPaneFocusTracker provides focusTracker,
                         LocalTvSettingsInSubScreen provides true,
                         LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
