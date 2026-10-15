@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,6 +72,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.BuildConfig
+import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.LocalTvRightPaneFocusTracker
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
@@ -396,6 +398,7 @@ fun TvSettingsScreen(
                         LocalTvSettingsRightPaneFirstItemClaimed provides firstItemClaimed,
                         LocalTvRightPaneFocusTracker provides focusTracker,
                         LocalTvSettingsInSubScreen provides true,
+                        LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
                     ) {
                         TvSettingsSubScreenWrapper(
                             topBarHeight = currentTopBarHeight,
@@ -554,7 +557,10 @@ fun TvSettingsSubScreenWrapper(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    CompositionLocalProvider(LocalTvSettingsInSubScreen provides true) {
+    CompositionLocalProvider(
+        LocalTvSettingsInSubScreen provides true,
+        LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
+    ) {
         Box(
             modifier = modifier
                 .fillMaxSize()
