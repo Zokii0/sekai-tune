@@ -85,7 +85,6 @@ import moe.rgsekai.sekaitune.ui.screens.settings.AboutScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AccountSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.AmbientModeSettingsScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AodCustomizedScreen
-import moe.rgsekai.sekaitune.ui.screens.settings.AppearanceSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.CanvasSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.ChangelogScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.ChiperSettings
@@ -114,7 +113,6 @@ enum class TvSettingsCategory(
     val route: String,
 ) {
     ACCOUNT("settings/account"),
-    APPEARANCE("settings/appearance"),
     CANVAS("settings/canvas"),
     LYRICS("settings/lyrics"),
     CONTENT("settings/content"),
@@ -127,7 +125,6 @@ enum class TvSettingsCategory(
 private fun tvCategoryTitle(category: TvSettingsCategory): String {
     return when (category) {
         TvSettingsCategory.ACCOUNT -> stringResource(R.string.account)
-        TvSettingsCategory.APPEARANCE -> stringResource(R.string.appearance)
         TvSettingsCategory.CANVAS -> stringResource(R.string.SekaiTune_canvas)
         TvSettingsCategory.LYRICS -> stringResource(R.string.lyrics)
         TvSettingsCategory.CONTENT -> stringResource(R.string.content)
@@ -141,7 +138,6 @@ private fun tvCategoryTitle(category: TvSettingsCategory): String {
 private fun tvCategoryIcon(category: TvSettingsCategory): Painter {
     return when (category) {
         TvSettingsCategory.ACCOUNT -> painterResource(R.drawable.account)
-        TvSettingsCategory.APPEARANCE -> painterResource(R.drawable.palette)
         TvSettingsCategory.CANVAS -> painterResource(R.drawable.slow_motion_video)
         TvSettingsCategory.LYRICS -> painterResource(R.drawable.lyrics)
         TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
@@ -207,7 +203,7 @@ private fun tvCategoryTopBarHeight(category: TvSettingsCategory, subRoute: Strin
 fun TvSettingsScreen(
     navController: NavController,
     upFocusRequester: FocusRequester,
-    initialCategory: TvSettingsCategory = TvSettingsCategory.APPEARANCE,
+    initialCategory: TvSettingsCategory = TvSettingsCategory.ACCOUNT,
     activeSubRoute: String? = null,
     contentFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
@@ -599,7 +595,6 @@ private fun TvSettingsCategoryContent(
 ) {
     when (category) {
         TvSettingsCategory.ACCOUNT -> AccountSettings(navController, latestVersionName = BuildConfig.VERSION_NAME)
-        TvSettingsCategory.APPEARANCE -> AppearanceSettings(navController)
         TvSettingsCategory.CANVAS -> CanvasSettings(navController)
         TvSettingsCategory.LYRICS -> LyricsSettings(navController)
         TvSettingsCategory.CONTENT -> ContentSettings(navController)

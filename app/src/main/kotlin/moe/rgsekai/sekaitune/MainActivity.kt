@@ -197,6 +197,7 @@ import kotlinx.coroutines.withContext
 import moe.rgsekai.sekaitune.aod.ACTION_AOD_MODE
 import moe.rgsekai.sekaitune.constants.AppBarHeight
 import moe.rgsekai.sekaitune.constants.AppFontPreference
+import moe.rgsekai.sekaitune.constants.AmbientArtScaleKey
 import moe.rgsekai.sekaitune.constants.AppLanguageKey
 import moe.rgsekai.sekaitune.constants.CustomFontUriKey
 import moe.rgsekai.sekaitune.constants.CustomThemeColorKey
@@ -722,7 +723,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val isTv = isTvDevice()
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = false)
+            val effectiveDynamicTheme = if (isTv) false else enableDynamicTheme
             val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "default")
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val disableAnimations = false
@@ -790,13 +793,19 @@ class MainActivity : ComponentActivity() {
                     if (preferences[SmartTrimmerKey] != true) {
                         dataStore.edit { it[SmartTrimmerKey] = true }
                     }
+                    if (preferences[DynamicThemeKey] != false) {
+                        dataStore.edit { it[DynamicThemeKey] = false }
+                    }
+                    if (preferences[AmbientArtScaleKey] == null || preferences[AmbientArtScaleKey] == 0.85f) {
+                        dataStore.edit { it[AmbientArtScaleKey] = 0.95f }
+                    }
                 }
             }
 
-            LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme, customThemeColor) {
+            LaunchedEffect(playerConnection, effectiveDynamicTheme, isSystemInDarkTheme, customThemeColor) {
                 val playerConnection = playerConnection
-                if (!enableDynamicTheme || playerConnection == null) {
-                    themeColor = if (!enableDynamicTheme) customThemeColor else DefaultThemeColor
+                if (!effectiveDynamicTheme || playerConnection == null) {
+                    themeColor = if (!effectiveDynamicTheme) customThemeColor else DefaultThemeColor
                     return@LaunchedEffect
                 }
                 playerConnection.service.currentMediaMetadata.collectLatest { song ->
@@ -835,7 +844,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = useDarkTheme,
                 pureBlack = pureBlack,
                 themeColor = themeColor,
-                seedPalette = if (!enableDynamicTheme) customThemeSeedPalette else null,
+                seedPalette = if (!effectiveDynamicTheme) customThemeSeedPalette else null,
                 disableAnimations = disableAnimations,
                 fontPreference = fontPreference,
                 customFontUri = customFontUri,

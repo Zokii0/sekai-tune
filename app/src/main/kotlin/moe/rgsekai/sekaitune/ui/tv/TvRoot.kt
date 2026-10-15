@@ -358,7 +358,7 @@ fun TvRoot(
                 composable("settings") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -367,7 +367,7 @@ fun TvRoot(
                 composable("stats") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -385,7 +385,7 @@ fun TvRoot(
                 composable("settings/appearance") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -403,7 +403,7 @@ fun TvRoot(
                 composable("settings/player") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -430,7 +430,7 @@ fun TvRoot(
                 composable("settings/privacy") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -448,7 +448,7 @@ fun TvRoot(
                 composable("settings/backup_restore") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -466,7 +466,7 @@ fun TvRoot(
                 composable("settings/internet") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -475,7 +475,7 @@ fun TvRoot(
                 composable("settings/advanced") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -493,7 +493,7 @@ fun TvRoot(
                 composable("settings/appearance/liquid_glass") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/liquid_glass",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -503,7 +503,7 @@ fun TvRoot(
                 composable("settings/liquid_glass") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/liquid_glass",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -513,7 +513,7 @@ fun TvRoot(
                 composable("settings/appearance/ambient_mode") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/ambient_mode",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -523,7 +523,7 @@ fun TvRoot(
                 composable("settings/appearance/icon") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/icon",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -533,7 +533,7 @@ fun TvRoot(
                 composable("settings/appearance/aod_customized") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/aod_customized",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -543,7 +543,7 @@ fun TvRoot(
                 composable("settings/appearance/palette_picker") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/palette_picker",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -553,7 +553,7 @@ fun TvRoot(
                 composable("settings/appearance/lyrics_animations") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/lyrics_animations",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -563,7 +563,7 @@ fun TvRoot(
                 composable("settings/appearance/theme_creator") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/appearance/theme_creator",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -573,7 +573,7 @@ fun TvRoot(
                 composable("settings/player/chiper") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        initialCategory = TvSettingsCategory.ACCOUNT,
                         activeSubRoute = "settings/player/chiper",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,

@@ -300,7 +300,7 @@ fun TvNowPlayingScreen(
 
     var viewMode by rememberSaveable { mutableStateOf(TvNowPlayingViewMode.SPLIT) }
 
-    val artScale by rememberPreference(AmbientArtScaleKey, 0.85f)
+    val artScale by rememberPreference(AmbientArtScaleKey, 0.95f)
     val ambientCanvasEnabled by rememberPreference(AmbientCanvasEnabledKey, true)
     val showProgressBar by rememberPreference(AmbientShowProgressBarKey, true)
     val showTitle by rememberPreference(AmbientShowTitleKey, true)
