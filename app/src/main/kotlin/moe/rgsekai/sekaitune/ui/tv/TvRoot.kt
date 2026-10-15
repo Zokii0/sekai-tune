@@ -403,7 +403,7 @@ fun TvRoot(
                 composable("settings/player") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.PLAYER,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -573,7 +573,7 @@ fun TvRoot(
                 composable("settings/player/chiper") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.PLAYER,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         activeSubRoute = "settings/player/chiper",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,

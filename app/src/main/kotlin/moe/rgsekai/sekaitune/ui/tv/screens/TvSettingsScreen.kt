@@ -99,7 +99,6 @@ import moe.rgsekai.sekaitune.ui.screens.settings.LyricsAnimationSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.LyricsSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.MusicTogetherScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.PalettePickerScreen
-import moe.rgsekai.sekaitune.ui.screens.settings.PlayerSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.PoTokenScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.StorageSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.SupportScreen
@@ -117,7 +116,6 @@ enum class TvSettingsCategory(
     ACCOUNT("settings/account"),
     APPEARANCE("settings/appearance"),
     CANVAS("settings/canvas"),
-    PLAYER("settings/player"),
     LYRICS("settings/lyrics"),
     CONTENT("settings/content"),
     STORAGE("settings/storage"),
@@ -131,7 +129,6 @@ private fun tvCategoryTitle(category: TvSettingsCategory): String {
         TvSettingsCategory.ACCOUNT -> stringResource(R.string.account)
         TvSettingsCategory.APPEARANCE -> stringResource(R.string.appearance)
         TvSettingsCategory.CANVAS -> stringResource(R.string.SekaiTune_canvas)
-        TvSettingsCategory.PLAYER -> stringResource(R.string.settings_playback_title)
         TvSettingsCategory.LYRICS -> stringResource(R.string.lyrics)
         TvSettingsCategory.CONTENT -> stringResource(R.string.content)
         TvSettingsCategory.STORAGE -> stringResource(R.string.storage)
@@ -146,7 +143,6 @@ private fun tvCategoryIcon(category: TvSettingsCategory): Painter {
         TvSettingsCategory.ACCOUNT -> painterResource(R.drawable.account)
         TvSettingsCategory.APPEARANCE -> painterResource(R.drawable.palette)
         TvSettingsCategory.CANVAS -> painterResource(R.drawable.slow_motion_video)
-        TvSettingsCategory.PLAYER -> painterResource(R.drawable.music_note)
         TvSettingsCategory.LYRICS -> painterResource(R.drawable.lyrics)
         TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
         TvSettingsCategory.STORAGE -> painterResource(R.drawable.storage)
@@ -605,7 +601,6 @@ private fun TvSettingsCategoryContent(
         TvSettingsCategory.ACCOUNT -> AccountSettings(navController, latestVersionName = BuildConfig.VERSION_NAME)
         TvSettingsCategory.APPEARANCE -> AppearanceSettings(navController)
         TvSettingsCategory.CANVAS -> CanvasSettings(navController)
-        TvSettingsCategory.PLAYER -> PlayerSettings(navController)
         TvSettingsCategory.LYRICS -> LyricsSettings(navController)
         TvSettingsCategory.CONTENT -> ContentSettings(navController)
         TvSettingsCategory.STORAGE -> StorageSettings(navController)
