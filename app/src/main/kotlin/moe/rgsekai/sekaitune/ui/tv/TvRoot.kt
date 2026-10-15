@@ -475,7 +475,7 @@ fun TvRoot(
                 composable("settings/advanced") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.ADVANCED,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -593,7 +593,7 @@ fun TvRoot(
                 composable("settings/misc") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.ADVANCED,
+                        initialCategory = TvSettingsCategory.ABOUT,
                         activeSubRoute = "settings/misc",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -603,7 +603,7 @@ fun TvRoot(
                 composable("settings/logcat") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.ADVANCED,
+                        initialCategory = TvSettingsCategory.ABOUT,
                         activeSubRoute = "settings/logcat",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -613,7 +613,7 @@ fun TvRoot(
                 composable("settings/po_token") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.ADVANCED,
+                        initialCategory = TvSettingsCategory.CONTENT,
                         activeSubRoute = "settings/po_token",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,

@@ -76,7 +76,6 @@ import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFocusRequester
 import moe.rgsekai.sekaitune.ui.screens.settings.AboutScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AccountSettings
-import moe.rgsekai.sekaitune.ui.screens.settings.AdvancedSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.AmbientModeSettingsScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AodCustomizedScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AppearanceSettings
@@ -116,7 +115,6 @@ enum class TvSettingsCategory(
     CONTENT("settings/content"),
     STORAGE("settings/storage"),
     INTEGRATIONS("settings/integrations"),
-    ADVANCED("settings/advanced"),
     ABOUT("settings/about"),
 }
 
@@ -131,7 +129,6 @@ private fun tvCategoryTitle(category: TvSettingsCategory): String {
         TvSettingsCategory.CONTENT -> stringResource(R.string.content)
         TvSettingsCategory.STORAGE -> stringResource(R.string.storage)
         TvSettingsCategory.INTEGRATIONS -> stringResource(R.string.integrations)
-        TvSettingsCategory.ADVANCED -> stringResource(R.string.advanced)
         TvSettingsCategory.ABOUT -> stringResource(R.string.about)
     }
 }
@@ -147,7 +144,6 @@ private fun tvCategoryIcon(category: TvSettingsCategory): Painter {
         TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
         TvSettingsCategory.STORAGE -> painterResource(R.drawable.storage)
         TvSettingsCategory.INTEGRATIONS -> painterResource(R.drawable.integration)
-        TvSettingsCategory.ADVANCED -> painterResource(R.drawable.tune)
         TvSettingsCategory.ABOUT -> painterResource(R.drawable.info)
     }
 }
@@ -593,7 +589,6 @@ private fun TvSettingsCategoryContent(
         TvSettingsCategory.CONTENT -> ContentSettings(navController)
         TvSettingsCategory.STORAGE -> StorageSettings(navController)
         TvSettingsCategory.INTEGRATIONS -> IntegrationsScreen(navController)
-        TvSettingsCategory.ADVANCED -> AdvancedSettings(navController)
         TvSettingsCategory.ABOUT -> AboutScreen(navController)
     }
 }
