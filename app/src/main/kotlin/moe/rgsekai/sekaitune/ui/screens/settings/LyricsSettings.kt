@@ -112,6 +112,7 @@ import moe.rgsekai.sekaitune.ui.component.NumberPickerPreference
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.component.SwitchPreference
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
@@ -126,6 +127,7 @@ fun LyricsSettings(
     navController: NavController,
     viewModel: ContentSettingsViewModel = hiltViewModel(),
 ) {
+    val isTv = LocalIsTv.current
     var showClearLyricsDialog by remember { mutableStateOf(false) }
     var showPaxsenixStatsDialog by remember { mutableStateOf(false) }
 
@@ -159,7 +161,7 @@ fun LyricsSettings(
 
     val (lyricsClick, onLyricsClickChange) = rememberPreference(LyricsClickKey, defaultValue = true)
     val (lyricsScroll, onLyricsScrollChange) = rememberPreference(LyricsScrollKey, defaultValue = true)
-    val (lyricsTextSize, onLyricsTextSizeChange) = rememberPreference(LyricsTextSizeKey, defaultValue = 26f)
+    val (lyricsTextSize, onLyricsTextSizeChange) = rememberPreference(LyricsTextSizeKey, defaultValue = if (isTv) 32f else 26f)
     val (lyricsLineSpacing, onLyricsLineSpacingChange) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
     val (lyricsMode, onLyricsModeChange) = rememberEnumPreference(LyricsModeKey, defaultValue = LyricsMode.ENHANCED)
     val (enableLrclib, onEnableLrclibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
@@ -261,7 +263,8 @@ fun LyricsSettings(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = SettingsDimensions.ScreenBottomPadding),
         ) {
-            var showLyricsTextSizeDialog by rememberSaveable { mutableStateOf(false) }
+            if (!isTv) {
+                var showLyricsTextSizeDialog by rememberSaveable { mutableStateOf(false) }
 
         if (showLyricsTextSizeDialog) {
             var tempTextSize by remember { mutableFloatStateOf(lyricsTextSize) }
@@ -595,6 +598,7 @@ fun LyricsSettings(
                 )
             }
         }
+    }
 
         PreferenceGroup(title = stringResource(R.string.romanization)) {
             item {
