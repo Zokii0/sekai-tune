@@ -74,14 +74,12 @@ import moe.rgsekai.sekaitune.BuildConfig
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFocusRequester
-import moe.rgsekai.sekaitune.ui.screens.StatsScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AboutScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AccountSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.AdvancedSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.AmbientModeSettingsScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AodCustomizedScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AppearanceSettings
-import moe.rgsekai.sekaitune.ui.screens.settings.BackupAndRestore
 import moe.rgsekai.sekaitune.ui.screens.settings.CanvasSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.ChangelogScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.ChiperSettings
@@ -90,7 +88,6 @@ import moe.rgsekai.sekaitune.ui.screens.settings.DebugSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.GlassEffectSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.IconScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.IntegrationsScreen
-import moe.rgsekai.sekaitune.ui.screens.settings.InternetSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.LogcatScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.LyricsAnimationSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.LyricsSettings
@@ -98,7 +95,6 @@ import moe.rgsekai.sekaitune.ui.screens.settings.MusicTogetherScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.PalettePickerScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.PlayerSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.PoTokenScreen
-import moe.rgsekai.sekaitune.ui.screens.settings.PrivacySettings
 import moe.rgsekai.sekaitune.ui.screens.settings.StorageSettings
 import moe.rgsekai.sekaitune.ui.screens.settings.SupportScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.ThemeCreatorScreen
@@ -113,17 +109,13 @@ enum class TvSettingsCategory(
     val route: String,
 ) {
     ACCOUNT("settings/account"),
-    STATS("stats"),
     APPEARANCE("settings/appearance"),
     CANVAS("settings/canvas"),
     PLAYER("settings/player"),
     LYRICS("settings/lyrics"),
     CONTENT("settings/content"),
-    PRIVACY("settings/privacy"),
     STORAGE("settings/storage"),
-    BACKUP_RESTORE("settings/backup_restore"),
     INTEGRATIONS("settings/integrations"),
-    INTERNET("settings/internet"),
     ADVANCED("settings/advanced"),
     ABOUT("settings/about"),
 }
@@ -132,17 +124,13 @@ enum class TvSettingsCategory(
 private fun tvCategoryTitle(category: TvSettingsCategory): String {
     return when (category) {
         TvSettingsCategory.ACCOUNT -> stringResource(R.string.account)
-        TvSettingsCategory.STATS -> stringResource(R.string.settings_stats_title)
         TvSettingsCategory.APPEARANCE -> stringResource(R.string.appearance)
         TvSettingsCategory.CANVAS -> stringResource(R.string.SekaiTune_canvas)
         TvSettingsCategory.PLAYER -> stringResource(R.string.settings_playback_title)
         TvSettingsCategory.LYRICS -> stringResource(R.string.lyrics)
         TvSettingsCategory.CONTENT -> stringResource(R.string.content)
-        TvSettingsCategory.PRIVACY -> stringResource(R.string.privacy)
         TvSettingsCategory.STORAGE -> stringResource(R.string.storage)
-        TvSettingsCategory.BACKUP_RESTORE -> stringResource(R.string.backup_restore)
         TvSettingsCategory.INTEGRATIONS -> stringResource(R.string.integrations)
-        TvSettingsCategory.INTERNET -> stringResource(R.string.internet)
         TvSettingsCategory.ADVANCED -> stringResource(R.string.advanced)
         TvSettingsCategory.ABOUT -> stringResource(R.string.about)
     }
@@ -152,17 +140,13 @@ private fun tvCategoryTitle(category: TvSettingsCategory): String {
 private fun tvCategoryIcon(category: TvSettingsCategory): Painter {
     return when (category) {
         TvSettingsCategory.ACCOUNT -> painterResource(R.drawable.account)
-        TvSettingsCategory.STATS -> painterResource(R.drawable.stats)
         TvSettingsCategory.APPEARANCE -> painterResource(R.drawable.palette)
         TvSettingsCategory.CANVAS -> painterResource(R.drawable.slow_motion_video)
         TvSettingsCategory.PLAYER -> painterResource(R.drawable.music_note)
         TvSettingsCategory.LYRICS -> painterResource(R.drawable.lyrics)
         TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
-        TvSettingsCategory.PRIVACY -> painterResource(R.drawable.security)
         TvSettingsCategory.STORAGE -> painterResource(R.drawable.storage)
-        TvSettingsCategory.BACKUP_RESTORE -> painterResource(R.drawable.backup)
         TvSettingsCategory.INTEGRATIONS -> painterResource(R.drawable.integration)
-        TvSettingsCategory.INTERNET -> painterResource(R.drawable.wifi_proxy)
         TvSettingsCategory.ADVANCED -> painterResource(R.drawable.tune)
         TvSettingsCategory.ABOUT -> painterResource(R.drawable.info)
     }
@@ -204,7 +188,6 @@ private fun tvCategoryTopBarHeight(category: TvSettingsCategory, subRoute: Strin
     }
     return when (category) {
         TvSettingsCategory.ACCOUNT,
-        TvSettingsCategory.STATS,
         TvSettingsCategory.ABOUT -> 152.dp
         else -> 64.dp
     }
@@ -225,7 +208,7 @@ private fun tvCategoryTopBarHeight(category: TvSettingsCategory, subRoute: Strin
 fun TvSettingsScreen(
     navController: NavController,
     upFocusRequester: FocusRequester,
-    initialCategory: TvSettingsCategory = TvSettingsCategory.ACCOUNT,
+    initialCategory: TvSettingsCategory = TvSettingsCategory.APPEARANCE,
     activeSubRoute: String? = null,
     contentFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
@@ -603,17 +586,13 @@ private fun TvSettingsCategoryContent(
 ) {
     when (category) {
         TvSettingsCategory.ACCOUNT -> AccountSettings(navController, latestVersionName = BuildConfig.VERSION_NAME)
-        TvSettingsCategory.STATS -> StatsScreen(navController)
         TvSettingsCategory.APPEARANCE -> AppearanceSettings(navController)
         TvSettingsCategory.CANVAS -> CanvasSettings(navController)
         TvSettingsCategory.PLAYER -> PlayerSettings(navController)
         TvSettingsCategory.LYRICS -> LyricsSettings(navController)
         TvSettingsCategory.CONTENT -> ContentSettings(navController)
-        TvSettingsCategory.PRIVACY -> PrivacySettings(navController)
         TvSettingsCategory.STORAGE -> StorageSettings(navController)
-        TvSettingsCategory.BACKUP_RESTORE -> BackupAndRestore(navController)
         TvSettingsCategory.INTEGRATIONS -> IntegrationsScreen(navController)
-        TvSettingsCategory.INTERNET -> InternetSettings(navController)
         TvSettingsCategory.ADVANCED -> AdvancedSettings(navController)
         TvSettingsCategory.ABOUT -> AboutScreen(navController)
     }

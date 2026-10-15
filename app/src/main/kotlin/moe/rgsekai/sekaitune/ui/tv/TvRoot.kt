@@ -358,6 +358,16 @@ fun TvRoot(
                 composable("settings") {
                     TvSettingsScreen(
                         navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
+                        upFocusRequester = topBarFocusRequester,
+                        contentFocusRequester = contentFocusRequester,
+                    )
+                }
+
+                composable("stats") {
+                    TvSettingsScreen(
+                        navController = navController,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -420,7 +430,7 @@ fun TvRoot(
                 composable("settings/privacy") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.PRIVACY,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -438,7 +448,7 @@ fun TvRoot(
                 composable("settings/backup_restore") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.BACKUP_RESTORE,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
@@ -456,7 +466,7 @@ fun TvRoot(
                 composable("settings/internet") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.INTERNET,
+                        initialCategory = TvSettingsCategory.APPEARANCE,
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
                     )
