@@ -73,6 +73,7 @@ import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.BuildConfig
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFirstItemClaimed
 import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsRightPaneFocusRequester
 import moe.rgsekai.sekaitune.ui.screens.settings.AboutScreen
 import moe.rgsekai.sekaitune.ui.screens.settings.AccountSettings
@@ -380,9 +381,11 @@ fun TvSettingsScreen(
                     },
             ) {
                 key(selectedIndex, activeSubRoute) {
+                    val firstItemClaimed = remember(selectedIndex, activeSubRoute) { mutableStateOf(false) }
                     CompositionLocalProvider(
                         LocalTvSettingsCategoryFocusRequester provides categoryFocusRequesters[selectedIndex],
                         LocalTvSettingsRightPaneFocusRequester provides rightPaneFirstItemFocusRequester,
+                        LocalTvSettingsRightPaneFirstItemClaimed provides firstItemClaimed,
                     ) {
                         TvSettingsSubScreenWrapper(
                             topBarHeight = currentTopBarHeight,

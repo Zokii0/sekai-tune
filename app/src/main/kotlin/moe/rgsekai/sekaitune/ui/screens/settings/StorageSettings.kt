@@ -89,6 +89,7 @@ import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.component.SwitchPreference
 import moe.rgsekai.sekaitune.ui.player.CanvasArtworkPlaybackCache
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.ui.utils.formatFileSize
 import moe.rgsekai.sekaitune.utils.rememberPreference
@@ -151,11 +152,18 @@ fun StorageSettings(
             listOf(0, 64, 128, 256, 512, 1024, 2048, 4096, 8192, -1)
         }
 
+    val isTv = LocalIsTv.current
     val (smartTrimmer, onSmartTrimmerChange) =
         rememberPreference(
             key = SmartTrimmerKey,
-            defaultValue = false,
+            defaultValue = isTv,
         )
+
+    LaunchedEffect(isTv) {
+        if (isTv && !smartTrimmer) {
+            onSmartTrimmerChange(true)
+        }
+    }
     val (maxImageCacheSize, onMaxImageCacheSizeChange) =
         rememberPreference(
             key = MaxImageCacheSizeKey,
@@ -336,23 +344,25 @@ fun StorageSettings(
                 onSelectFolder = viewModel::openStorageLocationPicker,
             )
 
-            PreferenceGroup(title = stringResource(R.string.downloaded_songs)) {
-                item {
-                    PreferenceEntry(
-                        title = { Text(stringResource(R.string.clear_all_downloads)) },
-                        description = stringResource(R.string.size_used, formatFileSize(downloadCacheSize)),
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_download),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { clearDownloads = true },
-                    )
+            if (!isTv) {
+                PreferenceGroup(title = stringResource(R.string.downloaded_songs)) {
+                    item {
+                        PreferenceEntry(
+                            title = { Text(stringResource(R.string.clear_all_downloads)) },
+                            description = stringResource(R.string.size_used, formatFileSize(downloadCacheSize)),
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_download),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = { clearDownloads = true },
+                        )
+                    }
                 }
             }
 
-            if (clearDownloads) {
+            if (!isTv && clearDownloads) {
                 ActionPromptDialog(
                     title = stringResource(R.string.clear_all_downloads),
                     onDismiss = { clearDownloads = false },
@@ -592,6 +602,7 @@ private fun StorageFolderSection(
     onSmartTrimmerChange: (Boolean) -> Unit,
     onSelectFolder: () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     PreferenceGroup(title = stringResource(R.string.storage_folder)) {
         when (state) {
             StorageSettingsScreenState.Loading -> {
@@ -640,14 +651,16 @@ private fun StorageFolderSection(
             }
         }
 
-        item {
-            SwitchPreference(
-                title = { Text(stringResource(R.string.smart_trimmer)) },
-                description = stringResource(R.string.smart_trimmer_description),
-                checked = smartTrimmer && isSmartTrimmerAvailable,
-                onCheckedChange = onSmartTrimmerChange,
-                isEnabled = isSmartTrimmerAvailable,
-            )
+        if (!isTv) {
+            item {
+                SwitchPreference(
+                    title = { Text(stringResource(R.string.smart_trimmer)) },
+                    description = stringResource(R.string.smart_trimmer_description),
+                    checked = smartTrimmer && isSmartTrimmerAvailable,
+                    onCheckedChange = onSmartTrimmerChange,
+                    isEnabled = isSmartTrimmerAvailable,
+                )
+            }
         }
     }
 }

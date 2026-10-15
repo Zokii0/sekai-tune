@@ -42,17 +42,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
+import moe.rgsekai.sekaitune.utils.isTvDevice as isTvDeviceUtil
+
 /**
  * Detects whether the device is an Android TV / Google TV.
  */
-fun Context.isTvDevice(): Boolean {
-    val isTelevisionUiMode =
-        (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
-            Configuration.UI_MODE_TYPE_TELEVISION
-    return isTelevisionUiMode ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
-}
+fun Context.isTvDevice(): Boolean = isTvDeviceUtil()
 
 /**
  * CompositionLocal indicating whether the app is currently running in Android TV mode.

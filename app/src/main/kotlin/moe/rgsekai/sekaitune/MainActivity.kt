@@ -287,9 +287,11 @@ import moe.rgsekai.sekaitune.ui.component.MarkdownText
 import moe.rgsekai.sekaitune.ui.component.NetworkStatusBanner
 import moe.rgsekai.sekaitune.ui.component.StarDialog
 import moe.rgsekai.sekaitune.ui.component.TopSearch
+import moe.rgsekai.sekaitune.constants.SmartTrimmerKey
 import moe.rgsekai.sekaitune.ui.component.TvNavigationRail
 import moe.rgsekai.sekaitune.ui.tv.TvRoot
 import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import moe.rgsekai.sekaitune.ui.component.rememberBottomSheetState
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerTheme
 import moe.rgsekai.sekaitune.ui.menu.YouTubeSongMenu
@@ -779,6 +781,15 @@ class MainActivity : ComponentActivity() {
                 val preferences = dataStore.data.first()
                 if (preferences[FontPreferenceKey] == null) {
                     dataStore.edit { it[FontPreferenceKey] = AppFontPreference.SYSTEM.name }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                if (isTvDevice()) {
+                    val preferences = dataStore.data.first()
+                    if (preferences[SmartTrimmerKey] != true) {
+                        dataStore.edit { it[SmartTrimmerKey] = true }
+                    }
                 }
             }
 
@@ -3052,15 +3063,6 @@ private fun OnlineSearchSortMenu(
             }
         }
     }
-}
-
-private fun Context.isTvDevice(): Boolean {
-    val isTelevisionUiMode =
-        (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
-            Configuration.UI_MODE_TYPE_TELEVISION
-    return isTelevisionUiMode ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
 }
 
 

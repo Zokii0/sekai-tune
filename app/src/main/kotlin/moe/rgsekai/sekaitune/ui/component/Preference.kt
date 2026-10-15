@@ -70,6 +70,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -81,6 +82,7 @@ import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -122,6 +124,7 @@ val LocalPreferenceGroupPosition = compositionLocalOf<PreferenceGroupPosition?> 
 val LocalTvSliderAdjustment = compositionLocalOf<((Boolean) -> Unit)?> { null }
 val LocalTvSettingsCategoryFocusRequester = compositionLocalOf<FocusRequester?> { null }
 val LocalTvSettingsRightPaneFocusRequester = compositionLocalOf<FocusRequester?> { null }
+val LocalTvSettingsRightPaneFirstItemClaimed = compositionLocalOf { mutableStateOf(false) }
 
 private val PreferenceGroupLargeCorner = 28.dp
 private val PreferenceGroupSmallCorner = 6.dp
@@ -214,15 +217,29 @@ fun PreferenceEntry(
     val isTv = LocalIsTv.current
     val leftCategoryFocusRequester = LocalTvSettingsCategoryFocusRequester.current
     val rightPaneFocusRequester = LocalTvSettingsRightPaneFocusRequester.current
+    val firstItemClaimed = LocalTvSettingsRightPaneFirstItemClaimed.current
     val focusManager = LocalFocusManager.current
     val sliderAdjustment = LocalTvSliderAdjustment.current
 
-    val isFirstInGroup = groupPosition == PreferenceGroupPosition.First || groupPosition == PreferenceGroupPosition.Single
+    val shouldAttachFirstItemRequester = remember(isTv, rightPaneFocusRequester) {
+        if (isTv && rightPaneFocusRequester != null && !firstItemClaimed.value) {
+            firstItemClaimed.value = true
+            true
+        } else {
+            false
+        }
+    }
 
     val tvModifier = if (isTv) {
         Modifier
-            .tvFocusOutline(shape = resolvedShape)
-            .focusable(enabled = isEnabled)
+            .then(
+                if (shouldAttachFirstItemRequester && rightPaneFocusRequester != null) {
+                    Modifier.focusRequester(rightPaneFocusRequester)
+                } else {
+                    Modifier
+                }
+            )
+            .tvFocusOutline(shape = resolvedShape, interactionSource = interactionSource)
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (keyEvent.key) {
@@ -246,12 +263,14 @@ fun PreferenceEntry(
                         }
                     }
                     Key.DirectionUp -> {
-                        focusManager.moveFocus(FocusDirection.Up)
-                        true
+                        val moved = focusManager.moveFocus(FocusDirection.Up) ||
+                            focusManager.moveFocus(FocusDirection.Previous)
+                        moved
                     }
                     Key.DirectionDown -> {
-                        focusManager.moveFocus(FocusDirection.Down)
-                        true
+                        val moved = focusManager.moveFocus(FocusDirection.Down) ||
+                            focusManager.moveFocus(FocusDirection.Next)
+                        moved
                     }
                     Key.DirectionCenter, Key.Enter, Key.Spacebar, Key.NumPadEnter -> {
                         if (isEnabled && onClick != null) {
@@ -264,6 +283,13 @@ fun PreferenceEntry(
                     else -> false
                 }
             }
+            .then(
+                if (onClick == null && onLongClick == null && sliderAdjustment != null) {
+                    Modifier.focusable(enabled = isEnabled, interactionSource = interactionSource)
+                } else {
+                    Modifier
+                }
+            )
     } else {
         Modifier
     }
@@ -275,26 +301,34 @@ fun PreferenceEntry(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = PreferenceEntryMinHeight)
-                    .then(if (isEnabled && (onClick != null || onLongClick != null)) Modifier.focusable() else Modifier)
+                    .then(
+                        if (!isTv && isEnabled && (onClick != null || onLongClick != null)) {
+                            Modifier.focusable()
+                        } else {
+                            Modifier
+                        }
+                    )
                     .then(
                         if (onLongClick != null) {
                             Modifier.combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = LocalIndication.current,
+                                indication = if (isTv) null else LocalIndication.current,
                                 enabled = isEnabled && (onClick != null || onLongClick != null),
                                 onClick = onClick ?: {},
                                 onLongClick = onLongClick,
                             )
-                        } else {
+                        } else if (onClick != null) {
                             Modifier.clickable(
                                 interactionSource = interactionSource,
-                                indication = LocalIndication.current,
-                                enabled = isEnabled && onClick != null,
-                                onClick = onClick ?: {},
+                                indication = if (isTv) null else LocalIndication.current,
+                                enabled = isEnabled,
+                                onClick = onClick,
                             )
+                        } else {
+                            Modifier
                         }
                     ).alpha(if (isEnabled) 1f else 0.5f)
-                    .then(if (isTv) tvModifier else Modifier)
+                    .then(tvModifier)
                     .padding(
                         horizontal = PreferenceEntryHorizontalPadding,
                         vertical = PreferenceEntryVerticalPadding,
@@ -390,7 +424,9 @@ fun <T> SegmentedPreference(
             content = {
                 Spacer(Modifier.height(12.dp))
                 SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(
+                        if (isTv) Modifier.focusProperties { canFocus = false } else Modifier
+                    ),
                 ) {
                     values.forEachIndexed { index, value ->
                         SegmentedButton(
@@ -608,6 +644,14 @@ private fun <T> PreferenceSelectionBottomSheet(
                 }
             }
 
+            val isTv = LocalIsTv.current
+            val selectedOptionFocusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) {
+                if (isTv) {
+                    selectedOptionFocusRequester.safeRequestFocus()
+                }
+            }
+
             LazyColumn(
                 modifier =
                     Modifier
@@ -627,6 +671,7 @@ private fun <T> PreferenceSelectionBottomSheet(
                         selected = value == selectedValue,
                         enabled = isValueEnabled(value),
                         onClick = { onValueSelected(value) },
+                        modifier = if (isTv && value == selectedValue) Modifier.focusRequester(selectedOptionFocusRequester) else Modifier,
                     )
                 }
             }
@@ -641,6 +686,7 @@ private fun PreferenceSelectionOption(
     selected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val glassConfig = LocalGlassEffectConfig.current
     val isGlass = glassConfig.isEnabledFor(GlassComponent.POPUP_MENU)
@@ -673,7 +719,7 @@ private fun PreferenceSelectionOption(
         color = containerColor,
         border = if (isGlass && rimColor != null) BorderStroke(1.dp, rimColor) else null,
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .heightIn(min = if (description == null) 72.dp else 96.dp)
                 .alpha(if (enabled) 1f else 0.5f)
@@ -792,6 +838,7 @@ fun SwitchPreference(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = isEnabled,
+                modifier = if (LocalIsTv.current) Modifier.focusProperties { canFocus = false } else Modifier,
                 thumbContent = {
                     AnimatedContent(
                         targetState = checked,
