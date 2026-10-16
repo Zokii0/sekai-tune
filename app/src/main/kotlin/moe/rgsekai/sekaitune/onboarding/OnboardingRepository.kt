@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import moe.rgsekai.sekaitune.constants.LaunchCountKey
 import moe.rgsekai.sekaitune.constants.OnboardingCompletedKey
 import moe.rgsekai.sekaitune.utils.dataStore
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import javax.inject.Inject
 
 class OnboardingRepository
@@ -24,7 +25,11 @@ class OnboardingRepository
     ) {
         fun observeShouldShowOnboarding(): Flow<Boolean> =
             context.dataStore.data.map { preferences ->
-                preferences[OnboardingCompletedKey] != true
+                if (context.isTvDevice()) {
+                    false
+                } else {
+                    preferences[OnboardingCompletedKey] != true
+                }
             }
 
         suspend fun markCompleted() {

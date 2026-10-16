@@ -708,9 +708,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val isTv = isTvDevice()
+
             // Show prompt once per new version
-            LaunchedEffect(latestVersionName, dismissedUpdateVersion) {
+            LaunchedEffect(latestVersionName, dismissedUpdateVersion, isTv) {
                 if (
+                    !isTv &&
                     BuildConfig.UPDATER_AVAILABLE &&
                     Updater.isUpdateAvailable(latestVersionName, BuildConfig.VERSION_NAME)
                 ) {
@@ -723,7 +726,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val isTv = isTvDevice()
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = false)
             val effectiveDynamicTheme = if (isTv) false else enableDynamicTheme
             val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "default")
