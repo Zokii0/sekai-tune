@@ -39,7 +39,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -94,6 +98,9 @@ fun Modifier.tvFocusOutline(
     val activeBorderColor = focusedBorderColor ?: primaryColor
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
+    var itemSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+    val extraPaddingPx = remember(density) { with(density) { 36.dp.toPx() } }
 
     val animatedBorderColor by animateColorAsState(
         targetValue = if (effectivelyFocused) activeBorderColor else Color.Transparent,
@@ -111,12 +118,23 @@ fun Modifier.tvFocusOutline(
 
     this
         .bringIntoViewRequester(bringIntoViewRequester)
+        .onSizeChanged { itemSize = it }
         .onFocusChanged {
             isFocused = it.isFocused || it.hasFocus
             if (it.isFocused || it.hasFocus) {
                 coroutineScope.launch {
                     runCatching {
-                        bringIntoViewRequester.bringIntoView()
+                        if (itemSize.height > 0) {
+                            val rect = Rect(
+                                left = 0f,
+                                top = -extraPaddingPx,
+                                right = itemSize.width.toFloat(),
+                                bottom = itemSize.height.toFloat() + extraPaddingPx,
+                            )
+                            bringIntoViewRequester.bringIntoView(rect)
+                        } else {
+                            bringIntoViewRequester.bringIntoView()
+                        }
                     }
                 }
             }

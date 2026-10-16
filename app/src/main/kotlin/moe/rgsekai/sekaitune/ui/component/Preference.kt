@@ -85,9 +85,13 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.IntSize
 import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
@@ -249,6 +253,9 @@ fun Modifier.tvSettingsItemFocus(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     var isFocused by remember { mutableStateOf(false) }
+    var itemSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+    val extraPaddingPx = remember(density) { with(density) { 36.dp.toPx() } }
 
     this
         .focusRequester(itemFocusRequester)
@@ -259,13 +266,24 @@ fun Modifier.tvSettingsItemFocus(
                 Modifier
             }
         )
+        .onSizeChanged { itemSize = it }
         .onFocusChanged {
             isFocused = it.isFocused || it.hasFocus
             if (it.isFocused || it.hasFocus) {
                 currentFocusedRequester?.value = itemFocusRequester
                 coroutineScope.launch {
                     runCatching {
-                        bringIntoViewRequester.bringIntoView()
+                        if (itemSize.height > 0) {
+                            val rect = Rect(
+                                left = 0f,
+                                top = -extraPaddingPx,
+                                right = itemSize.width.toFloat(),
+                                bottom = itemSize.height.toFloat() + extraPaddingPx,
+                            )
+                            bringIntoViewRequester.bringIntoView(rect)
+                        } else {
+                            bringIntoViewRequester.bringIntoView()
+                        }
                     }
                 }
             }
@@ -494,11 +512,24 @@ fun PreferenceEntry(
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
+    var prefItemSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+    val extraPaddingPx = remember(density) { with(density) { 36.dp.toPx() } }
 
     LaunchedEffect(isItemFocused) {
         if (isItemFocused) {
             runCatching {
-                bringIntoViewRequester.bringIntoView()
+                if (prefItemSize.height > 0) {
+                    val rect = Rect(
+                        left = 0f,
+                        top = -extraPaddingPx,
+                        right = prefItemSize.width.toFloat(),
+                        bottom = prefItemSize.height.toFloat() + extraPaddingPx,
+                    )
+                    bringIntoViewRequester.bringIntoView(rect)
+                } else {
+                    bringIntoViewRequester.bringIntoView()
+                }
             }
         }
     }
@@ -513,13 +544,24 @@ fun PreferenceEntry(
                     Modifier
                 }
             )
+            .onSizeChanged { prefItemSize = it }
             .onFocusChanged {
                 isRowFocused = it.isFocused || it.hasFocus
                 if (it.isFocused || it.hasFocus) {
                     currentFocusedRequester?.value = itemFocusRequester
                     coroutineScope.launch {
                         runCatching {
-                            bringIntoViewRequester.bringIntoView()
+                            if (prefItemSize.height > 0) {
+                                val rect = Rect(
+                                    left = 0f,
+                                    top = -extraPaddingPx,
+                                    right = prefItemSize.width.toFloat(),
+                                    bottom = prefItemSize.height.toFloat() + extraPaddingPx,
+                                )
+                                bringIntoViewRequester.bringIntoView(rect)
+                            } else {
+                                bringIntoViewRequester.bringIntoView()
+                            }
                         }
                     }
                 }
