@@ -7,9 +7,11 @@
 
 package moe.rgsekai.sekaitune.ui.tv
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,12 +33,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -115,13 +124,70 @@ fun TvRoot(
     }
 
     val selectedTab = topTabForCurrentRoute ?: lastTopTab
+    val isLoginRoute = currentRoute == LOGIN_ROUTE || currentRoute.startsWith("$LOGIN_ROUTE?") || currentRoute.contains("login")
+    val isNowPlayingRoute = currentRoute == "ambient_mode"
+
+    var isTopBarFocused by remember { mutableStateOf(false) }
+    var lastRemoteActivityTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var isTopBarAutoHidden by remember { mutableStateOf(false) }
+
+    // Inactivity timer: When focus is on the Now Playing screen or its elements,
+    // after 10 seconds of no remote activity, hide the top TV bar upside.
+    // If any remote activity happens, the top bar appears immediately.
+    LaunchedEffect(isNowPlayingRoute, isTopBarFocused, lastRemoteActivityTime) {
+        if (isNowPlayingRoute && !isTopBarFocused) {
+            isTopBarAutoHidden = false
+            delay(10_000L)
+            isTopBarAutoHidden = true
+        } else {
+            isTopBarAutoHidden = false
+        }
+    }
+
+    val isTopBarVisible = !isTopBarAutoHidden
+
+    val topBarOffsetFraction by animateFloatAsState(
+        targetValue = if (isTopBarVisible) 0f else -1f,
+        animationSpec = tween(
+            durationMillis = 400,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "tvTopBarSlide",
+    )
+    val topBarAlpha by animateFloatAsState(
+        targetValue = if (isTopBarVisible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 350,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "tvTopBarAlpha",
+    )
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface),
+            .background(MaterialTheme.colorScheme.surface)
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown) {
+                    lastRemoteActivityTime = System.currentTimeMillis()
+                    if (isTopBarAutoHidden) {
+                        isTopBarAutoHidden = false
+                    }
+                }
+                false
+            }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent()
+                        lastRemoteActivityTime = System.currentTimeMillis()
+                        if (isTopBarAutoHidden) {
+                            isTopBarAutoHidden = false
+                        }
+                    }
+                }
+            },
     ) {
-        val isLoginRoute = currentRoute == LOGIN_ROUTE || currentRoute.startsWith("$LOGIN_ROUTE?") || currentRoute.contains("login")
 
         // TV Content Area: hosts NavHost wrapped with TvDpadLayer for generic D-pad navigation
         TvDpadLayer(
@@ -648,7 +714,14 @@ fun TvRoot(
                 downFocusRequester = contentFocusRequester,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.TopCenter),
+                    .align(Alignment.TopCenter)
+                    .onFocusChanged { focusState ->
+                        isTopBarFocused = focusState.hasFocus
+                    }
+                    .graphicsLayer {
+                        translationY = topBarOffsetFraction * (size.height + 40.dp.toPx())
+                        alpha = topBarAlpha
+                    },
             )
         }
     }
