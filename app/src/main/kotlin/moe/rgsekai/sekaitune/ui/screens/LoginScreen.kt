@@ -21,7 +21,9 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -128,14 +130,18 @@ fun LoginScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .padding(top = innerPadding.calculateTopPadding())
                     .then(
                         if (isTv) {
                             Modifier
                                 .focusRequester(webViewFocusRequester)
                                 .focusable()
                         } else {
-                            Modifier.windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                            Modifier.windowInsetsPadding(
+                                LocalPlayerAwareWindowInsets.current.only(
+                                    WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                                ),
+                            )
                         },
                     )
                     .background(MaterialTheme.colorScheme.surface),
