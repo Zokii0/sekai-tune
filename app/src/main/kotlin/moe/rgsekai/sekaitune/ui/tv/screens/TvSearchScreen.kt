@@ -157,7 +157,7 @@ fun TvSearchScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 48.dp, vertical = 24.dp),
+                .padding(start = 48.dp, end = 48.dp, top = 80.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // TV Search Input Pill

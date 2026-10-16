@@ -156,7 +156,7 @@ fun TvLibraryScreen(
     } else {
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(top = 16.dp, bottom = 48.dp),
+            contentPadding = PaddingValues(top = 76.dp, bottom = 48.dp),
             modifier = modifier.fillMaxSize(),
         ) {
             itemsIndexed(

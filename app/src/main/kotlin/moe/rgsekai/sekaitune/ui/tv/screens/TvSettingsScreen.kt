@@ -262,7 +262,7 @@ fun TvSettingsScreen(
                 .fillMaxHeight()
                 .weight(0.30f)
                 .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .padding(top = 16.dp, start = 20.dp, end = 12.dp, bottom = 16.dp),
+                .padding(top = 76.dp, start = 20.dp, end = 12.dp, bottom = 16.dp),
         ) {
             Text(
                 text = stringResource(R.string.settings),
@@ -347,7 +347,7 @@ fun TvSettingsScreen(
             modifier = Modifier
                 .fillMaxHeight()
                 .weight(0.70f)
-                .padding(start = 16.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
+                .padding(start = 16.dp, end = 20.dp, top = 76.dp, bottom = 16.dp),
         ) {
             // Category title header at the top of the right pane (since phone top bar is hidden)
             Text(

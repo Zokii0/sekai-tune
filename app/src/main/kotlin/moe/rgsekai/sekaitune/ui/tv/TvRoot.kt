@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -115,59 +116,12 @@ fun TvRoot(
 
     val selectedTab = topTabForCurrentRoute ?: lastTopTab
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface),
     ) {
         val isLoginRoute = currentRoute == LOGIN_ROUTE || currentRoute.startsWith("$LOGIN_ROUTE?") || currentRoute.contains("login")
-
-        if (!isLoginRoute) {
-            // TV Top Navigation Bar
-            TvTopBar(
-                selectedTab = selectedTab,
-                onTabSelected = { tab ->
-                    when (tab) {
-                        TvTab.HOME -> {
-                            if (currentRoute != TV_HOME_ROUTE) {
-                                navController.navigate(TV_HOME_ROUTE) {
-                                    popUpTo(TV_HOME_ROUTE) { inclusive = true }
-                                    launchSingleTop = true
-                                }
-                            }
-                        }
-                        TvTab.EXPLORE -> {
-                            navController.navigate(Screens.NewRelease.route) {
-                                launchSingleTop = true
-                            }
-                        }
-                        TvTab.LIBRARY -> {
-                            navController.navigate(Screens.Library.route) {
-                                launchSingleTop = true
-                            }
-                        }
-                        TvTab.NOW_PLAYING -> {
-                            navController.navigate("ambient_mode") {
-                                launchSingleTop = true
-                            }
-                        }
-                        TvTab.SEARCH -> {
-                            navController.navigate(Screens.Search.route) {
-                                launchSingleTop = true
-                            }
-                        }
-                        TvTab.SETTINGS -> {
-                            navController.navigate("settings") {
-                                launchSingleTop = true
-                            }
-                        }
-                    }
-                },
-                selectedTabFocusRequester = topBarFocusRequester,
-                downFocusRequester = contentFocusRequester,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
 
         // TV Content Area: hosts NavHost wrapped with TvDpadLayer for generic D-pad navigation
         TvDpadLayer(
@@ -175,9 +129,7 @@ fun TvRoot(
             currentRoute = currentRoute,
             upFocusRequester = topBarFocusRequester,
             contentFocusRequester = contentFocusRequester,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             NavHost(
                 navController = navController,
@@ -649,6 +601,55 @@ fun TvRoot(
                     )
                 }
             }
+        }
+
+        if (!isLoginRoute) {
+            // TV Top Navigation Bar (floats on top of content)
+            TvTopBar(
+                selectedTab = selectedTab,
+                onTabSelected = { tab ->
+                    when (tab) {
+                        TvTab.HOME -> {
+                            if (currentRoute != TV_HOME_ROUTE) {
+                                navController.navigate(TV_HOME_ROUTE) {
+                                    popUpTo(TV_HOME_ROUTE) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                        TvTab.EXPLORE -> {
+                            navController.navigate(Screens.NewRelease.route) {
+                                launchSingleTop = true
+                            }
+                        }
+                        TvTab.LIBRARY -> {
+                            navController.navigate(Screens.Library.route) {
+                                launchSingleTop = true
+                            }
+                        }
+                        TvTab.NOW_PLAYING -> {
+                            navController.navigate("ambient_mode") {
+                                launchSingleTop = true
+                            }
+                        }
+                        TvTab.SEARCH -> {
+                            navController.navigate(Screens.Search.route) {
+                                launchSingleTop = true
+                            }
+                        }
+                        TvTab.SETTINGS -> {
+                            navController.navigate("settings") {
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                },
+                selectedTabFocusRequester = topBarFocusRequester,
+                downFocusRequester = contentFocusRequester,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter),
+            )
         }
     }
 }

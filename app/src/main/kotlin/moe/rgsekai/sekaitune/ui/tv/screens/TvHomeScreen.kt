@@ -95,7 +95,7 @@ fun TvHomeScreen(
 
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(bottom = 48.dp),
+                contentPadding = PaddingValues(top = 76.dp, bottom = 48.dp),
                 modifier = modifier.fillMaxSize(),
             ) {
                 var isFirstRenderedShelf = true

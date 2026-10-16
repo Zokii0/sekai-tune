@@ -525,6 +525,9 @@ fun TvNowPlayingScreen(
                 fadeIn(tween(250)) togetherWith fadeOut(tween(250))
             },
             label = "tvNowPlayingMainLayout",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 68.dp),
         ) { isFullLyrics ->
             if (isFullLyrics) {
                 // Mode 3: Full Synchronized Lyrics taking top/main screen, controls below remain visible

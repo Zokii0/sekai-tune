@@ -168,7 +168,7 @@ fun TvDetailLayout(
             modifier = Modifier
                 .width(300.dp)
                 .fillMaxHeight()
-                .padding(start = 32.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
+                .padding(start = 32.dp, end = 20.dp, top = 76.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val coverShape = if (isRoundCover) CircleShape else RoundedCornerShape(14.dp)
@@ -363,7 +363,7 @@ fun TvDetailLayout(
             } else {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 48.dp, end = 24.dp),
+                    contentPadding = PaddingValues(top = 76.dp, bottom = 48.dp, end = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {

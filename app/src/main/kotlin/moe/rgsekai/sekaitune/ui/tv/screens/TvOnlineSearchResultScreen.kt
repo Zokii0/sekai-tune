@@ -201,7 +201,7 @@ fun TvOnlineSearchResultScreen(
                 contentPadding = PaddingValues(
                     start = 48.dp,
                     end = 48.dp,
-                    top = 16.dp,
+                    top = 76.dp,
                     bottom = 48.dp,
                 ),
                 modifier = Modifier.fillMaxSize(),
