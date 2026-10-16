@@ -489,7 +489,7 @@ private fun TvSettingsCategoryRow(
                     Modifier
                 },
             )
-            .tvFocusOutline(shape = itemShape)
+            .tvFocusOutline(shape = itemShape, scaleOnFocus = 1.0f)
             .focusable(interactionSource = interactionSource)
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false

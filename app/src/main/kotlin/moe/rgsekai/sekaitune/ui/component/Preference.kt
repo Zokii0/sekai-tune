@@ -202,6 +202,7 @@ fun Modifier.tvSettingsItemFocus(
     onMoveRight: (() -> Unit)? = null,
     onMoveUp: (() -> Unit)? = null,
     onMoveDown: (() -> Unit)? = null,
+    scaleOnFocus: Float = 1.0f,
 ): Modifier = composed {
     val isTv = LocalIsTv.current
     if (!isTv) return@composed this
@@ -337,6 +338,7 @@ fun Modifier.tvSettingsItemFocus(
         }
         .tvFocusOutline(
             shape = shape,
+            scaleOnFocus = scaleOnFocus,
             interactionSource = interactionSource,
         )
 }

@@ -1388,12 +1388,13 @@ internal fun ExpressiveActionRow(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }.clip(InnerTileShape)
+                }
                 .tvSettingsItemFocus(
                     shape = InnerTileShape,
                     interactionSource = interactionSource,
                     onClick = onClick,
                 )
+                .clip(InnerTileShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
@@ -1466,13 +1467,13 @@ internal fun ExpressiveSwitchRow(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 6.dp, vertical = 2.dp)
-                .clip(InnerTileShape)
-                .background(containerColor)
                 .tvSettingsItemFocus(
                     shape = InnerTileShape,
                     interactionSource = interactionSource,
                     onClick = { onCheckedChange(!checked) },
                 )
+                .clip(InnerTileShape)
+                .background(containerColor)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),

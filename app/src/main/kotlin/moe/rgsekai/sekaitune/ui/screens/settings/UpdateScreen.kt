@@ -125,6 +125,7 @@ fun UpdateScreen(
     onUpToDate: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val isTv = LocalIsTv.current
     val uriHandler = LocalUriHandler.current
     val scrollBehavior = appBarScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
@@ -400,23 +401,25 @@ fun UpdateScreen(
                 )
             }
 
-            item {
-                UpdateControlsPanel(
-                    enableUpdateNotification = enableUpdateNotification,
-                    onUpdateNotificationChange = { enabled ->
-                        if (enabled) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            if (!isTv) {
+                item {
+                    UpdateControlsPanel(
+                        enableUpdateNotification = enableUpdateNotification,
+                        onUpdateNotificationChange = { enabled ->
+                            if (enabled) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    onEnableUpdateNotificationChange(true)
+                                    UpdateNotificationManager.schedulePeriodicUpdateCheck(context)
+                                }
                             } else {
-                                onEnableUpdateNotificationChange(true)
-                                UpdateNotificationManager.schedulePeriodicUpdateCheck(context)
+                                onEnableUpdateNotificationChange(false)
+                                UpdateNotificationManager.cancelPeriodicUpdateCheck(context)
                             }
-                        } else {
-                            onEnableUpdateNotificationChange(false)
-                            UpdateNotificationManager.cancelPeriodicUpdateCheck(context)
-                        }
-                    },
-                )
+                        },
+                    )
+                }
             }
 
             item {
@@ -712,6 +715,7 @@ private fun UpdateActionPanel(
     onOpenChangelog: () -> Unit,
     onCheckForUpdate: () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     Card(
         modifier =
             Modifier
@@ -730,46 +734,59 @@ private fun UpdateActionPanel(
                     .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FilledTonalButton(
-                onClick = onOpenChangelog,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .tvSettingsItemFocus(
-                            shape = ButtonDefaults.shape,
-                            isFirstItem = true,
-                            onClick = onOpenChangelog,
-                        ),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.update),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.view_changelog))
-            }
+            if (!isTv) {
+                FilledTonalButton(
+                    onClick = onOpenChangelog,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.update),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(R.string.view_changelog))
+                }
 
-            OutlinedButton(
-                onClick = onCheckForUpdate,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .tvSettingsItemFocus(
-                            shape = ButtonDefaults.shape,
-                            isFirstItem = false,
-                            onClick = onCheckForUpdate,
-                        ),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.sync),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.check_for_update))
+                OutlinedButton(
+                    onClick = onCheckForUpdate,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.sync),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(R.string.check_for_update))
+                }
+            } else {
+                FilledTonalButton(
+                    onClick = onCheckForUpdate,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .tvSettingsItemFocus(
+                                shape = ButtonDefaults.shape,
+                                isFirstItem = true,
+                                onClick = onCheckForUpdate,
+                            ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.sync),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(R.string.check_for_update))
+                }
             }
         }
     }
@@ -818,13 +835,13 @@ private fun UpdateControlsPanel(
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier
-                    .clip(MaterialTheme.shapes.extraLarge)
                     .tvSettingsItemFocus(
                         shape = MaterialTheme.shapes.extraLarge,
                         interactionSource = interactionSource,
                         isFirstItem = false,
                         onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
                     )
+                    .clip(MaterialTheme.shapes.extraLarge)
                     .clickable(
                         interactionSource = interactionSource,
                         indication = androidx.compose.material3.ripple(),
