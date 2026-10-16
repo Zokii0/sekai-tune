@@ -118,6 +118,7 @@ enum class TvSettingsCategory(
     CONTENT("settings/content"),
     STORAGE("settings/storage"),
     INTEGRATIONS("settings/integrations"),
+    UPDATE("settings/update"),
     ABOUT("settings/about"),
 }
 
@@ -130,6 +131,7 @@ private fun tvCategoryTitle(category: TvSettingsCategory): String {
         TvSettingsCategory.CONTENT -> stringResource(R.string.content)
         TvSettingsCategory.STORAGE -> stringResource(R.string.storage)
         TvSettingsCategory.INTEGRATIONS -> stringResource(R.string.integrations)
+        TvSettingsCategory.UPDATE -> stringResource(R.string.updates)
         TvSettingsCategory.ABOUT -> stringResource(R.string.about)
     }
 }
@@ -143,6 +145,7 @@ private fun tvCategoryIcon(category: TvSettingsCategory): Painter {
         TvSettingsCategory.CONTENT -> painterResource(R.drawable.language)
         TvSettingsCategory.STORAGE -> painterResource(R.drawable.storage)
         TvSettingsCategory.INTEGRATIONS -> painterResource(R.drawable.integration)
+        TvSettingsCategory.UPDATE -> painterResource(R.drawable.update)
         TvSettingsCategory.ABOUT -> painterResource(R.drawable.info)
     }
 }
@@ -183,6 +186,7 @@ private fun tvCategoryTopBarHeight(category: TvSettingsCategory, subRoute: Strin
     }
     return when (category) {
         TvSettingsCategory.ACCOUNT,
+        TvSettingsCategory.UPDATE,
         TvSettingsCategory.ABOUT -> 152.dp
         else -> 64.dp
     }
@@ -604,6 +608,7 @@ private fun TvSettingsCategoryContent(
         TvSettingsCategory.CONTENT -> ContentSettings(navController)
         TvSettingsCategory.STORAGE -> StorageSettings(navController)
         TvSettingsCategory.INTEGRATIONS -> IntegrationsScreen(navController)
+        TvSettingsCategory.UPDATE -> UpdateScreen(navController)
         TvSettingsCategory.ABOUT -> AboutScreen(navController)
     }
 }

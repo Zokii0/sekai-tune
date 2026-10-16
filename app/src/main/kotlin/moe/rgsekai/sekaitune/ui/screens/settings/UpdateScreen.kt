@@ -17,6 +17,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,6 +81,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -100,8 +105,12 @@ import moe.rgsekai.sekaitune.ui.component.BottomSheetPage
 import moe.rgsekai.sekaitune.ui.component.BottomSheetPageState
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.MarkdownText
+import moe.rgsekai.sekaitune.ui.component.tvSettingsItemFocus
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.AppUpdateInstaller
 import moe.rgsekai.sekaitune.utils.UpdateNotificationManager
 import moe.rgsekai.sekaitune.utils.Updater
@@ -246,7 +255,9 @@ fun UpdateScreen(
 
         Button(
             onClick = { installUpdate(downloadUrl) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .tvFocusOutline(),
             shapes = ButtonDefaults.shapes(),
         ) {
             Text(text = stringResource(R.string.update_text))
@@ -469,6 +480,10 @@ fun UpdateScreen(
                 )
             },
             buttons = {
+                val cancelFocusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) {
+                    cancelFocusRequester.safeRequestFocus()
+                }
                 TextButton(
                     onClick = {
                         updateDownloadJob?.cancel()
@@ -476,7 +491,10 @@ fun UpdateScreen(
                         updateDownloadProgress = null
                         showUpdateDownloadDialog = false
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(cancelFocusRequester)
+                        .tvFocusOutline(),
                 ) {
                     Text(text = stringResource(android.R.string.cancel))
                 }
@@ -517,6 +535,10 @@ fun UpdateScreen(
     }
 
     if (showUpdateUpToDateDialog) {
+        val okFocusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {
+            okFocusRequester.safeRequestFocus()
+        }
         DefaultDialog(
             onDismiss = { showUpdateUpToDateDialog = false },
             icon = {
@@ -546,7 +568,10 @@ fun UpdateScreen(
             buttons = {
                 OutlinedButton(
                     onClick = { showUpdateUpToDateDialog = false },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(okFocusRequester)
+                        .tvFocusOutline(),
                 ) {
                     Text(stringResource(android.R.string.ok))
                 }
@@ -563,6 +588,10 @@ fun UpdateScreen(
     }
 
     if (showUpdateErrorDialog) {
+        val okFocusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {
+            okFocusRequester.safeRequestFocus()
+        }
         DefaultDialog(
             onDismiss = { showUpdateErrorDialog = false },
             icon = {
@@ -582,7 +611,10 @@ fun UpdateScreen(
             buttons = {
                 TextButton(
                     onClick = { showUpdateErrorDialog = false },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(okFocusRequester)
+                        .tvFocusOutline(),
                 ) {
                     Text(stringResource(android.R.string.ok))
                 }
@@ -703,7 +735,12 @@ private fun UpdateActionPanel(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp),
+                        .heightIn(min = 48.dp)
+                        .tvSettingsItemFocus(
+                            shape = ButtonDefaults.shape,
+                            isFirstItem = true,
+                            onClick = onOpenChangelog,
+                        ),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.update),
@@ -719,7 +756,12 @@ private fun UpdateActionPanel(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp),
+                        .heightIn(min = 48.dp)
+                        .tvSettingsItemFocus(
+                            shape = ButtonDefaults.shape,
+                            isFirstItem = false,
+                            onClick = onCheckForUpdate,
+                        ),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.sync),
@@ -738,6 +780,9 @@ private fun UpdateControlsPanel(
     enableUpdateNotification: Boolean,
     onUpdateNotificationChange: (Boolean) -> Unit,
 ) {
+    val isTv = LocalIsTv.current
+    val interactionSource = remember { MutableInteractionSource() }
+
     Card(
         modifier =
             Modifier
@@ -768,9 +813,23 @@ private fun UpdateControlsPanel(
                     Switch(
                         checked = enableUpdateNotification,
                         onCheckedChange = onUpdateNotificationChange,
+                        modifier = if (isTv) Modifier.focusProperties { canFocus = false } else Modifier,
                     )
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.extraLarge)
+                    .tvSettingsItemFocus(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        interactionSource = interactionSource,
+                        isFirstItem = false,
+                        onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
+                    )
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = androidx.compose.material3.ripple(),
+                        onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
+                    ),
             )
         }
     }

@@ -12,6 +12,7 @@ package moe.rgsekai.sekaitune.ui.screens.settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +28,7 @@ import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.MarkdownText
+import moe.rgsekai.sekaitune.ui.component.tvSettingsItemFocus
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.ReleaseInfo
 import moe.rgsekai.sekaitune.utils.Updater
@@ -149,8 +151,11 @@ fun ChangelogScreen(
                     ) {
                         item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                        items(releases) { release ->
-                            ReleaseCard(release = release)
+                        itemsIndexed(releases) { index, release ->
+                            ReleaseCard(
+                                release = release,
+                                isFirstItem = index == 0,
+                            )
                         }
 
                         item { Spacer(modifier = Modifier.height(SettingsDimensions.ScreenBottomPadding)) }
@@ -162,7 +167,10 @@ fun ChangelogScreen(
 }
 
 @Composable
-private fun ReleaseCard(release: ReleaseInfo) {
+private fun ReleaseCard(
+    release: ReleaseInfo,
+    isFirstItem: Boolean = false,
+) {
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     val displayDateFormat = remember { SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()) }
 
@@ -177,7 +185,13 @@ private fun ReleaseCard(release: ReleaseInfo) {
         }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .tvSettingsItemFocus(
+                    shape = RoundedCornerShape(16.dp),
+                    isFirstItem = isFirstItem,
+                ),
         shape = RoundedCornerShape(16.dp),
         colors =
             CardDefaults.cardColors(

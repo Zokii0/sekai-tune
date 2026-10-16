@@ -627,7 +627,7 @@ fun TvRoot(
                 composable("settings/changelog") {
                     TvSettingsScreen(
                         navController = navController,
-                        initialCategory = TvSettingsCategory.ABOUT,
+                        initialCategory = TvSettingsCategory.UPDATE,
                         activeSubRoute = "settings/changelog",
                         upFocusRequester = topBarFocusRequester,
                         contentFocusRequester = contentFocusRequester,
@@ -638,10 +638,9 @@ fun TvRoot(
                     composable("settings/update") {
                         TvSettingsScreen(
                             navController = navController,
-                            initialCategory = TvSettingsCategory.ABOUT,
-                            activeSubRoute = "settings/update",
+                            initialCategory = TvSettingsCategory.UPDATE,
                             upFocusRequester = topBarFocusRequester,
-                        contentFocusRequester = contentFocusRequester,
+                            contentFocusRequester = contentFocusRequester,
                         )
                     }
                 }

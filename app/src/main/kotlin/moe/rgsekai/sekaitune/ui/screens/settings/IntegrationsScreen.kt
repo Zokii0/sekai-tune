@@ -87,6 +87,7 @@ import moe.rgsekai.sekaitune.spotify.SpotifyAuth
 import moe.rgsekai.sekaitune.ui.component.DefaultDialog
 import moe.rgsekai.sekaitune.ui.component.GlassModalBottomSheet
 import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.utils.resetAuthWebViewSession
@@ -99,6 +100,7 @@ fun IntegrationsScreen(
     navController: NavController,
     spotifyAccountViewModel: SpotifyAccountViewModel = hiltViewModel(),
 ) {
+    val isTv = LocalIsTv.current
     val playerInsets = LocalPlayerAwareWindowInsets.current
     val (showSpotifyPlaylists, onShowSpotifyPlaylistsChange) = rememberPreference(
         key = ShowSpotifyPlaylistsKey,
@@ -183,15 +185,17 @@ fun IntegrationsScreen(
                             onCheckedChange = onShowSpotifyPlaylistsChange,
                         )
 
-                        ExpressiveDivider()
+                        if (!isTv) {
+                            ExpressiveDivider()
 
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.spotify_icon),
-                            title = stringResource(R.string.spotify_follow_artist),
-                            subtitle = stringResource(R.string.spotify_follow_artist_desc),
-                            checked = showSpotifyFollowArtist,
-                            onCheckedChange = onShowSpotifyFollowArtistChange,
-                        )
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.spotify_icon),
+                                title = stringResource(R.string.spotify_follow_artist),
+                                subtitle = stringResource(R.string.spotify_follow_artist_desc),
+                                checked = showSpotifyFollowArtist,
+                                onCheckedChange = onShowSpotifyFollowArtistChange,
+                            )
+                        }
 
                         ExpressiveDivider()
 
