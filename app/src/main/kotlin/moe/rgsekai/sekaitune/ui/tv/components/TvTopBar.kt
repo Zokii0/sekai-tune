@@ -64,11 +64,10 @@ enum class TvTab(
     NOW_PLAYING("Now Playing", R.drawable.play),
     SEARCH("Search", R.drawable.search),
     SETTINGS("Settings", R.drawable.settings),
-    PROFILE("Profile", R.drawable.person),
 }
 
 /**
- * Top pill bar for TV: Home, Explore, Library, Now Playing, Search, Settings, Profile.
+ * Top pill bar for TV: Home, Explore, Library, Now Playing, Search, Settings.
  * Focused item renders as a filled high-contrast pill.
  * Down D-pad moves into content; Up D-pad from content returns to the top bar.
  */

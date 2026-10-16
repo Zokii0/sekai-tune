@@ -103,8 +103,7 @@ fun TvRoot(
         currentRoute == Screens.Library.route -> TvTab.LIBRARY
         currentRoute == "ambient_mode" -> TvTab.NOW_PLAYING
         currentRoute == Screens.Search.route || currentRoute.startsWith(OnlineSearchResultRoutePrefix) || currentRoute.startsWith("online_search") -> TvTab.SEARCH
-        currentRoute == LOGIN_ROUTE || currentRoute == "account" || currentRoute == "settings/account" -> TvTab.PROFILE
-        currentRoute == "settings" || currentRoute.startsWith("settings/") -> TvTab.SETTINGS
+        currentRoute == "settings" || currentRoute.startsWith("settings/") || currentRoute == LOGIN_ROUTE || currentRoute == "account" -> TvTab.SETTINGS
         else -> null
     }
 
@@ -159,11 +158,6 @@ fun TvRoot(
                         }
                         TvTab.SETTINGS -> {
                             navController.navigate("settings") {
-                                launchSingleTop = true
-                            }
-                        }
-                        TvTab.PROFILE -> {
-                            navController.navigate("settings/account") {
                                 launchSingleTop = true
                             }
                         }
