@@ -258,7 +258,11 @@ fun LyricsSettings(
             Modifier
                 .padding(top = innerPadding.calculateTopPadding())
                 .windowInsetsPadding(
-                    LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal)
+                    if (isTv) {
+                        LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal)
+                    } else {
+                        LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                    }
                 )
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = SettingsDimensions.ScreenBottomPadding),

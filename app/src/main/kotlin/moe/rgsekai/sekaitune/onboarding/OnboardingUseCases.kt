@@ -65,10 +65,10 @@ class BuildOnboardingUiStateUseCase
                         contentDescription = "Website",
                     ),
                     OnboardingSocialLinkUiModel(
-                        id = "reddit",
-                        iconResId = R.drawable.ic_reddit_color,
-                        url = "https://www.reddit.com/r/SekaiTune/s/uGzuuwpCzR",
-                        contentDescription = "Reddit",
+                        id = "instagram",
+                        iconResId = R.drawable.ic_instagram_color,
+                        url = "https://www.instagram.com/sekaiplug?stkn=MXE3azFlMGJzZDc1OQ==",
+                        contentDescription = "Instagram",
                     ),
                     OnboardingSocialLinkUiModel(
                         id = "telegram",

@@ -256,9 +256,13 @@ fun UpdateScreen(
 
         Button(
             onClick = { installUpdate(downloadUrl) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .tvFocusOutline(),
+            modifier = if (isTv) {
+                Modifier
+                    .fillMaxWidth()
+                    .tvFocusOutline()
+            } else {
+                Modifier.fillMaxWidth()
+            },
             shapes = ButtonDefaults.shapes(),
         ) {
             Text(text = stringResource(R.string.update_text))
@@ -484,8 +488,10 @@ fun UpdateScreen(
             },
             buttons = {
                 val cancelFocusRequester = remember { FocusRequester() }
-                LaunchedEffect(Unit) {
-                    cancelFocusRequester.safeRequestFocus()
+                if (isTv) {
+                    LaunchedEffect(Unit) {
+                        cancelFocusRequester.safeRequestFocus()
+                    }
                 }
                 TextButton(
                     onClick = {
@@ -494,10 +500,14 @@ fun UpdateScreen(
                         updateDownloadProgress = null
                         showUpdateDownloadDialog = false
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(cancelFocusRequester)
-                        .tvFocusOutline(),
+                    modifier = if (isTv) {
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(cancelFocusRequester)
+                            .tvFocusOutline()
+                    } else {
+                        Modifier.fillMaxWidth()
+                    },
                 ) {
                     Text(text = stringResource(android.R.string.cancel))
                 }
@@ -539,8 +549,10 @@ fun UpdateScreen(
 
     if (showUpdateUpToDateDialog) {
         val okFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) {
-            okFocusRequester.safeRequestFocus()
+        if (isTv) {
+            LaunchedEffect(Unit) {
+                okFocusRequester.safeRequestFocus()
+            }
         }
         DefaultDialog(
             onDismiss = { showUpdateUpToDateDialog = false },
@@ -571,10 +583,14 @@ fun UpdateScreen(
             buttons = {
                 OutlinedButton(
                     onClick = { showUpdateUpToDateDialog = false },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(okFocusRequester)
-                        .tvFocusOutline(),
+                    modifier = if (isTv) {
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(okFocusRequester)
+                            .tvFocusOutline()
+                    } else {
+                        Modifier.fillMaxWidth()
+                    },
                 ) {
                     Text(stringResource(android.R.string.ok))
                 }
@@ -592,8 +608,10 @@ fun UpdateScreen(
 
     if (showUpdateErrorDialog) {
         val okFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) {
-            okFocusRequester.safeRequestFocus()
+        if (isTv) {
+            LaunchedEffect(Unit) {
+                okFocusRequester.safeRequestFocus()
+            }
         }
         DefaultDialog(
             onDismiss = { showUpdateErrorDialog = false },
@@ -614,10 +632,14 @@ fun UpdateScreen(
             buttons = {
                 TextButton(
                     onClick = { showUpdateErrorDialog = false },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(okFocusRequester)
-                        .tvFocusOutline(),
+                    modifier = if (isTv) {
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(okFocusRequester)
+                            .tvFocusOutline()
+                    } else {
+                        Modifier.fillMaxWidth()
+                    },
                 ) {
                     Text(stringResource(android.R.string.ok))
                 }
@@ -834,19 +856,23 @@ private fun UpdateControlsPanel(
                     )
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .tvSettingsItemFocus(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        interactionSource = interactionSource,
-                        isFirstItem = false,
-                        onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
-                    )
-                    .clip(MaterialTheme.shapes.extraLarge)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = androidx.compose.material3.ripple(),
-                        onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
-                    ),
+                modifier = if (isTv) {
+                    Modifier
+                        .tvSettingsItemFocus(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            interactionSource = interactionSource,
+                            isFirstItem = false,
+                            onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
+                        )
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = androidx.compose.material3.ripple(),
+                            onClick = { onUpdateNotificationChange(!enableUpdateNotification) },
+                        )
+                } else {
+                    Modifier
+                },
             )
         }
     }

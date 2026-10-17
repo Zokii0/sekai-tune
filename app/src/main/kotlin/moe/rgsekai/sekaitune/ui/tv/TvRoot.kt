@@ -61,6 +61,11 @@ import moe.rgsekai.sekaitune.ui.screens.search.OnlineSearchResultRoute
 import moe.rgsekai.sekaitune.ui.screens.search.OnlineSearchResultRoutePrefix
 import moe.rgsekai.sekaitune.ui.tv.components.TvTab
 import moe.rgsekai.sekaitune.ui.tv.components.TvTopBar
+import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.flow.first
+import moe.rgsekai.sekaitune.constants.LyricsTextSizeKey
+import moe.rgsekai.sekaitune.utils.dataStore
 import moe.rgsekai.sekaitune.ui.tv.screens.TvAlbumScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvArtistScreen
 import moe.rgsekai.sekaitune.ui.tv.screens.TvAutoPlaylistScreen
@@ -120,6 +125,14 @@ fun TvRoot(
     LaunchedEffect(topTabForCurrentRoute) {
         if (topTabForCurrentRoute != null) {
             lastTopTab = topTabForCurrentRoute
+        }
+    }
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        val prefs = context.dataStore.data.first()
+        if (prefs[LyricsTextSizeKey] == null) {
+            context.dataStore.edit { it[LyricsTextSizeKey] = 32f }
         }
     }
 

@@ -49,6 +49,32 @@ fun resetAuthWebViewSession(
     clearCookies: Boolean = true,
     onReady: () -> Unit,
 ) {
+    if (!context.isTvDevice()) {
+        webView.stopLoading()
+        webView.clearHistory()
+        webView.clearFormData()
+        webView.clearCache(true)
+        clearWebAuthStorage(context)
+
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
+        cookieManager.setAcceptThirdPartyCookies(webView, true)
+        if (!clearCookies) {
+            onReady()
+            return
+        }
+
+        cookieManager.removeSessionCookies {
+            cookieManager.removeAllCookies {
+                cookieManager.flush()
+                cookieManager.setAcceptCookie(true)
+                cookieManager.setAcceptThirdPartyCookies(webView, true)
+                onReady()
+            }
+        }
+        return
+    }
+
     webView.stopLoading()
     webView.clearHistory()
     webView.clearFormData()
