@@ -6,6 +6,7 @@
 
   <p>
     <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/badge/Download-Latest_APK-7C4DFF?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest APK"></a>
+    <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=sekai-tune"><img src="https://img.shields.io/badge/Orion_Store-Get_it_on_Orion-6366F1?style=for-the-badge&logo=android&logoColor=white" alt="Get it on Orion Store"></a>
     <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github" alt="Total Downloads"></a>
     <a href="https://rgsekai.github.io/sekai-tune/"><img src="https://img.shields.io/badge/Website-Visit_Site-007ACC?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Website"></a>
     <a href="https://github.com/rgsekai/sekai-tune/issues/new?template=bug_report.yml"><img src="https://img.shields.io/badge/Report-Bug-E53935?style=for-the-badge&logo=github&logoColor=white" alt="Report a Bug"></a>
@@ -25,6 +26,12 @@
 ## 📥 Download
 
 <p align="center">
+  <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=sekai-tune">
+    <img src="https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png" alt="Get it on Orion Store" height="60">
+  </a>
+</p>
+
+<p align="center">
   <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/github/v/release/rgsekai/sekai-tune?style=for-the-badge&logo=android&logoColor=white&color=7C4DFF&label=DOWNLOAD%20LATEST%20RELEASE" alt="Download Latest APK"></a>
   <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github" alt="Total Downloads"></a>
 </p>
@@ -32,7 +39,7 @@
 When installing the APK, Android may display a Google Play Protect prompt stating *"App scan recommended"* for apps installed outside the Play Store; tapping **"Scan app"** is completely normal.
 
 > [!WARNING]  
-> **Note:** The official repository releases above are the only trusted download source. We are not responsible for any modified or unofficial packages distributed elsewhere.
+> **Note:** The official repository releases above and Orion Store are the only trusted download sources. We are not responsible for any modified or unofficial packages distributed elsewhere.
 
 ---
 
