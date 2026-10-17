@@ -34,7 +34,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/github/v/release/rgsekai/sekai-tune?style=for-the-badge&logo=github&logoColor=white&color=7C4DFF&label=LATEST%20RELEASE" alt="Latest Release"></a>
   <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/latest/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github&label=DOWNLOADS" alt="Total Downloads"></a>
 </p>
 
