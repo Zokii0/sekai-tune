@@ -141,8 +141,15 @@ class PlayerConnection(
      * Instead keep the current item/position and only replace what comes after it.
      */
     fun startRadio(song: MediaMetadata) {
-        val playingId = mediaMetadata.value?.id ?: player.currentMetadata?.id ?: player.currentMediaItem?.mediaId
-        if (player.mediaItemCount > 0 && playingId == song.id) {
+        val currentMeta = mediaMetadata.value ?: player.currentMetadata
+        val playingId = currentMeta?.id ?: player.currentMediaItem?.mediaId
+        val isCurrentPlaying = player.mediaItemCount > 0 && (
+            playingId == song.id ||
+            playingId?.endsWith("/${song.id}") == true ||
+            song.id.endsWith("/$playingId") ||
+            (currentMeta?.title == song.title && !song.title.isNullOrBlank() && currentMeta?.artists?.firstOrNull()?.name == song.artists.firstOrNull()?.name)
+        )
+        if (isCurrentPlaying) {
             service.startRadioSeamlessly()
         } else {
             service.playQueue(YouTubeQueue.radio(song))

@@ -979,10 +979,16 @@ fun Queue(
                                                                         ),
                                                                     )
                                                                 } else {
-                                                                    playerConnection.player.seekToDefaultPosition(
-                                                                        window.firstPeriodIndex,
-                                                                    )
-                                                                    playerConnection.player.playWhenReady = true
+                                                                    if (window.firstPeriodIndex == playerConnection.player.currentMediaItemIndex) {
+                                                                        if (!playerConnection.player.playWhenReady) {
+                                                                            playerConnection.player.playWhenReady = true
+                                                                        }
+                                                                    } else {
+                                                                        playerConnection.player.seekToDefaultPosition(
+                                                                            window.firstPeriodIndex,
+                                                                        )
+                                                                        playerConnection.player.playWhenReady = true
+                                                                    }
                                                                 }
                                                             }
                                                         }

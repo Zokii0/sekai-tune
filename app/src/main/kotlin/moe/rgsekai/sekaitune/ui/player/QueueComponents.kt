@@ -1027,21 +1027,28 @@ fun QueueCollapsedContentV2(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            val useGlass = rememberPlayerGlassEnabled()
+
             // Menu button
             Box(
                 modifier =
                     Modifier
                         .size(buttonSize)
                         .clip(CircleShape)
-                        .background(textButtonColor)
-                        .clickable { onMenuClick() },
+                        .then(
+                            if (useGlass) {
+                                Modifier.playerGlass(CircleShape)
+                            } else {
+                                Modifier.background(textButtonColor)
+                            },
+                        ).clickable { onMenuClick() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.more_vert),
                     contentDescription = null,
                     modifier = Modifier.size(iconSize),
-                    tint = iconButtonColor,
+                    tint = if (useGlass) textButtonColor else iconButtonColor,
                 )
             }
         }

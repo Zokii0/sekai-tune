@@ -1420,23 +1420,25 @@ fun BottomSheetPlayer(
                     }
                 }
 
-            Queue(
-                state = queueSheetState,
-                playerBottomSheetState = state,
-                navController = navController,
-                backgroundColor =
-                    if (useBlackBackground) {
-                        Color.Black
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainer
-                    },
-                onBackgroundColor = queueOnBackgroundColor,
-                TextBackgroundColor = TextBackgroundColor,
-                textButtonColor = textButtonColor,
-                iconButtonColor = iconButtonColor,
-                onShowLyrics = { isLyricsScreenVisible = true },
-                pureBlack = pureBlack,
-            )
+            CompositionLocalProvider(LocalAppBackdrop provides controlsBackdrop) {
+                Queue(
+                    state = queueSheetState,
+                    playerBottomSheetState = state,
+                    navController = navController,
+                    backgroundColor =
+                        if (useBlackBackground) {
+                            Color.Black
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        },
+                    onBackgroundColor = queueOnBackgroundColor,
+                    TextBackgroundColor = TextBackgroundColor,
+                    textButtonColor = textButtonColor,
+                    iconButtonColor = iconButtonColor,
+                    onShowLyrics = { isLyricsScreenVisible = true },
+                    pureBlack = pureBlack,
+                )
+            }
 
             mediaMetadata?.let { metadata ->
                 MikoLyricsTransition(

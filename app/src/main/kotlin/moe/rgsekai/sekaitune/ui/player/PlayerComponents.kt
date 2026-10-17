@@ -1113,6 +1113,8 @@ private fun V8MetadataActions(
 
             Spacer(Modifier.width(16.dp))
 
+            val useGlass = rememberPlayerGlassEnabled()
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1122,7 +1124,13 @@ private fun V8MetadataActions(
                         Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(foreground.copy(alpha = 0.20f))
+                            .then(
+                                if (useGlass) {
+                                    Modifier.playerGlass(CircleShape)
+                                } else {
+                                    Modifier.background(foreground.copy(alpha = 0.20f))
+                                },
+                            )
                             .clickable(onClick = onMenuClick),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -1139,7 +1147,13 @@ private fun V8MetadataActions(
                         Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(foreground.copy(alpha = 0.20f))
+                            .then(
+                                if (useGlass) {
+                                    Modifier.playerGlass(CircleShape)
+                                } else {
+                                    Modifier.background(foreground.copy(alpha = 0.20f))
+                                },
+                            )
                             .clickable(onClick = onToggleLike),
                     contentAlignment = Alignment.Center,
                 ) {
