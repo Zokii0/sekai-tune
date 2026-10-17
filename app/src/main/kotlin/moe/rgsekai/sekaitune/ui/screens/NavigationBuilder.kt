@@ -15,8 +15,10 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -24,10 +26,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import moe.rgsekai.sekaitune.BuildConfig
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.musicrecognition.MusicRecognitionRoute
 import moe.rgsekai.sekaitune.ui.screens.BrowseScreen
 import moe.rgsekai.sekaitune.ui.screens.artist.ArtistAlbumsScreen
 import moe.rgsekai.sekaitune.ui.screens.artist.ArtistItemsScreen
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import moe.rgsekai.sekaitune.ui.screens.artist.ArtistScreen
 import moe.rgsekai.sekaitune.ui.screens.artist.ArtistSongsScreen
 import moe.rgsekai.sekaitune.ui.screens.library.LibraryScreen
@@ -461,29 +465,41 @@ fun NavGraphBuilder.navigationBuilder(
         )
     }
     composable(Screens.Onboarding.route) {
-        moe.rgsekai.sekaitune.ui.screens.onboarding.OnboardingRoute(
-            onNavigateToSupport = {
-                navController.navigate("settings/support") {
-                    popUpTo(Screens.Onboarding.route) {
-                        inclusive = true
-                    }
-                }
-            },
-            onNavigateToLogin = {
-                navController.navigate(buildLoginRoute()) {
-                    popUpTo(Screens.Onboarding.route) {
-                        inclusive = true
-                    }
-                }
-            },
-            onNavigateToHome = {
+        val context = LocalContext.current
+        val isTv = LocalIsTv.current || context.isTvDevice()
+        if (isTv) {
+            LaunchedEffect(Unit) {
                 navController.navigate(Screens.Home.route) {
                     popUpTo(Screens.Onboarding.route) {
                         inclusive = true
                     }
                 }
-            },
-        )
+            }
+        } else {
+            moe.rgsekai.sekaitune.ui.screens.onboarding.OnboardingRoute(
+                onNavigateToSupport = {
+                    navController.navigate("settings/support") {
+                        popUpTo(Screens.Onboarding.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate(buildLoginRoute()) {
+                        popUpTo(Screens.Onboarding.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(Screens.Home.route) {
+                        popUpTo(Screens.Onboarding.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+            )
+        }
     }
     composable(
         route = "year_in_music?year={year}",

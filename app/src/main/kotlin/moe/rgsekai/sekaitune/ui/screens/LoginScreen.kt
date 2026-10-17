@@ -35,6 +35,8 @@ import androidx.navigation.NavController
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.tv.screens.TvLoginScreen
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.resetAuthWebViewSession
 import moe.rgsekai.sekaitune.viewmodels.LoginEvent
@@ -48,7 +50,7 @@ fun buildLoginRoute(startUrl: String? = null): String {
     return "$LOGIN_ROUTE?$LOGIN_URL_ARGUMENT=${Uri.encode(resolvedUrl)}"
 }
 
-private const val DEFAULT_LOGIN_URL = "https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmusic.youtube.com"
+internal const val DEFAULT_LOGIN_URL = "https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmusic.youtube.com"
 
 private val YOUTUBE_COOKIE_URLS =
     listOf(
@@ -65,6 +67,15 @@ fun LoginScreen(
     startUrl: String? = null,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
+    if (LocalIsTv.current) {
+        TvLoginScreen(
+            navController = navController,
+            startUrl = startUrl,
+            viewModel = viewModel,
+        )
+        return
+    }
+
     val context = LocalContext.current
 
     @Suppress("UNUSED_VARIABLE")
@@ -106,7 +117,7 @@ fun LoginScreen(
                                     "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var d=c.get('DATASYNC_ID');if(d){Android.onRetrieveDataSyncId(d);return}}var y=window.yt&&window.yt.config_;if(y&&y.DATASYNC_ID){Android.onRetrieveDataSyncId(y.DATASYNC_ID);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/[\\\"'](?:DATASYNC_ID|dataSyncId)[\\\"']\\s*:\\s*[\\\"']([^\\\"']+)[\\\"']/);if(m){Android.onRetrieveDataSyncId(m[1]);return}}}catch(e){}})())",
                                 )
                                 loadUrl(
-                                    "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var t=c.get('PO_TOKEN');if(t){Android.onRetrievePoToken(t);return}}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/\"PO_TOKEN\":\"([^\"]+)\"/);if(m){Android.onRetrievePoToken(m[1]);return}}}catch(e){}})())",
+                                    "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var t=c.get('PO_TOKEN');if(t){Android.onRetrievePoToken(t);return}}var y=window.yt&&window.yt.config_;if(y&&y.PO_TOKEN){Android.onRetrievePoToken(y.PO_TOKEN);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/\"PO_TOKEN\":\"([^\"]+)\"/);if(m){Android.onRetrievePoToken(m[1]);return}}}catch(e){}})())",
                                 )
                             }
 
@@ -169,7 +180,7 @@ fun LoginScreen(
     }
 }
 
-private fun mergeYouTubeCookies(
+internal fun mergeYouTubeCookies(
     cookieManager: CookieManager,
     currentUrl: String? = null,
 ): String? {
@@ -205,7 +216,7 @@ private fun mergeYouTubeCookies(
         ?.joinToString(separator = "; ") { (key, value) -> "$key=$value" }
 }
 
-private fun String?.toYouTubeCookieOrigin(): String? {
+internal fun String?.toYouTubeCookieOrigin(): String? {
     val parsed = this?.let(Uri::parse) ?: return null
     val host = parsed.host?.lowercase() ?: return null
     if (host != "youtube.com" && !host.endsWith(".youtube.com")) return null
@@ -217,7 +228,3 @@ private fun String?.toYouTubeCookieOrigin(): String? {
 
     return "$scheme://$host"
 }
-
-
-
-

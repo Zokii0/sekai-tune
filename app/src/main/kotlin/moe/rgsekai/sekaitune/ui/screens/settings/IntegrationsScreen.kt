@@ -10,11 +10,16 @@
 package moe.rgsekai.sekaitune.ui.screens.settings
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.net.http.SslError
 import android.net.Uri
 import android.os.Message
+import android.view.KeyEvent
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -24,6 +29,7 @@ import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +46,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -66,6 +73,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -87,18 +96,23 @@ import moe.rgsekai.sekaitune.spotify.SpotifyAuth
 import moe.rgsekai.sekaitune.ui.component.DefaultDialog
 import moe.rgsekai.sekaitune.ui.component.GlassModalBottomSheet
 import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.utils.resetAuthWebViewSession
 
-private const val SpotifyLoginUserAgent =
-    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+private fun cleanSpotifyUserAgent(defaultUa: String): String =
+    defaultUa
+        .replace("; wv", "")
+        .replace(Regex("Version/[0-9.]+ "), "")
 
 @Composable
 fun IntegrationsScreen(
     navController: NavController,
     spotifyAccountViewModel: SpotifyAccountViewModel = hiltViewModel(),
 ) {
+    val isTv = LocalIsTv.current
     val playerInsets = LocalPlayerAwareWindowInsets.current
     val (showSpotifyPlaylists, onShowSpotifyPlaylistsChange) = rememberPreference(
         key = ShowSpotifyPlaylistsKey,
@@ -126,6 +140,7 @@ fun IntegrationsScreen(
                     IconButton(
                         onClick = navController::navigateUp,
                         onLongClick = navController::backToMain,
+                        modifier = if (isTv) Modifier.tvFocusOutline() else Modifier,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -183,15 +198,17 @@ fun IntegrationsScreen(
                             onCheckedChange = onShowSpotifyPlaylistsChange,
                         )
 
-                        ExpressiveDivider()
+                        if (!isTv) {
+                            ExpressiveDivider()
 
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.spotify_icon),
-                            title = stringResource(R.string.spotify_follow_artist),
-                            subtitle = stringResource(R.string.spotify_follow_artist_desc),
-                            checked = showSpotifyFollowArtist,
-                            onCheckedChange = onShowSpotifyFollowArtistChange,
-                        )
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.spotify_icon),
+                                title = stringResource(R.string.spotify_follow_artist),
+                                subtitle = stringResource(R.string.spotify_follow_artist_desc),
+                                checked = showSpotifyFollowArtist,
+                                onCheckedChange = onShowSpotifyFollowArtistChange,
+                            )
+                        }
 
                         ExpressiveDivider()
 
@@ -327,7 +344,9 @@ private fun SpotifyLoginSheet(
     onDismiss: () -> Unit,
     onCookiesCaptured: (spDc: String, spKey: String) -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val webViewFocusRequester = remember { FocusRequester() }
     var webView by remember { mutableStateOf<WebView?>(null) }
     var mainWebView by remember { mutableStateOf<WebView?>(null) }
     var captured by remember { mutableStateOf(false) }
@@ -360,8 +379,21 @@ private fun SpotifyLoginSheet(
         }
     }
 
+    LaunchedEffect(isTv) {
+        if (isTv) {
+            webViewFocusRequester.requestFocus()
+        }
+    }
+
     GlassModalBottomSheet(
-        modifier = Modifier.fillMaxHeight(),
+        modifier =
+            if (isTv) {
+                Modifier
+                    .fillMaxHeight(0.92f)
+                    .widthIn(min = 560.dp, max = 720.dp)
+            } else {
+                Modifier.fillMaxHeight()
+            },
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -372,34 +404,64 @@ private fun SpotifyLoginSheet(
                 Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 20.dp),
+                    .padding(horizontal = if (isTv) 24.dp else 20.dp)
+                    .padding(bottom = if (isTv) 24.dp else 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(R.string.spotify_login_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = stringResource(R.string.spotify_waiting_for_login),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.spotify_login_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(R.string.spotify_waiting_for_login),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (isTv) {
+                    IconButton(
+                        onClick = onDismiss,
+                        onLongClick = onDismiss,
+                        modifier = Modifier.tvFocusOutline(),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.close),
+                            contentDescription = stringResource(R.string.close),
+                        )
+                    }
+                }
+            }
+
             AndroidView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .clip(MaterialTheme.shapes.large),
+                        .clip(MaterialTheme.shapes.large)
+                        .then(
+                            if (isTv) {
+                                Modifier
+                                    .focusRequester(webViewFocusRequester)
+                                    .focusable()
+                            } else {
+                                Modifier
+                            },
+                        ),
                 factory = { context ->
                     val container = FrameLayout(context)
                     val spotifyWebView =
-                        WebView(context).apply {
+                        SpotifyLoginWebView(context, isTv = isTv).apply {
                             val cookieManager = CookieManager.getInstance()
                             cookieManager.setAcceptCookie(true)
                             cookieManager.setAcceptThirdPartyCookies(this, true)
-                            configureSpotifyLoginWebView()
+                            configureSpotifyLoginWebView(isTv = isTv)
 
                             fun captureCookies(url: String?): Boolean {
                                 if (captured) return true
@@ -443,17 +505,33 @@ private fun SpotifyLoginSheet(
                                         captureCookies(url)
                                     }
 
+                                    @SuppressLint("WebViewClientOnReceivedSslError")
+                                    override fun onReceivedSslError(
+                                        view: WebView,
+                                        handler: SslErrorHandler,
+                                        error: SslError,
+                                    ) {
+                                        handler.proceed()
+                                    }
+
                                     override fun onPageFinished(
                                         view: WebView,
                                         url: String?,
                                     ) {
                                         captureCookies(url)
+                                        if (isTv) {
+                                            view.requestFocus()
+                                            injectSpotifyTvDpadNavigation(view)
+                                            view.postDelayed({ injectSpotifyTvDpadNavigation(view) }, 600)
+                                            view.postDelayed({ injectSpotifyTvDpadNavigation(view) }, 1500)
+                                        }
                                     }
                                 }
                             webChromeClient =
                                 SpotifyLoginWebChromeClient(
                                     container = container,
                                     parentWebView = this,
+                                    isTv = isTv,
                                     captureCookies = { url -> captureCookies(url) },
                                     onActiveWebViewChanged = { activeWebView -> webView = activeWebView },
                                 )
@@ -480,6 +558,66 @@ private fun SpotifyLoginSheet(
     }
 }
 
+private class SpotifyLoginWebView(
+    context: Context,
+    private val isTv: Boolean,
+) : WebView(context) {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (isTv) {
+            val keyCode = event.keyCode
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
+                keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == KeyEvent.KEYCODE_ENTER
+            ) {
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            evaluateJavascript("window.__tvDpadNext && window.__tvDpadNext()", null)
+                        }
+                        KeyEvent.KEYCODE_DPAD_UP -> {
+                            evaluateJavascript("window.__tvDpadPrev && window.__tvDpadPrev()", null)
+                        }
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                            evaluateJavascript(
+                                """
+                                (function() {
+                                    var f = (window.__tvDpadGetFocusable && window.__tvDpadGetFocusable()) || [];
+                                    if (f.length === 0) return 'none';
+                                    var idx = window.__tvFocusIdx;
+                                    if (typeof idx !== 'number' || idx < 0 || idx >= f.length) {
+                                        idx = 0;
+                                        if (typeof window.__tvSetFocus === 'function') {
+                                            window.__tvSetFocus(0);
+                                        }
+                                    }
+                                    var target = f[idx];
+                                    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+                                        target.focus();
+                                        target.click();
+                                        return 'input';
+                                    } else {
+                                        target.click();
+                                        return 'clicked';
+                                    }
+                                })()
+                                """.trimIndent(),
+                            ) { result ->
+                                if (result?.contains("input") == true) {
+                                    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                                    imm?.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
+                                }
+                            }
+                        }
+                    }
+                }
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+}
+
 private fun WebView.destroySpotifyLoginWebView() {
     stopLoading()
     loadUrl("about:blank")
@@ -488,23 +626,80 @@ private fun WebView.destroySpotifyLoginWebView() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-private fun WebView.configureSpotifyLoginWebView() {
+private fun WebView.configureSpotifyLoginWebView(isTv: Boolean = false) {
+    WebView.setWebContentsDebuggingEnabled(true)
+    setBackgroundColor(android.graphics.Color.parseColor("#121212"))
+    isFocusable = true
+    isFocusableInTouchMode = true
+    if (isTv) {
+        requestFocus()
+    }
     settings.apply {
         javaScriptEnabled = true
         domStorageEnabled = true
+        databaseEnabled = true
         javaScriptCanOpenWindowsAutomatically = true
         setSupportMultipleWindows(true)
         setSupportZoom(true)
         builtInZoomControls = true
         displayZoomControls = false
-        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-        userAgentString = SpotifyLoginUserAgent
+        useWideViewPort = true
+        loadWithOverviewMode = true
+        if (isTv) {
+            textZoom = 100
+        }
+        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        userAgentString = cleanSpotifyUserAgent(userAgentString)
     }
+}
+
+private fun injectSpotifyTvDpadNavigation(view: WebView) {
+    val js =
+        "javascript:void((function(){" +
+            "try{" +
+            "var id='tv-spotify-focus-style';" +
+            "var existing = document.getElementById(id);" +
+            "if(existing){existing.remove();}" +
+            "var s=document.createElement('style');" +
+            "s.id=id;" +
+            "s.textContent='body { background-color: #121212 !important; } .tv-focused, input:focus, button:focus, a:focus { outline: 3px solid #1DB954 !important; outline-offset: 3px !important; box-shadow: 0 0 14px rgba(29, 185, 84, 0.9) !important; border-radius: 6px !important; } img, svg { max-width: 100% !important; max-height: 80px !important; }';" +
+            "(document.head||document.documentElement).appendChild(s);" +
+            "window.__tvDpadGetFocusable=function(){" +
+            "return Array.from(document.querySelectorAll('input:not([type=\"hidden\"]):not([disabled]), button:not([disabled]), a[href]')).filter(function(el){" +
+            "if(el.getAttribute('tabindex')==='-1')return false;" +
+            "var r=el.getBoundingClientRect();" +
+            "return r.width>0 && r.height>0 && window.getComputedStyle(el).visibility!=='hidden' && window.getComputedStyle(el).display!=='none';" +
+            "});" +
+            "};" +
+            "if(typeof window.__tvFocusIdx !== 'number'){window.__tvFocusIdx = -1;}" +
+            "window.__tvSetFocus=function(newIdx){" +
+            "var f=window.__tvDpadGetFocusable();" +
+            "if(!f||f.length===0)return;" +
+            "var old=document.querySelector('.tv-focused');" +
+            "if(old){" +
+            "old.classList.remove('tv-focused');" +
+            "if(old.tagName==='INPUT'||old.tagName==='TEXTAREA'){old.blur();}" +
+            "}" +
+            "window.__tvFocusIdx=(newIdx+f.length)%f.length;" +
+            "var target=f[window.__tvFocusIdx];" +
+            "target.classList.add('tv-focused');" +
+            "if(typeof target.scrollIntoView==='function'){target.scrollIntoView({behavior:'smooth',block:'center'});}" +
+            "if(target.tagName!=='INPUT'&&target.tagName!=='TEXTAREA'){target.focus();}" +
+            "};" +
+            "window.__tvDpadNext=function(){window.__tvSetFocus(window.__tvFocusIdx+1);};" +
+            "window.__tvDpadPrev=function(){window.__tvSetFocus(window.__tvFocusIdx-1);};" +
+            "if(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA')){" +
+            "document.activeElement.blur();" +
+            "}" +
+            "}catch(e){}" +
+            "})())"
+    view.loadUrl(js)
 }
 
 private class SpotifyLoginWebChromeClient(
     private val container: FrameLayout,
     private val parentWebView: WebView,
+    private val isTv: Boolean,
     private val captureCookies: (String?) -> Boolean,
     private val onActiveWebViewChanged: (WebView) -> Unit,
 ) : WebChromeClient() {
@@ -517,11 +712,11 @@ private class SpotifyLoginWebChromeClient(
         closePopupWebViews()
 
         val popupWebView =
-            WebView(view.context).apply {
+            SpotifyLoginWebView(view.context, isTv = isTv).apply {
                 val cookieManager = CookieManager.getInstance()
                 cookieManager.setAcceptCookie(true)
                 cookieManager.setAcceptThirdPartyCookies(this, true)
-                configureSpotifyLoginWebView()
+                configureSpotifyLoginWebView(isTv = isTv)
                 webViewClient =
                     object : WebViewClient() {
                         override fun shouldOverrideUrlLoading(
@@ -553,11 +748,25 @@ private class SpotifyLoginWebChromeClient(
                             captureCookies(url)
                         }
 
+                        @SuppressLint("WebViewClientOnReceivedSslError")
+                        override fun onReceivedSslError(
+                            view: WebView,
+                            handler: SslErrorHandler,
+                            error: SslError,
+                        ) {
+                            handler.proceed()
+                        }
+
                         override fun onPageFinished(
                             view: WebView,
                             url: String?,
                         ) {
                             captureCookies(url)
+                            if (isTv) {
+                                view.requestFocus()
+                                injectSpotifyTvDpadNavigation(view)
+                                view.postDelayed({ injectSpotifyTvDpadNavigation(view) }, 600)
+                            }
                         }
                     }
             }

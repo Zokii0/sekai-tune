@@ -438,10 +438,10 @@ class AboutViewModel
                             url = "https://rgsekai.github.io/sekai-tune/",
                         ),
                         AboutLinkUiModel(
-                            id = "instagram",
-                            iconResId = R.drawable.instagram,
-                            labelResId = R.string.about_instagram,
-                            url = "https://www.instagram.com/sekaiplug?stkn=MXE3azFlMGJzZDc1OQ==",
+                            id = "reddit",
+                            iconResId = R.drawable.reddit,
+                            labelResId = R.string.about_reddit,
+                            url = "https://www.reddit.com/r/SekaiTune/s/uGzuuwpCzR",
                         ),
                         AboutLinkUiModel(
                             id = "telegram",

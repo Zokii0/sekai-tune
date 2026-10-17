@@ -46,9 +46,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        ndk {
-            abiFilters.add("arm64-v8a")
-        }
 
 
         val nightlyBuildHash =

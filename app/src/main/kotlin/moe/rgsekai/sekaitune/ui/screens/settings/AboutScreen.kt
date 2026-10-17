@@ -77,6 +77,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,8 +87,14 @@ import coil3.compose.AsyncImage
 import moe.rgsekai.sekaitune.LocalPlayerAwareWindowInsets
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsCategoryFocusRequester
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsInSubScreen
+import moe.rgsekai.sekaitune.ui.component.tvSettingsItemFocus
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import moe.rgsekai.sekaitune.viewmodels.AboutDependencyLicenseUiCollection
 import moe.rgsekai.sekaitune.viewmodels.AboutDependencyLicensesUiState
 import moe.rgsekai.sekaitune.viewmodels.AboutDialog
@@ -113,7 +121,11 @@ fun AboutScreen(
     LaunchedEffect(viewModel, uriHandler) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is AboutScreenEffect.OpenUri -> uriHandler.openUri(effect.uri)
+                is AboutScreenEffect.OpenUri -> {
+                    runCatching {
+                        uriHandler.openUri(effect.uri)
+                    }
+                }
             }
         }
     }
@@ -162,6 +174,8 @@ private fun AboutScreenContent(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
+            val isTv = LocalIsTv.current
+            val inSubScreen = LocalTvSettingsInSubScreen.current
             LargeFlexibleTopAppBar(
                 title = {
                     Text(
@@ -173,6 +187,7 @@ private fun AboutScreenContent(
                     IconButton(
                         onClick = onNavigateUp,
                         onLongClick = onNavigateHome,
+                        modifier = if (isTv && inSubScreen) Modifier.focusProperties { canFocus = false } else Modifier,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
@@ -193,6 +208,7 @@ private fun AboutScreenContent(
                             onDismissMenu = onDismissOverflowMenu,
                             onOpenTranslationContributors = onOpenTranslationContributors,
                             onOpenDependencyLicenses = onOpenDependencyLicenses,
+                            modifier = if (isTv && inSubScreen) Modifier.focusProperties { canFocus = false } else Modifier,
                         )
                     }
                 },
@@ -275,6 +291,7 @@ private fun AboutOverflowMenu(
         IconButton(
             onClick = onShowMenu,
             onLongClick = {},
+            modifier = modifier,
         ) {
             Icon(
                 painter = painterResource(R.drawable.more_vert),
@@ -766,10 +783,11 @@ private fun AboutSuccessContent(
     contentPadding: PaddingValues,
     listState: LazyListState,
 ) {
+    val isTv = LocalIsTv.current
     LazyColumn(
         state = listState,
         modifier = modifier,
-        contentPadding = contentPadding,
+        contentPadding = if (isTv) PaddingValues(top = 16.dp, bottom = 48.dp) else contentPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item(key = "identity", contentType = "about_identity") {
@@ -906,6 +924,10 @@ private fun LinkChipRow(
     onOpenUri: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isTv = LocalIsTv.current
+    val leftCategoryFocusRequester = LocalTvSettingsCategoryFocusRequester.current
+    val chipRequesters = remember(links.size) { List(links.size) { FocusRequester() } }
+
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -919,8 +941,45 @@ private fun LinkChipRow(
                     { onOpenUri(link.url) }
                 }
 
+            val chipModifier = if (isTv) {
+                Modifier
+                    .tvSettingsItemFocus(
+                        shape = RoundedCornerShape(8.dp),
+                        customFocusRequester = chipRequesters.getOrNull(i),
+                        isFirstItem = (i == 0),
+                        onClick = onClick,
+                        onMoveLeft = {
+                            when (i) {
+                                0, 4 -> leftCategoryFocusRequester?.safeRequestFocus()
+                                else -> chipRequesters.getOrNull(i - 1)?.safeRequestFocus()
+                            }
+                        },
+                        onMoveRight = {
+                            when (i) {
+                                0, 1, 2 -> chipRequesters.getOrNull(i + 1)?.safeRequestFocus()
+                                else -> { /* rightmost on row, stay put */ }
+                            }
+                        },
+                        onMoveUp = {
+                            when (i) {
+                                4 -> chipRequesters.getOrNull(1)?.safeRequestFocus()
+                                else -> { /* top row, stay put */ }
+                            }
+                        },
+                        onMoveDown = {
+                            when (i) {
+                                0, 1, 2, 3 -> chipRequesters.getOrNull(4)?.safeRequestFocus()
+                                else -> { /* bottom row, stay put */ }
+                            }
+                        },
+                    )
+            } else {
+                Modifier
+            }
+
             AssistChip(
                 onClick = onClick,
+                modifier = chipModifier,
                 leadingIcon = {
                     Icon(
                         painter = painterResource(link.iconResId),

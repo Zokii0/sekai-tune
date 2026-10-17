@@ -72,11 +72,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.common.collect.ImmutableList
 import moe.rgsekai.sekaitune.R
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.onboarding.OnboardingEvent
 import moe.rgsekai.sekaitune.onboarding.OnboardingScreenState
 import moe.rgsekai.sekaitune.onboarding.OnboardingSocialLinkUiModel
 import moe.rgsekai.sekaitune.onboarding.OnboardingUiState
 import moe.rgsekai.sekaitune.onboarding.OnboardingViewModel
+import moe.rgsekai.sekaitune.utils.isTvDevice
 
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
@@ -91,6 +93,16 @@ fun OnboardingRoute(
     onNavigateToLogin: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val isTv = LocalIsTv.current || context.isTvDevice()
+    if (isTv) {
+        LaunchedEffect(Unit) {
+            viewModel.complete()
+            onNavigateToHome()
+        }
+        return
+    }
+
     val state by viewModel.screenState.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
 
