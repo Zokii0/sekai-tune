@@ -25,13 +25,16 @@
 ## 📥 Download
 
 <p align="center">
+  <a href="https://github.com/rgsekai/sekai-tune/releases/latest">
+    <img src="docs/assets/get-it-on-github.png" alt="Get it on GitHub" height="60">
+  </a>
   <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=sekai-tune">
-    <img src="https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png" alt="Get it on Orion Store" height="60">
+    <img src="docs/assets/orion-badge.png" alt="Get it on Orion Store" height="60">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/github/v/release/rgsekai/sekai-tune?style=for-the-badge&logo=android&logoColor=white&color=7C4DFF&label=DOWNLOAD%20LATEST%20RELEASE" alt="Download Latest APK"></a>
+  <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/github/v/release/rgsekai/sekai-tune?style=for-the-badge&logo=github&logoColor=white&color=7C4DFF&label=LATEST%20RELEASE" alt="Latest Release"></a>
   <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/latest/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github&label=DOWNLOADS" alt="Total Downloads"></a>
 </p>
 
