@@ -6,7 +6,6 @@
 
   <p>
     <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/badge/Download-Latest_APK-7C4DFF?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest APK"></a>
-    <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=sekai-tune"><img src="https://img.shields.io/badge/Orion_Store-Get_it_on_Orion-6366F1?style=for-the-badge&logo=android&logoColor=white" alt="Get it on Orion Store"></a>
     <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github" alt="Total Downloads"></a>
     <a href="https://rgsekai.github.io/sekai-tune/"><img src="https://img.shields.io/badge/Website-Visit_Site-007ACC?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Website"></a>
     <a href="https://github.com/rgsekai/sekai-tune/issues/new?template=bug_report.yml"><img src="https://img.shields.io/badge/Report-Bug-E53935?style=for-the-badge&logo=github&logoColor=white" alt="Report a Bug"></a>
