@@ -21,7 +21,9 @@ import android.os.SystemClock
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import moe.rgsekai.sekaitune.ui.component.backdrop.backdrops.LayerBackdrop
+import moe.rgsekai.sekaitune.ui.component.LocalAppBackdrop
 import moe.rgsekai.sekaitune.ui.component.backdrop.backdrops.layerBackdrop
+import moe.rgsekai.sekaitune.ui.component.backdrop.backdrops.rememberLayerBackdrop
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -43,6 +45,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -1115,7 +1118,17 @@ fun BottomSheetPlayer(
             }
         }
 
+        // Glass controls must not sample a layer that contains themselves, so they get their own
+        // backdrop that records only the player background (the shared playerBackdrop wraps the controls too).
+        val controlsBackdropColor = MaterialTheme.colorScheme.surface
+        val controlsBackdrop =
+            rememberLayerBackdrop {
+                drawRect(controlsBackdropColor)
+                drawContent()
+            }
+
         val controlsContent: @Composable ColumnScope.(MediaMetadata) -> Unit = { mediaMetadata ->
+            CompositionLocalProvider(LocalAppBackdrop provides controlsBackdrop) {
             PlayerControlsContent(
                 mediaMetadata = mediaMetadata,
                 playerDesignStyle = playerDesignStyle,
@@ -1145,6 +1158,7 @@ fun BottomSheetPlayer(
                 showOneLineLyrics = showOneLineLyrics,
                 onShowLyrics = { isLyricsScreenVisible = true },
             )
+            }
         }
 
         Box(
@@ -1159,6 +1173,7 @@ fun BottomSheetPlayer(
                         },
                     ),
         ) {
+            Box(modifier = Modifier.fillMaxSize().layerBackdrop(controlsBackdrop)) {
             if (!state.isCollapsed &&
                 !aodModeEnabled &&
                 playerDesignStyle != PlayerDesignStyle.V7
@@ -1176,6 +1191,7 @@ fun BottomSheetPlayer(
                     canvasArtwork = v7CanvasArtwork,
                     isPlaying = isPlaying,
                 )
+            }
             }
 
             Box(
@@ -1404,23 +1420,25 @@ fun BottomSheetPlayer(
                     }
                 }
 
-            Queue(
-                state = queueSheetState,
-                playerBottomSheetState = state,
-                navController = navController,
-                backgroundColor =
-                    if (useBlackBackground) {
-                        Color.Black
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainer
-                    },
-                onBackgroundColor = queueOnBackgroundColor,
-                TextBackgroundColor = TextBackgroundColor,
-                textButtonColor = textButtonColor,
-                iconButtonColor = iconButtonColor,
-                onShowLyrics = { isLyricsScreenVisible = true },
-                pureBlack = pureBlack,
-            )
+            CompositionLocalProvider(LocalAppBackdrop provides controlsBackdrop) {
+                Queue(
+                    state = queueSheetState,
+                    playerBottomSheetState = state,
+                    navController = navController,
+                    backgroundColor =
+                        if (useBlackBackground) {
+                            Color.Black
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        },
+                    onBackgroundColor = queueOnBackgroundColor,
+                    TextBackgroundColor = TextBackgroundColor,
+                    textButtonColor = textButtonColor,
+                    iconButtonColor = iconButtonColor,
+                    onShowLyrics = { isLyricsScreenVisible = true },
+                    pureBlack = pureBlack,
+                )
+            }
 
             mediaMetadata?.let { metadata ->
                 MikoLyricsTransition(

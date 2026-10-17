@@ -737,6 +737,8 @@
     <string name="liquid_glass_dialog_desc">Manage Glass Dialog Boxes settings</string>
     <string name="liquid_glass_queue">Glass Queue</string>
     <string name="liquid_glass_queue_desc">Manage Glass Queue settings</string>
+    <string name="liquid_glass_player">Glass Player</string>
+    <string name="liquid_glass_player_desc">Apply the glass effect to the player controls (previous, play/pause, next, share, like)</string>
     <string name="color_picker_hex">Hex</string>
     <string name="playing_matched_version">Playing best matched version from YouTube Music</string>
     <string name="downloading_matched_version">Downloading best matched version from YouTube Music</string>

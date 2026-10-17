@@ -146,7 +146,11 @@ import moe.rgsekai.sekaitune.playback.PlayerConnection
 import moe.rgsekai.sekaitune.ui.component.BottomSheetPageState
 import moe.rgsekai.sekaitune.ui.component.BottomSheetState
 import moe.rgsekai.sekaitune.ui.component.MenuState
+import moe.rgsekai.sekaitune.ui.component.GlassComponent
+import moe.rgsekai.sekaitune.ui.component.LocalGlassEffectConfig
 import moe.rgsekai.sekaitune.ui.component.OneLineLyrics
+import moe.rgsekai.sekaitune.ui.component.isGlassSupported
+import moe.rgsekai.sekaitune.ui.component.liquidGlass
 import moe.rgsekai.sekaitune.ui.component.PlayerSliderTrack
 import moe.rgsekai.sekaitune.ui.component.rememberDelayedBufferingState
 import moe.rgsekai.sekaitune.ui.component.ResizableIconButton
@@ -293,6 +297,7 @@ fun PlayerTopActions(
     currentSongLiked: Boolean,
 ) {
     val haptic = LocalHapticFeedback.current
+    val useGlass = rememberPlayerGlassEnabled()
     val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
     when (playerDesignStyle) {
         PlayerDesignStyle.V2 -> {
@@ -321,7 +326,7 @@ fun PlayerTopActions(
                         Modifier
                             .size(36.dp)
                             .clip(shareShape)
-                            .background(textButtonColor)
+                            .then(if (useGlass) Modifier.playerGlass(shareShape) else Modifier.background(textButtonColor))
                             .clickable {
                                 val intent =
                                     Intent().apply {
@@ -338,7 +343,7 @@ fun PlayerTopActions(
                     Image(
                         painter = painterResource(R.drawable.share),
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(iconButtonColor),
+                        colorFilter = ColorFilter.tint(if (useGlass) textButtonColor else iconButtonColor),
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
@@ -351,7 +356,7 @@ fun PlayerTopActions(
                         Modifier
                             .size(36.dp)
                             .clip(favShape)
-                            .background(textButtonColor)
+                            .then(if (useGlass) Modifier.playerGlass(favShape) else Modifier.background(textButtonColor))
                             .clickable {
                                 playerConnection.toggleLike()
                             },
@@ -366,7 +371,7 @@ fun PlayerTopActions(
                                 },
                             ),
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(iconButtonColor),
+                        colorFilter = ColorFilter.tint(if (useGlass) textButtonColor else iconButtonColor),
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
@@ -590,6 +595,7 @@ fun PlayerPlaybackControls(
     currentSongLiked: Boolean,
 ) {
     val haptic = LocalHapticFeedback.current
+    val useGlass = rememberPlayerGlassEnabled()
 
     when (playerDesignStyle) {
         PlayerDesignStyle.V2 -> {
@@ -617,13 +623,14 @@ fun PlayerPlaybackControls(
                         enabled = canSkipPrevious,
                         colors =
                             IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = textButtonColor,
-                                contentColor = iconButtonColor,
+                                containerColor = if (useGlass) Color.Transparent else textButtonColor,
+                                contentColor = if (useGlass) textButtonColor else iconButtonColor,
                             ),
                         modifier =
                             Modifier
                                 .size(width = sideButtonWidth, height = sideButtonHeight)
-                                .clip(sideShape),
+                                .clip(sideShape)
+                                .playerGlass(sideShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.skip_previous),
@@ -646,13 +653,14 @@ fun PlayerPlaybackControls(
                         },
                         colors =
                             IconButtonDefaults.filledIconButtonColors(
-                                containerColor = textButtonColor,
-                                contentColor = iconButtonColor,
+                                containerColor = if (useGlass) Color.Transparent else textButtonColor,
+                                contentColor = if (useGlass) textButtonColor else iconButtonColor,
                             ),
                         modifier =
                             Modifier
                                 .size(width = playButtonWidth, height = playButtonHeight)
-                                .clip(playShape),
+                                .clip(playShape)
+                                .playerGlass(playShape),
                     ) {
                         Icon(
                             painter =
@@ -678,13 +686,14 @@ fun PlayerPlaybackControls(
                         enabled = canSkipNext,
                         colors =
                             IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = textButtonColor,
-                                contentColor = iconButtonColor,
+                                containerColor = if (useGlass) Color.Transparent else textButtonColor,
+                                contentColor = if (useGlass) textButtonColor else iconButtonColor,
                             ),
                         modifier =
                             Modifier
                                 .size(width = sideButtonWidth, height = sideButtonHeight)
-                                .clip(sideShape),
+                                .clip(sideShape)
+                                .playerGlass(sideShape),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.skip_next),
@@ -1104,6 +1113,8 @@ private fun V8MetadataActions(
 
             Spacer(Modifier.width(16.dp))
 
+            val useGlass = rememberPlayerGlassEnabled()
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1113,7 +1124,13 @@ private fun V8MetadataActions(
                         Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(foreground.copy(alpha = 0.20f))
+                            .then(
+                                if (useGlass) {
+                                    Modifier.playerGlass(CircleShape)
+                                } else {
+                                    Modifier.background(foreground.copy(alpha = 0.20f))
+                                },
+                            )
                             .clickable(onClick = onMenuClick),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -1130,7 +1147,13 @@ private fun V8MetadataActions(
                         Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(foreground.copy(alpha = 0.20f))
+                            .then(
+                                if (useGlass) {
+                                    Modifier.playerGlass(CircleShape)
+                                } else {
+                                    Modifier.background(foreground.copy(alpha = 0.20f))
+                                },
+                            )
                             .clickable(onClick = onToggleLike),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -2286,6 +2309,20 @@ fun PlayerBackground(
     }
 }
 
+/** True when the "Glass Player" option (and the global glass switch) is on and the device supports it. */
+@Composable
+internal fun rememberPlayerGlassEnabled(): Boolean {
+    val config = LocalGlassEffectConfig.current
+    return config.isEnabledFor(GlassComponent.PLAYER) && isGlassSupported()
+}
 
-
-
+/** Applies the liquid glass effect to a player control. No-op when the glass player is disabled. */
+@Composable
+internal fun Modifier.playerGlass(shape: androidx.compose.ui.graphics.Shape): Modifier {
+    val config = LocalGlassEffectConfig.current
+    return if (config.isEnabledFor(GlassComponent.PLAYER) && isGlassSupported()) {
+        this.liquidGlass(config = config, shape = shape)
+    } else {
+        this
+    }
+}

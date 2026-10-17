@@ -223,6 +223,7 @@ import moe.rgsekai.sekaitune.constants.LiquidGlassNavBarEnabledKey
 import moe.rgsekai.sekaitune.constants.LiquidGlassPopupMenuEnabledKey
 import moe.rgsekai.sekaitune.constants.LiquidGlassDialogEnabledKey
 import moe.rgsekai.sekaitune.constants.LiquidGlassQueueEnabledKey
+import moe.rgsekai.sekaitune.constants.LiquidGlassPlayerEnabledKey
 import moe.rgsekai.sekaitune.constants.LiquidGlassSurfaceOpacityKey
 import moe.rgsekai.sekaitune.constants.LiquidGlassSurfaceTintColorKey
 import moe.rgsekai.sekaitune.constants.LiquidGlassTextColorKey
@@ -1081,6 +1082,7 @@ class MainActivity : ComponentActivity() {
                     val (liquidGlassPopupMenuEnabled) = rememberPreference(LiquidGlassPopupMenuEnabledKey, defaultValue = true)
                     val (liquidGlassDialogEnabled) = rememberPreference(LiquidGlassDialogEnabledKey, defaultValue = true)
                     val (liquidGlassQueueEnabled) = rememberPreference(LiquidGlassQueueEnabledKey, defaultValue = true)
+                    val (liquidGlassPlayerEnabled) = rememberPreference(LiquidGlassPlayerEnabledKey, defaultValue = true)
 
                     val glassEffectConfig = remember(
                         liquidGlassGlobalEnabled,
@@ -1098,6 +1100,7 @@ class MainActivity : ComponentActivity() {
                         liquidGlassPopupMenuEnabled,
                         liquidGlassDialogEnabled,
                         liquidGlassQueueEnabled,
+                        liquidGlassPlayerEnabled,
                     ) {
                         GlassEffectConfig(
                             globalEnabled = liquidGlassGlobalEnabled,
@@ -1115,6 +1118,7 @@ class MainActivity : ComponentActivity() {
                             popupMenuEnabled = liquidGlassPopupMenuEnabled,
                             dialogEnabled = liquidGlassDialogEnabled,
                             queueEnabled = liquidGlassQueueEnabled,
+                            playerEnabled = liquidGlassPlayerEnabled,
                         )
                     }
 

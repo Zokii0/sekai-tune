@@ -3255,13 +3255,15 @@ class MusicService :
                 }
 
             if (radioItems.isNotEmpty()) {
+                val activeIndex = player.currentMediaItemIndex
+                val targetIndex = if (activeIndex >= 0) activeIndex else currentIndex
                 val itemCount = player.mediaItemCount
 
-                if (itemCount > currentIndex + 1) {
-                    player.removeMediaItems(currentIndex + 1, itemCount)
+                if (itemCount > targetIndex + 1) {
+                    player.removeMediaItems(targetIndex + 1, itemCount)
                 }
 
-                player.addMediaItems(currentIndex + 1, radioItems)
+                player.addMediaItems(targetIndex + 1, radioItems)
             }
 
             currentQueue = radioQueue

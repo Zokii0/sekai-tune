@@ -21,6 +21,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -319,12 +320,20 @@ fun Thumbnail(
     val currentItem by remember { derivedStateOf { thumbnailLazyGridState.firstVisibleItemIndex } }
     val itemScrollOffset by remember { derivedStateOf { thumbnailLazyGridState.firstVisibleItemScrollOffset } }
 
+    var userWasDragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(thumbnailLazyGridState.interactionSource) {
+        thumbnailLazyGridState.interactionSource.interactions.collect { interaction ->
+            if (interaction is DragInteraction.Start) {
+                userWasDragging = true
+            }
+        }
+    }
+
     // Handle swipe to change song.
-    // FIX: the old version was keyed on itemScrollOffset and required isScrollInProgress to still be
-    // true when the effect ran. With snap-fling the flag often flips to false first, so the skip was
-    // silently dropped: the grid rested on the neighbour page, the player stayed on the old song and
-    // there was no further page to swipe to. Now we react to the scroll *ending*, always, and then
-    // verify that the player really moved; if not, we snap back to the page that is actually playing.
+    // FIX: Only trigger a song skip if the user actually initiated a drag gesture on the thumbnail.
+    // Internal/programmatic scrolls (track auto-advancing, next button click, layout recomposition)
+    // must NEVER trigger seekToNext/seekToPrevious, preventing rapid 0:00 restart ping-pong loops.
     val latestPages by rememberUpdatedState(thumbnailPages)
     val latestCanSkipNext by rememberUpdatedState(canSkipNext)
     val latestCanSkipPrevious by rememberUpdatedState(canSkipPrevious)
@@ -334,8 +343,21 @@ fun Thumbnail(
         snapshotFlow { thumbnailLazyGridState.isScrollInProgress }.collectLatest { scrolling ->
             if (scrolling) return@collectLatest
 
+            val wasDragged = userWasDragging
+            userWasDragging = false
+
             val pages = latestPages
             val playingPage = pages.indexOfFirst { it.slotKey == "current" }
+
+            if (!wasDragged) {
+                // Not a physical user swipe (e.g. track change, auto advance, button click, programmatic scroll).
+                // Ensure the grid stays aligned with the current playing page without triggering any seek.
+                if (playingPage >= 0 && thumbnailLazyGridState.firstVisibleItemIndex != playingPage) {
+                    thumbnailLazyGridState.scrollToItem(playingPage)
+                }
+                return@collectLatest
+            }
+
             if (playingPage < 0) return@collectLatest
 
             val layout = thumbnailLazyGridState.layoutInfo
@@ -367,21 +389,10 @@ fun Thumbnail(
         }
     }
 
-    // Update position when song changes
-    LaunchedEffect(mediaMetadata, currentMediaItem?.mediaId, canSkipPrevious, canSkipNext) {
-        val index = maxOf(0, currentMediaIndex)
-        if (index >= 0 && index < thumbnailPages.size) {
-            try {
-                thumbnailLazyGridState.animateScrollToItem(index)
-            } catch (e: Exception) {
-                thumbnailLazyGridState.scrollToItem(index)
-            }
-        }
-    }
-
-    LaunchedEffect(playerConnection.player.currentMediaItemIndex, currentMediaItem?.mediaId) {
+    // Keep grid centered on the current playing item when song changes externally
+    LaunchedEffect(currentMediaIndex, currentMediaItem?.mediaId) {
         val index = currentMediaIndex
-        if (index >= 0 && index != currentItem) {
+        if (index >= 0 && index < thumbnailPages.size && !thumbnailLazyGridState.isScrollInProgress) {
             thumbnailLazyGridState.scrollToItem(index)
         }
     }
