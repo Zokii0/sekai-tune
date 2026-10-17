@@ -141,7 +141,7 @@ class PlayerConnection(
      * Instead keep the current item/position and only replace what comes after it.
      */
     fun startRadio(song: MediaMetadata) {
-        val playingId = player.currentMetadata?.id ?: player.currentMediaItem?.mediaId
+        val playingId = mediaMetadata.value?.id ?: player.currentMetadata?.id ?: player.currentMediaItem?.mediaId
         if (player.mediaItemCount > 0 && playingId == song.id) {
             service.startRadioSeamlessly()
         } else {

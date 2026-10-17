@@ -604,6 +604,7 @@ fun Thumbnail(
                                                 val request =
                                                     ImageRequest.Builder(context)
                                                         .data(displayUrl)
+                                                        .size(256, 256)
                                                         .allowHardware(false)
                                                         .build()
                                                 val result = context.imageLoader.execute(request)

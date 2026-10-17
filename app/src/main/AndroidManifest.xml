@@ -43,6 +43,7 @@
         android:allowBackup="true"
         android:allowAudioPlaybackCapture="true"
         android:appCategory="audio"
+        android:largeHeap="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"

@@ -3222,7 +3222,7 @@ class MusicService :
         }
         cancelInfiniteQueueBootstrap()
         suppressAutoPlayback = false
-        val currentMediaMetadata = player.currentMetadata ?: return
+        val currentMediaMetadata = player.currentMetadata ?: currentMediaMetadata.value ?: return
 
         val currentIndex = player.currentMediaItemIndex
         val currentMediaId = currentMediaMetadata.id
