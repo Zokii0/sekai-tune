@@ -136,6 +136,7 @@ import moe.rgsekai.sekaitune.lyrics.WordTimestamp
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerHost
 import moe.rgsekai.sekaitune.ui.component.shimmer.TextPlaceholder
 import moe.rgsekai.sekaitune.ui.theme.rememberSekaiTuneLyricsFontFamily
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import moe.rgsekai.sekaitune.utils.reportException
@@ -177,8 +178,9 @@ fun LyricsEnhanced(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val playbackParameters by playerConnection.playbackParameters.collectAsState()
 
+    val isTv = LocalIsTv.current
     val (lyricsClick) = rememberPreference(LyricsClickKey, defaultValue = true)
-    val (lyricsTextSize) = rememberPreference(LyricsTextSizeKey, defaultValue = 26f)
+    val (lyricsTextSize) = rememberPreference(LyricsTextSizeKey, defaultValue = if (isTv) 32f else 26f)
     val (lyricsLineBlurPreference) = rememberPreference(LyricsLineBlurKey, defaultValue = true)
     val (romanizeChinese) = rememberPreference(LyricsRomanizeChineseKey, defaultValue = true)
     val (romanizeHindi) = rememberPreference(LyricsRomanizeHindiKey, defaultValue = true)

@@ -52,6 +52,8 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +90,9 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import moe.rgsekai.sekaitune.LocalPlayerConnection
 import moe.rgsekai.sekaitune.R
@@ -211,9 +216,19 @@ fun Thumbnail(
     val thumbnailLazyGridState = rememberLazyGridState()
 
     // Create a playlist using correct shuffle-aware logic
+    // FIX: prev/next are read straight from the player below, which is NOT observable state.
+    // Without these subscriptions the neighbour pages stay stale when the queue is replaced
+    // (start radio, shuffle toggle, auto-load-more, ...) and the grid shows covers of songs
+    // that are no longer next/previous.
+    @Suppress("UNUSED_VARIABLE")
+    val queueWindows by playerConnection.queueWindows.collectAsState()
+    @Suppress("UNUSED_VARIABLE")
+    val observedQueueIndex by playerConnection.currentMediaItemIndex.collectAsState()
+    @Suppress("UNUSED_VARIABLE")
+    val observedRepeatMode by playerConnection.repeatMode.collectAsState()
     val timeline = playerConnection.player.currentTimeline
     val currentIndex = playerConnection.player.currentMediaItemIndex
-    val shuffleModeEnabled = playerConnection.player.shuffleModeEnabled
+    val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
     val previousWindowIndex =
         if (swipeThumbnail && !timeline.isEmpty) {
             timeline.getPreviousWindowIndex(
@@ -304,18 +319,51 @@ fun Thumbnail(
     val currentItem by remember { derivedStateOf { thumbnailLazyGridState.firstVisibleItemIndex } }
     val itemScrollOffset by remember { derivedStateOf { thumbnailLazyGridState.firstVisibleItemScrollOffset } }
 
-    // Handle swipe to change song
-    LaunchedEffect(itemScrollOffset) {
-        if (!thumbnailLazyGridState.isScrollInProgress || !swipeThumbnail || itemScrollOffset != 0 ||
-            currentMediaIndex < 0
-        ) {
-            return@LaunchedEffect
-        }
+    // Handle swipe to change song.
+    // FIX: the old version was keyed on itemScrollOffset and required isScrollInProgress to still be
+    // true when the effect ran. With snap-fling the flag often flips to false first, so the skip was
+    // silently dropped: the grid rested on the neighbour page, the player stayed on the old song and
+    // there was no further page to swipe to. Now we react to the scroll *ending*, always, and then
+    // verify that the player really moved; if not, we snap back to the page that is actually playing.
+    val latestPages by rememberUpdatedState(thumbnailPages)
+    val latestCanSkipNext by rememberUpdatedState(canSkipNext)
+    val latestCanSkipPrevious by rememberUpdatedState(canSkipPrevious)
 
-        if (currentItem > currentMediaIndex && canSkipNext) {
-            playerConnection.player.seekToNext()
-        } else if (currentItem < currentMediaIndex && canSkipPrevious) {
-            playerConnection.player.seekToPreviousMediaItem()
+    LaunchedEffect(swipeThumbnail) {
+        if (!swipeThumbnail) return@LaunchedEffect
+        snapshotFlow { thumbnailLazyGridState.isScrollInProgress }.collectLatest { scrolling ->
+            if (scrolling) return@collectLatest
+
+            val pages = latestPages
+            val playingPage = pages.indexOfFirst { it.slotKey == "current" }
+            if (playingPage < 0) return@collectLatest
+
+            val layout = thumbnailLazyGridState.layoutInfo
+            val settledPage =
+                thumbnailLazyGridState.firstVisibleItemIndex +
+                    if (thumbnailLazyGridState.firstVisibleItemScrollOffset > layout.viewportSize.width / 2) 1 else 0
+
+            if (settledPage != playingPage) {
+                val startIndex = playerConnection.player.currentMediaItemIndex
+                val startId = playerConnection.mediaMetadata.value?.id
+                if (settledPage > playingPage && latestCanSkipNext) {
+                    playerConnection.player.seekToNext()
+                } else if (settledPage < playingPage && latestCanSkipPrevious) {
+                    playerConnection.player.seekToPreviousMediaItem()
+                }
+                // Wait for the player to actually transition (or give up).
+                withTimeoutOrNull(1500L) {
+                    playerConnection.currentMediaItemIndex.first { it != startIndex }
+                }
+                delay(80L) // let the new pages compose
+                if (playerConnection.mediaMetadata.value?.id == startId &&
+                    playerConnection.player.currentMediaItemIndex == startIndex
+                ) {
+                    // Skip was ignored/failed -> never leave the UI on a page that isn't playing.
+                    val back = latestPages.indexOfFirst { it.slotKey == "current" }
+                    if (back >= 0) thumbnailLazyGridState.animateScrollToItem(back)
+                }
+            }
         }
     }
 
@@ -397,7 +445,9 @@ fun Thumbnail(
                         items(
                             items = thumbnailPages,
                             key = { page ->
-                                "${page.slotKey}:${page.windowIndex}:${page.mediaItem.mediaId.ifEmpty { "unknown" }}"
+                                // FIX: no slotKey here. After a skip the old "next" page becomes "current"; with a stable
+                                // key the grid follows it by itself instead of re-creating all pages and jumping.
+                                "${page.windowIndex}:${page.mediaItem.mediaId.ifEmpty { "unknown" }}"
                             },
                             contentType = { "thumbnailPage" },
                         ) { page ->
@@ -554,6 +604,7 @@ fun Thumbnail(
                                                 val request =
                                                     ImageRequest.Builder(context)
                                                         .data(displayUrl)
+                                                        .size(256, 256)
                                                         .allowHardware(false)
                                                         .build()
                                                 val result = context.imageLoader.execute(request)

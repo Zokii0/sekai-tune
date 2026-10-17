@@ -54,6 +54,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -93,6 +94,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -143,9 +145,13 @@ import moe.rgsekai.sekaitune.ui.component.GlassModalBottomSheet
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.InfoLabel
 import moe.rgsekai.sekaitune.ui.component.TextFieldDialog
+import moe.rgsekai.sekaitune.ui.component.tvSettingsItemFocus
+import androidx.compose.ui.focus.FocusRequester
 import moe.rgsekai.sekaitune.ui.screens.buildLoginRoute
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.appBarScrollBehavior
 import moe.rgsekai.sekaitune.ui.utils.backToMain
+import moe.rgsekai.sekaitune.ui.utils.safeRequestFocus
 import moe.rgsekai.sekaitune.utils.PreferenceStore
 import moe.rgsekai.sekaitune.utils.SavedAccount
 import moe.rgsekai.sekaitune.utils.Updater
@@ -222,6 +228,7 @@ fun AccountSettings(
         YouTube.useLoginForBrowse = useLoginForBrowse
     }
 
+    val isTv = LocalIsTv.current
     val viewModel: HomeViewModel = hiltViewModel()
     val accountNameFromViewModel by viewModel.accountName.collectAsStateWithLifecycle()
     val accountImageUrl by viewModel.accountImageUrl.collectAsStateWithLifecycle()
@@ -434,103 +441,105 @@ fun AccountSettings(
                 )
             }
 
-            if (hasUpdate) {
-                item {
-                    UpdateBannerStrip(
-                        latestVersion = latestVersionName,
-                        onClick = { uriHandler.openUri(Updater.getLatestDownloadUrl()) },
-                    )
-                }
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = isLoggedIn,
-                    enter =
-                        fadeIn(spring(stiffness = Spring.StiffnessLow)) +
-                            expandVertically(
-                                spring(stiffness = Spring.StiffnessLow),
-                            ),
-                    exit = fadeOut() + shrinkVertically(),
-                ) {
-                    ExpressiveSectionCard(title = generalLabel) {
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.add_circle),
-                            title = stringResource(R.string.more_content),
-                            subtitle = stringResource(R.string.use_login_for_browse_desc),
-                            checked = useLoginForBrowse,
-                            onCheckedChange = onUseLoginForBrowseChange,
-                        )
-
-                        ExpressiveDivider()
-
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.cached),
-                            title = stringResource(R.string.yt_sync),
-                            checked = ytmSync,
-                            onCheckedChange = onYtmSyncChange,
-                        )
-
-                        ExpressiveDivider()
-
-                        ExpressiveSwitchRow(
-                            icon = painterResource(R.drawable.sync),
-                            title = stringResource(R.string.force_sync_on_switch_account),
-                            subtitle = stringResource(R.string.force_sync_on_switch_account_desc),
-                            checked = forceSyncOnAccountSwitch,
-                            onCheckedChange = onForceSyncOnAccountSwitchChange,
+            if (!isTv) {
+                if (hasUpdate) {
+                    item {
+                        UpdateBannerStrip(
+                            latestVersion = latestVersionName,
+                            onClick = { uriHandler.openUri(Updater.getLatestDownloadUrl()) },
                         )
                     }
                 }
-            }
 
-            item {
-                ExpressiveSectionCard(title = stringResource(R.string.integrations)) {
-                    ExpressiveActionRow(
-                        icon = painterResource(R.drawable.integration),
-                        title = stringResource(R.string.integrations),
-                        subtitle = if (spotifyState.isAuthenticated && spotifyState.accountName.isNotBlank()) {
-                            stringResource(R.string.spotify_connected_as, spotifyState.accountName)
-                        } else {
-                            stringResource(R.string.integrations_desc)
-                        },
-                        onClick = { navController.navigate("settings/integrations") },
-                    )
+                item {
+                    AnimatedVisibility(
+                        visible = isLoggedIn,
+                        enter =
+                            fadeIn(spring(stiffness = Spring.StiffnessLow)) +
+                                expandVertically(
+                                    spring(stiffness = Spring.StiffnessLow),
+                                ),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
+                        ExpressiveSectionCard(title = generalLabel) {
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.add_circle),
+                                title = stringResource(R.string.more_content),
+                                subtitle = stringResource(R.string.use_login_for_browse_desc),
+                                checked = useLoginForBrowse,
+                                onCheckedChange = onUseLoginForBrowseChange,
+                            )
+
+                            ExpressiveDivider()
+
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.cached),
+                                title = stringResource(R.string.yt_sync),
+                                checked = ytmSync,
+                                onCheckedChange = onYtmSyncChange,
+                            )
+
+                            ExpressiveDivider()
+
+                            ExpressiveSwitchRow(
+                                icon = painterResource(R.drawable.sync),
+                                title = stringResource(R.string.force_sync_on_switch_account),
+                                subtitle = stringResource(R.string.force_sync_on_switch_account_desc),
+                                checked = forceSyncOnAccountSwitch,
+                                onCheckedChange = onForceSyncOnAccountSwitchChange,
+                            )
+                        }
+                    }
                 }
-            }
 
-            item {
-                ExpressiveSectionCard(title = stringResource(R.string.music_together)) {
-                    ExpressiveActionRow(
-                        icon = painterResource(R.drawable.fire),
-                        title = stringResource(R.string.music_together),
-                        onClick = { navController.navigate("settings/music_together") },
-                    )
-                }
-            }
-
-            item {
-                ExpressiveSectionCard(title = miscLabel) {
-                    ExpressiveActionRow(
-                        icon = painterResource(R.drawable.token),
-                        title = tokenActionTitle,
-                        subtitle = tokenDescription,
-                        accent = if (isLoggedIn && showToken) MaterialTheme.colorScheme.tertiary else null,
-                        onClick = {
-                            if (!isLoggedIn) {
-                                showTokenEditor = true
-                            } else if (!showToken) {
-                                showToken = true
+                item {
+                    ExpressiveSectionCard(title = stringResource(R.string.integrations)) {
+                        ExpressiveActionRow(
+                            icon = painterResource(R.drawable.integration),
+                            title = stringResource(R.string.integrations),
+                            subtitle = if (spotifyState.isAuthenticated && spotifyState.accountName.isNotBlank()) {
+                                stringResource(R.string.spotify_connected_as, spotifyState.accountName)
                             } else {
-                                showTokenEditor = true
-                            }
-                        },
-                    )
+                                stringResource(R.string.integrations_desc)
+                            },
+                            onClick = { navController.navigate("settings/integrations") },
+                        )
+                    }
                 }
-            }
 
-            item {
-                VersionStamp()
+                item {
+                    ExpressiveSectionCard(title = stringResource(R.string.music_together)) {
+                        ExpressiveActionRow(
+                            icon = painterResource(R.drawable.fire),
+                            title = stringResource(R.string.music_together),
+                            onClick = { navController.navigate("settings/music_together") },
+                        )
+                    }
+                }
+
+                item {
+                    ExpressiveSectionCard(title = miscLabel) {
+                        ExpressiveActionRow(
+                            icon = painterResource(R.drawable.token),
+                            title = tokenActionTitle,
+                            subtitle = tokenDescription,
+                            accent = if (isLoggedIn && showToken) MaterialTheme.colorScheme.tertiary else null,
+                            onClick = {
+                                if (!isLoggedIn) {
+                                    showTokenEditor = true
+                                } else if (!showToken) {
+                                    showToken = true
+                                } else {
+                                    showTokenEditor = true
+                                }
+                            },
+                        )
+                    }
+                }
+
+                item {
+                    VersionStamp()
+                }
             }
         }
     }
@@ -638,6 +647,7 @@ private fun ProfileIdentityCard(
     onRemoveAccount: (SavedAccount) -> Unit,
     onAddAnotherAccount: () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -652,23 +662,7 @@ private fun ProfileIdentityCard(
         label = "accountMenuChevron",
     )
 
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                },
-        shape = CardShape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        onClick = onPrimaryAction,
-        interactionSource = interactionSource,
-    ) {
+    val cardContent: @Composable ColumnScope.() -> Unit = {
         Column(
             modifier =
                 Modifier
@@ -828,15 +822,104 @@ private fun ProfileIdentityCard(
                     }
                 }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(top = 4.dp),
-            ) {
+            if (isTv) {
+                val tvButtonRequester = remember { FocusRequester() }
+                if (isLoggedIn) {
+                    OutlinedButton(
+                        onClick = onSecondaryAction,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier =
+                            Modifier
+                                .padding(top = 4.dp)
+                                .tvSettingsItemFocus(
+                                    shape = RoundedCornerShape(12.dp),
+                                    customFocusRequester = tvButtonRequester,
+                                    onClick = onSecondaryAction,
+                                    isFirstItem = true,
+                                    interceptDirectionLeft = true,
+                                    onMoveRight = {},
+                                    onMoveUp = {},
+                                    onMoveDown = {},
+                                ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.logout),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.action_logout),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = onPrimaryAction,
+                        shape = RoundedCornerShape(12.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(top = 4.dp)
+                                .tvSettingsItemFocus(
+                                    shape = RoundedCornerShape(12.dp),
+                                    customFocusRequester = tvButtonRequester,
+                                    onClick = onPrimaryAction,
+                                    isFirstItem = true,
+                                    interceptDirectionLeft = true,
+                                    onMoveRight = {},
+                                    onMoveUp = {},
+                                    onMoveDown = {},
+                                ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.login),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.login),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                val leadingButtonRequester = remember { FocusRequester() }
+                val trailingButtonRequester = remember { FocusRequester() }
+                val logoutButtonRequester = remember { FocusRequester() }
+                val canExpandMenu = isLoggedIn || savedAccounts.accounts.isNotEmpty()
+
                 Box {
                     SplitButtonLayout(
                         leadingButton = {
                             SplitButtonDefaults.ElevatedLeadingButton(
                                 onClick = onPrimaryAction,
+                                modifier =
+                                    Modifier.tvSettingsItemFocus(
+                                        shape = ButtonGroupDefaults.connectedLeadingButtonShapes().shape,
+                                        customFocusRequester = leadingButtonRequester,
+                                        onClick = onPrimaryAction,
+                                        isFirstItem = true,
+                                        interceptDirectionLeft = true,
+                                        onMoveRight = {
+                                            if (canExpandMenu) {
+                                                trailingButtonRequester.safeRequestFocus()
+                                            } else {
+                                                logoutButtonRequester.safeRequestFocus()
+                                            }
+                                        },
+                                        onMoveUp = {},
+                                        onMoveDown = {},
+                                    ),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -867,7 +950,23 @@ private fun ProfileIdentityCard(
                             SplitButtonDefaults.ElevatedTrailingButton(
                                 checked = accountMenuExpanded,
                                 onCheckedChange = { accountMenuExpanded = it },
-                                enabled = isLoggedIn || savedAccounts.accounts.isNotEmpty(),
+                                enabled = canExpandMenu,
+                                modifier =
+                                    Modifier.tvSettingsItemFocus(
+                                        shape = ButtonGroupDefaults.connectedTrailingButtonShapes().shape,
+                                        customFocusRequester = trailingButtonRequester,
+                                        onClick = {
+                                            if (canExpandMenu) {
+                                                accountMenuExpanded = !accountMenuExpanded
+                                            }
+                                        },
+                                        isFirstItem = false,
+                                        interceptDirectionLeft = false,
+                                        onMoveLeft = { leadingButtonRequester.safeRequestFocus() },
+                                        onMoveRight = { logoutButtonRequester.safeRequestFocus() },
+                                        onMoveUp = {},
+                                        onMoveDown = {},
+                                    ),
                                 colors =
                                     ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -1079,6 +1178,24 @@ private fun ProfileIdentityCard(
                 OutlinedButton(
                     onClick = onSecondaryAction,
                     shapes = ButtonDefaults.shapes(),
+                    modifier =
+                        Modifier.tvSettingsItemFocus(
+                            shape = ButtonDefaults.outlinedShape,
+                            customFocusRequester = logoutButtonRequester,
+                            onClick = onSecondaryAction,
+                            isFirstItem = false,
+                            interceptDirectionLeft = false,
+                            onMoveLeft = {
+                                if (canExpandMenu) {
+                                    trailingButtonRequester.safeRequestFocus()
+                                } else {
+                                    leadingButtonRequester.safeRequestFocus()
+                                }
+                            },
+                            onMoveRight = {},
+                            onMoveUp = {},
+                            onMoveDown = {},
+                        ),
                 ) {
                     Text(
                         text = if (isLoggedIn) stringResource(R.string.action_logout) else stringResource(R.string.advanced_login),
@@ -1086,7 +1203,40 @@ private fun ProfileIdentityCard(
                     )
                 }
             }
+            }
         }
+    }
+
+    if (isTv) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = CardShape,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            content = cardContent,
+        )
+    } else {
+        Card(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+            shape = CardShape,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            onClick = onPrimaryAction,
+            interactionSource = interactionSource,
+            content = cardContent,
+        )
     }
 }
 
@@ -1110,7 +1260,13 @@ private fun UpdateBannerStrip(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                },
+                }
+                .tvSettingsItemFocus(
+                    shape = CardShape,
+                    interactionSource = interactionSource,
+                    onClick = onClick,
+                    isFirstItem = false,
+                ),
         shape = CardShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         onClick = onClick,
@@ -1232,7 +1388,13 @@ internal fun ExpressiveActionRow(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }.clip(InnerTileShape)
+                }
+                .tvSettingsItemFocus(
+                    shape = InnerTileShape,
+                    interactionSource = interactionSource,
+                    onClick = onClick,
+                )
+                .clip(InnerTileShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
@@ -1287,6 +1449,8 @@ internal fun ExpressiveSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
+    val isTv = LocalIsTv.current
+    val interactionSource = remember { MutableInteractionSource() }
     val containerColor by animateColorAsState(
         targetValue =
             if (checked) {
@@ -1303,9 +1467,18 @@ internal fun ExpressiveSwitchRow(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 6.dp, vertical = 2.dp)
+                .tvSettingsItemFocus(
+                    shape = InnerTileShape,
+                    interactionSource = interactionSource,
+                    onClick = { onCheckedChange(!checked) },
+                )
                 .clip(InnerTileShape)
                 .background(containerColor)
-                .clickable { onCheckedChange(!checked) },
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = androidx.compose.material3.ripple(),
+                    onClick = { onCheckedChange(!checked) },
+                ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
@@ -1344,6 +1517,7 @@ internal fun ExpressiveSwitchRow(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
+                modifier = if (isTv) Modifier.focusProperties { canFocus = false } else Modifier,
                 colors =
                     SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,

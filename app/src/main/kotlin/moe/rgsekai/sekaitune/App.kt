@@ -55,6 +55,7 @@ import moe.rgsekai.sekaitune.utils.clearPlaybackWebAuthSession
 import moe.rgsekai.sekaitune.utils.dataStore
 import moe.rgsekai.sekaitune.utils.get
 import moe.rgsekai.sekaitune.utils.potoken.BotGuardTokenGenerator
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import moe.rgsekai.sekaitune.utils.reportException
 import moe.rgsekai.sekaitune.utils.toPlaybackAuthState
 import okhttp3.Dns
@@ -360,7 +361,7 @@ class App :
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
-        val smartTrimmer = dataStore[SmartTrimmerKey] ?: false
+        val smartTrimmer = dataStore[SmartTrimmerKey] ?: isTvDevice()
         val imageCacheConfig = resolveImageDiskCacheConfig(dataStore[MaxImageCacheSizeKey])
 
         val diskCache =

@@ -43,6 +43,7 @@ import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.component.SwitchPreference
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.rememberPreference
 import kotlin.math.roundToInt
@@ -50,7 +51,8 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AmbientModeSettingsScreen(navController: NavController) {
-    val (artScale, onArtScaleChange) = rememberPreference(AmbientArtScaleKey, defaultValue = 0.85f)
+    val isTv = LocalIsTv.current
+    val (artScale, onArtScaleChange) = rememberPreference(AmbientArtScaleKey, defaultValue = if (isTv) 0.95f else 0.85f)
     val (canvasEnabled, onCanvasEnabledChange) = rememberPreference(AmbientCanvasEnabledKey, defaultValue = true)
     val (volumeGestureEnabled, onVolumeGestureEnabledChange) = rememberPreference(AmbientVolumeGestureEnabledKey, defaultValue = true)
     val (showProgressBar, onShowProgressBarChange) = rememberPreference(AmbientShowProgressBarKey, defaultValue = true)

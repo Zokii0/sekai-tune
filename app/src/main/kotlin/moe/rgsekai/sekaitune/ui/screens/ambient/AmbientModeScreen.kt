@@ -113,6 +113,7 @@ import moe.rgsekai.sekaitune.ui.player.CanvasRenderMode
 import moe.rgsekai.sekaitune.ui.player.rememberOfflineArtworkImageRequest
 import moe.rgsekai.sekaitune.ui.player.resolveCanvasArtworkForPlayback
 import moe.rgsekai.sekaitune.ui.player.resolveProceduralRenderMode
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.highRes
 import moe.rgsekai.sekaitune.utils.makeTimeString
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
@@ -128,7 +129,8 @@ fun AmbientModeScreen(navController: NavController) {
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val isPlaying by playerConnection.isPlaying.collectAsState()
 
-    val artScale by rememberPreference(AmbientArtScaleKey, 0.85f)
+    val isTv = LocalIsTv.current
+    val artScale by rememberPreference(AmbientArtScaleKey, if (isTv) 0.95f else 0.85f)
     val ambientCanvasEnabled by rememberPreference(AmbientCanvasEnabledKey, true)
     val ambientVolumeGestureEnabled by rememberPreference(AmbientVolumeGestureEnabledKey, true)
     val showProgressBar by rememberPreference(AmbientShowProgressBarKey, true)

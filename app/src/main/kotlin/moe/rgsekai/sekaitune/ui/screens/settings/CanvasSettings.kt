@@ -18,6 +18,8 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import timber.log.Timber
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,10 +28,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,8 +43,14 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.focus.focusProperties
 import moe.rgsekai.sekaitune.ui.component.DefaultDialog
+import moe.rgsekai.sekaitune.ui.component.LocalTvSettingsInSubScreen
+import moe.rgsekai.sekaitune.ui.component.tvSettingsItemFocus
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.ui.utils.tvFocusOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -53,6 +63,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -103,13 +114,18 @@ private fun CanvasSettingsContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isTv = LocalIsTv.current
+    val inSubScreen = LocalTvSettingsInSubScreen.current
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.SekaiTune_canvas)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = if (isTv && inSubScreen) Modifier.focusProperties { canFocus = false } else Modifier,
+                    ) {
                         Icon(painterResource(R.drawable.arrow_back), null)
                     }
                 },
@@ -139,6 +155,7 @@ private fun CanvasSettingsBody(
     onAction: (CanvasSettingsAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isTv = LocalIsTv.current
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -175,25 +192,59 @@ private fun CanvasSettingsBody(
     val onCacheLimit = remember(onAction) { { onAction(CanvasSettingsAction.ShowCacheLimit) } }
     val onClear = remember(onAction) { { onAction(CanvasSettingsAction.ShowClearCache) } }
     val sources = remember { CanvasSource.entries.toList() }
+
+    LaunchedEffect(isTv, model.configuration.source) {
+        if (isTv && model.configuration.source != CanvasSource.ALL) {
+            onAction(CanvasSettingsAction.SelectSource(CanvasSource.ALL))
+        }
+    }
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = SettingsDimensions.ScreenHorizontalPadding)
-            .padding(top = SettingsDimensions.SectionSpacing, bottom = SettingsDimensions.ScreenBottomPadding),
+            .padding(
+                top = SettingsDimensions.SectionSpacing,
+                bottom = if (isTv) 64.dp else SettingsDimensions.ScreenBottomPadding,
+            ),
         verticalArrangement = remember { Arrangement.spacedBy(SettingsDimensions.SectionSpacing) },
     ) {
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier
+                .tvSettingsItemFocus(
+                    shape = MaterialTheme.shapes.large,
+                    isFirstItem = true,
+                    onClick = { if (!model.busy) onEnabled(!model.configuration.enabled) },
+                )
+                .then(
+                    if (isTv) {
+                        Modifier.clickable(
+                            enabled = true,
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = { if (!model.busy) onEnabled(!model.configuration.enabled) },
+                        )
+                    } else {
+                        Modifier
+                    }
+                ),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .toggleable(
-                        value = model.configuration.enabled,
-                        enabled = !model.busy,
-                        role = Role.Switch,
-                        onValueChange = onEnabled,
+                    .then(
+                        if (isTv) {
+                            Modifier.focusProperties { canFocus = false }
+                        } else {
+                            Modifier.toggleable(
+                                value = model.configuration.enabled,
+                                enabled = !model.busy,
+                                role = Role.Switch,
+                                onValueChange = onEnabled,
+                            )
+                        }
                     )
                     .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -214,49 +265,58 @@ private fun CanvasSettingsBody(
                 Switch(
                     checked = model.configuration.enabled,
                     onCheckedChange = null,
-                    enabled = !model.busy,
+                    enabled = if (isTv) true else !model.busy,
+                    modifier = if (isTv) Modifier.focusProperties { canFocus = false } else Modifier,
                 )
             }
         }
 
-        CanvasSettingsGroup(title = stringResource(R.string.canvas_source)) {
-            Column(
-                modifier = remember {
-                    Modifier.fillMaxWidth().selectableGroup()
-                },
-            ) {
-                sources.forEachIndexed { index, source ->
-                    val onSelect = remember(onAction, source) { { onAction(CanvasSettingsAction.SelectSource(source)) } }
-                    CanvasChoiceRow(
-                        title = stringResource(source.labelResource()),
-                        subtitle = when (source) {
-                            CanvasSource.SPOTIFY -> stringResource(R.string.canvas_spotify_desc)
-                            CanvasSource.ALL -> stringResource(R.string.canvas_source_all_desc)
-                            else -> null
-                        },
-                        selected = model.configuration.source == source,
-                        enabled = !model.busy,
-                        shape = itemShape(index, sources.size),
-                        onClick = onSelect,
-                    )
+        if (!isTv) {
+            CanvasSettingsGroup(title = stringResource(R.string.canvas_source)) {
+                Column(
+                    modifier = remember {
+                        Modifier.fillMaxWidth().selectableGroup()
+                    },
+                ) {
+                    sources.forEachIndexed { index, source ->
+                        val onSelect = remember(onAction, source) { { onAction(CanvasSettingsAction.SelectSource(source)) } }
+                        CanvasChoiceRow(
+                            title = stringResource(source.labelResource()),
+                            subtitle = when (source) {
+                                CanvasSource.SPOTIFY -> stringResource(R.string.canvas_spotify_desc)
+                                CanvasSource.ALL -> stringResource(R.string.canvas_source_all_desc)
+                                else -> null
+                            },
+                            selected = model.configuration.source == source,
+                            enabled = !model.busy,
+                            shape = itemShape(index, sources.size),
+                            onClick = onSelect,
+                        )
+                    }
                 }
             }
         }
 
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+        if (isTv) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier
+                    .tvSettingsItemFocus(
+                        shape = MaterialTheme.shapes.large,
+                        onClick = { if (!model.busy) onWifiOnly(!model.configuration.wifiOnly) },
+                    )
+                    .clickable(
+                        enabled = true,
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = { if (!model.busy) onWifiOnly(!model.configuration.wifiOnly) },
+                    ),
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .toggleable(
-                            value = model.configuration.wifiOnly,
-                            enabled = !model.busy,
-                            role = Role.Switch,
-                            onValueChange = onWifiOnly,
-                        )
+                        .focusProperties { canFocus = false }
                         .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
@@ -275,19 +335,31 @@ private fun CanvasSettingsBody(
                     Switch(
                         checked = model.configuration.wifiOnly,
                         onCheckedChange = null,
-                        enabled = !model.busy,
+                        enabled = true,
+                        modifier = Modifier.focusProperties { canFocus = false },
                     )
                 }
+            }
 
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier
+                    .tvSettingsItemFocus(
+                        shape = MaterialTheme.shapes.large,
+                        onClick = { if (!model.busy) onProceduralFallback(!model.configuration.proceduralFallback) },
+                    )
+                    .clickable(
+                        enabled = true,
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = { if (!model.busy) onProceduralFallback(!model.configuration.proceduralFallback) },
+                    ),
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .toggleable(
-                            value = model.configuration.proceduralFallback,
-                            enabled = !model.busy,
-                            role = Role.Switch,
-                            onValueChange = onProceduralFallback,
-                        )
+                        .focusProperties { canFocus = false }
                         .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
@@ -306,49 +378,60 @@ private fun CanvasSettingsBody(
                     Switch(
                         checked = model.configuration.proceduralFallback,
                         onCheckedChange = null,
-                        enabled = !model.busy,
+                        enabled = true,
+                        modifier = Modifier.focusProperties { canFocus = false },
                     )
                 }
+            }
 
-                if (model.configuration.proceduralFallback) {
-                    val styles = remember { ProceduralCanvasStyle.entries.toList() }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .padding(bottom = 8.dp)
-                            .selectableGroup(),
-                    ) {
-                        styles.forEachIndexed { index, style ->
-                            val onSelect = remember(onAction, style) {
-                                { onAction(CanvasSettingsAction.SetProceduralStyle(style)) }
-                            }
-                            CanvasChoiceRow(
-                                title = when (style) {
-                                    ProceduralCanvasStyle.KAWARP -> stringResource(R.string.canvas_procedural_style_kawarp)
-                                    ProceduralCanvasStyle.SQUARE_TUNNEL -> stringResource(R.string.canvas_procedural_style_square_tunnel)
-                                },
-                                subtitle = when (style) {
-                                    ProceduralCanvasStyle.KAWARP -> stringResource(R.string.canvas_procedural_style_kawarp_desc)
-                                    ProceduralCanvasStyle.SQUARE_TUNNEL -> stringResource(R.string.canvas_procedural_style_square_tunnel_desc)
-                                },
-                                selected = model.configuration.proceduralStyle == style,
-                                enabled = !model.busy,
-                                shape = itemShape(index, styles.size),
-                                onClick = onSelect,
-                            )
+            if (model.configuration.proceduralFallback) {
+                val styles = remember { ProceduralCanvasStyle.entries.toList() }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
+                    verticalArrangement = remember { Arrangement.spacedBy(4.dp) },
+                ) {
+                    styles.forEachIndexed { index, style ->
+                        val onSelect = remember(onAction, style) {
+                            { onAction(CanvasSettingsAction.SetProceduralStyle(style)) }
                         }
+                        CanvasChoiceRow(
+                            title = when (style) {
+                                ProceduralCanvasStyle.KAWARP -> stringResource(R.string.canvas_procedural_style_kawarp)
+                                ProceduralCanvasStyle.SQUARE_TUNNEL -> stringResource(R.string.canvas_procedural_style_square_tunnel)
+                            },
+                            subtitle = when (style) {
+                                ProceduralCanvasStyle.KAWARP -> stringResource(R.string.canvas_procedural_style_kawarp_desc)
+                                ProceduralCanvasStyle.SQUARE_TUNNEL -> stringResource(R.string.canvas_procedural_style_square_tunnel_desc)
+                            },
+                            selected = model.configuration.proceduralStyle == style,
+                            enabled = !model.busy,
+                            shape = itemShape(index, styles.size),
+                            onClick = onSelect,
+                        )
                     }
+                }
 
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier
+                        .tvSettingsItemFocus(
+                            shape = MaterialTheme.shapes.large,
+                            onClick = { if (!model.busy) onAudioReactive(!model.configuration.audioReactive) },
+                        )
+                        .clickable(
+                            enabled = true,
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = { if (!model.busy) onAudioReactive(!model.configuration.audioReactive) },
+                        ),
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .toggleable(
-                                value = model.configuration.audioReactive,
-                                enabled = !model.busy,
-                                role = Role.Switch,
-                                onValueChange = onAudioReactive,
-                            )
+                            .focusProperties { canFocus = false }
                             .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
@@ -367,56 +450,194 @@ private fun CanvasSettingsBody(
                         Switch(
                             checked = model.configuration.audioReactive,
                             onCheckedChange = null,
+                            enabled = true,
+                            modifier = Modifier.focusProperties { canFocus = false },
+                        )
+                    }
+                }
+            }
+        } else {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = model.configuration.wifiOnly,
+                                enabled = !model.busy,
+                                role = Role.Switch,
+                                onValueChange = onWifiOnly,
+                            )
+                            .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
+                    ) {
+                        Column(modifier = remember { Modifier.weight(1f) }) {
+                            Text(
+                                text = stringResource(R.string.canvas_wifi_only),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = stringResource(R.string.canvas_wifi_only_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = model.configuration.wifiOnly,
+                            onCheckedChange = null,
                             enabled = !model.busy,
                         )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = model.configuration.proceduralFallback,
+                                enabled = !model.busy,
+                                role = Role.Switch,
+                                onValueChange = onProceduralFallback,
+                            )
+                            .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
+                    ) {
+                        Column(modifier = remember { Modifier.weight(1f) }) {
+                            Text(
+                                text = stringResource(R.string.canvas_procedural_fallback),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = stringResource(R.string.canvas_procedural_fallback_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = model.configuration.proceduralFallback,
+                            onCheckedChange = null,
+                            enabled = !model.busy,
+                        )
+                    }
+
+                    if (model.configuration.proceduralFallback) {
+                        val styles = remember { ProceduralCanvasStyle.entries.toList() }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                                .padding(bottom = 8.dp)
+                                .selectableGroup(),
+                        ) {
+                            styles.forEachIndexed { index, style ->
+                                val onSelect = remember(onAction, style) {
+                                    { onAction(CanvasSettingsAction.SetProceduralStyle(style)) }
+                                }
+                                CanvasChoiceRow(
+                                    title = when (style) {
+                                        ProceduralCanvasStyle.KAWARP -> stringResource(R.string.canvas_procedural_style_kawarp)
+                                        ProceduralCanvasStyle.SQUARE_TUNNEL -> stringResource(R.string.canvas_procedural_style_square_tunnel)
+                                    },
+                                    subtitle = when (style) {
+                                        ProceduralCanvasStyle.KAWARP -> stringResource(R.string.canvas_procedural_style_kawarp_desc)
+                                        ProceduralCanvasStyle.SQUARE_TUNNEL -> stringResource(R.string.canvas_procedural_style_square_tunnel_desc)
+                                    },
+                                    selected = model.configuration.proceduralStyle == style,
+                                    enabled = !model.busy,
+                                    shape = itemShape(index, styles.size),
+                                    onClick = onSelect,
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = model.configuration.audioReactive,
+                                    enabled = !model.busy,
+                                    role = Role.Switch,
+                                    onValueChange = onAudioReactive,
+                                )
+                                .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
+                        ) {
+                            Column(modifier = remember { Modifier.weight(1f) }) {
+                                Text(
+                                    text = stringResource(R.string.canvas_audio_reactive),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                                Text(
+                                    text = stringResource(R.string.canvas_audio_reactive_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = model.configuration.audioReactive,
+                                onCheckedChange = null,
+                                enabled = !model.busy,
+                            )
+                        }
                     }
                 }
             }
         }
 
-        CanvasSettingsGroup(
-            title = stringResource(R.string.canvas_provider_health),
-            action = {
-                TextButton(
-                    onClick = onRefresh,
-                    enabled = model.canRefreshHealth && !model.busy,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.sync),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.refresh),
-                        modifier = Modifier.padding(start = 4.dp),
+        if (!isTv) {
+            CanvasSettingsGroup(
+                title = stringResource(R.string.canvas_provider_health),
+                action = {
+                    TextButton(
+                        onClick = onRefresh,
+                        enabled = model.canRefreshHealth && !model.busy,
+                        modifier = Modifier.tvSettingsItemFocus(
+                            shape = ButtonDefaults.textShape,
+                            onClick = onRefresh,
+                        ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.sync),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.refresh),
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+                },
+            ) {
+                val providers = remember {
+                    listOf(
+                        CanvasSource.BETTER_LYRICS to R.drawable.sync,
+                        CanvasSource.APPLE_MUSIC to R.drawable.music_note,
+                        CanvasSource.TIDAL to R.drawable.music_note,
+                        CanvasSource.SPOTIFY to R.drawable.music_note,
                     )
                 }
-            },
-        ) {
-            val providers = remember {
-                listOf(
-                    CanvasSource.BETTER_LYRICS to R.drawable.sync,
-                    CanvasSource.APPLE_MUSIC to R.drawable.music_note,
-                    CanvasSource.TIDAL to R.drawable.music_note,
-                    CanvasSource.SPOTIFY to R.drawable.music_note,
-                )
-            }
-            Column(modifier = remember { Modifier.fillMaxWidth() }) {
-                providers.forEachIndexed { index, (provider, iconRes) ->
-                    val health = when (provider) {
-                        CanvasSource.BETTER_LYRICS -> model.health.betterLyrics
-                        CanvasSource.APPLE_MUSIC -> model.health.appleMusic
-                        CanvasSource.TIDAL -> model.health.tidal
-                        CanvasSource.SPOTIFY -> model.health.spotify
-                        CanvasSource.ALL -> CanvasHealth.NOT_CHECKED
+                Column(modifier = remember { Modifier.fillMaxWidth() }) {
+                    providers.forEachIndexed { index, (provider, iconRes) ->
+                        val health = when (provider) {
+                            CanvasSource.BETTER_LYRICS -> model.health.betterLyrics
+                            CanvasSource.APPLE_MUSIC -> model.health.appleMusic
+                            CanvasSource.TIDAL -> model.health.tidal
+                            CanvasSource.SPOTIFY -> model.health.spotify
+                            CanvasSource.ALL -> CanvasHealth.NOT_CHECKED
+                        }
+                        CanvasHealthRow(
+                            title = stringResource(provider.labelResource()),
+                            status = stringResource(health.labelResource()),
+                            iconRes = iconRes,
+                            checking = health == CanvasHealth.CHECKING,
+                            shape = itemShape(index, providers.size),
+                        )
                     }
-                    CanvasHealthRow(
-                        title = stringResource(provider.labelResource()),
-                        status = stringResource(health.labelResource()),
-                        iconRes = iconRes,
-                        checking = health == CanvasHealth.CHECKING,
-                        shape = itemShape(index, providers.size),
-                    )
                 }
             }
         }
@@ -427,6 +648,10 @@ private fun CanvasSettingsBody(
                 onCacheLimit = onCacheLimit,
                 onClear = onClear,
             )
+        }
+
+        if (isTv) {
+            Spacer(Modifier.height(48.dp))
         }
     }
     CanvasSettingsDialogs(model = model, onAction = onAction)
@@ -468,16 +693,53 @@ private fun CanvasChoiceRow(
     selected: Boolean,
     enabled: Boolean,
     shape: Shape = MaterialTheme.shapes.small,
+    inDialog: Boolean = false,
     onClick: () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     Surface(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = if (isTv && !inDialog) {
+            Modifier
+                .tvSettingsItemFocus(
+                    shape = shape,
+                    onClick = { if (enabled) onClick() },
+                )
+                .clickable(
+                    enabled = true,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = { if (enabled) onClick() },
+                )
+        } else if (isTv && inDialog) {
+            Modifier
+                .tvFocusOutline(shape = shape)
+                .clickable(
+                    enabled = enabled,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = onClick,
+                )
+        } else {
+            Modifier
+        },
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+                .then(
+                    if (isTv) {
+                        Modifier.focusProperties { canFocus = false }
+                    } else {
+                        Modifier.selectable(
+                            selected = selected,
+                            enabled = enabled,
+                            role = Role.RadioButton,
+                            onClick = onClick,
+                        )
+                    }
+                )
                 .padding(horizontal = SettingsDimensions.RowHorizontalPadding, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = remember { Arrangement.spacedBy(16.dp) },
@@ -486,6 +748,7 @@ private fun CanvasChoiceRow(
                 selected = selected,
                 onClick = null,
                 enabled = enabled,
+                modifier = if (isTv) Modifier.focusProperties { canFocus = false } else Modifier,
             )
             Column(modifier = remember { Modifier.weight(1f) }) {
                 Text(text = title, style = MaterialTheme.typography.bodyLarge)
@@ -542,11 +805,15 @@ private fun CanvasCacheCard(
     onCacheLimit: () -> Unit,
     onClear: () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Column(modifier = remember { Modifier.fillMaxWidth() }) {
+        Column(
+            modifier = remember { Modifier.fillMaxWidth() }
+                .then(if (isTv) Modifier.padding(bottom = 8.dp) else Modifier),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -576,8 +843,13 @@ private fun CanvasCacheCard(
             }
             Surface(
                 onClick = onCacheLimit,
-                enabled = !model.busy,
+                enabled = if (LocalIsTv.current) true else !model.busy,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.tvSettingsItemFocus(
+                    shape = RoundedCornerShape(12.dp),
+                    onClick = { if (!model.busy) onCacheLimit() },
+                ),
             ) {
                 Row(
                     modifier = Modifier
@@ -608,9 +880,14 @@ private fun CanvasCacheCard(
             }
             Surface(
                 onClick = onClear,
-                enabled = !model.busy,
+                enabled = if (LocalIsTv.current) true else !model.busy,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 contentColor = MaterialTheme.colorScheme.error,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.tvSettingsItemFocus(
+                    shape = RoundedCornerShape(12.dp),
+                    onClick = { if (!model.busy) onClear() },
+                ),
             ) {
                 Row(
                     modifier = Modifier
@@ -656,13 +933,21 @@ private fun itemShape(index: Int, total: Int): Shape = when {
 
 @Composable
 private fun CanvasSettingsDialogs(model: CanvasSettingsUiModel, onAction: (CanvasSettingsAction) -> Unit) {
+    val isTv = LocalIsTv.current
     val onDismiss = remember(onAction) { { onAction(CanvasSettingsAction.DismissDialog) } }
     val onConfirmClear = remember(onAction) { { onAction(CanvasSettingsAction.ClearCache) } }
     when (model.dialog) {
         CanvasSettingsDialog.CACHE_LIMIT -> DefaultDialog(
             onDismiss = onDismiss,
             title = { Text(stringResource(R.string.max_cache_size)) },
-            buttons = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+            buttons = {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = if (isTv) Modifier.tvFocusOutline() else Modifier,
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
         ) {
             LazyColumn(modifier = Modifier.heightIn(max = 420.dp).selectableGroup()) {
                 items(model.cacheOptions.values, key = CanvasCacheOption::limitMb, contentType = { "cache_limit" }) { option ->
@@ -677,6 +962,7 @@ private fun CanvasSettingsDialogs(model: CanvasSettingsUiModel, onAction: (Canva
                         },
                         selected = model.configuration.cacheLimitMb == option.limitMb,
                         enabled = !model.busy,
+                        inDialog = true,
                         onClick = onSelect,
                     )
                 }
@@ -686,8 +972,19 @@ private fun CanvasSettingsDialogs(model: CanvasSettingsUiModel, onAction: (Canva
             onDismiss = onDismiss,
             title = { Text(stringResource(R.string.clear_canvas_cache)) },
             buttons = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-                TextButton(onClick = onConfirmClear, enabled = !model.busy) { Text(stringResource(android.R.string.ok)) }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = if (isTv) Modifier.tvFocusOutline() else Modifier,
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+                TextButton(
+                    onClick = onConfirmClear,
+                    enabled = !model.busy,
+                    modifier = if (isTv) Modifier.tvFocusOutline() else Modifier,
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
             },
         ) {
             Text(stringResource(R.string.clear_canvas_cache_dialog))

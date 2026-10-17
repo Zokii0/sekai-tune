@@ -180,6 +180,7 @@ import androidx.datastore.preferences.core.edit
 import moe.rgsekai.sekaitune.constants.ShowLyricsKey
 import moe.rgsekai.sekaitune.constants.SkipSilenceKey
 import moe.rgsekai.sekaitune.constants.SmartTrimmerKey
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import moe.rgsekai.sekaitune.constants.StopMusicOnTaskClearKey
 import moe.rgsekai.sekaitune.constants.TogetherClientIdKey
 import moe.rgsekai.sekaitune.constants.WakelockKey
@@ -1329,7 +1330,7 @@ class MusicService :
 
         dataStore.data
             .map { prefs ->
-                (prefs[SmartTrimmerKey] ?: false) to (prefs[MaxSongCacheSizeKey] ?: 1024)
+                (prefs[SmartTrimmerKey] ?: isTvDevice()) to (prefs[MaxSongCacheSizeKey] ?: 1024)
             }.debounce(300)
             .distinctUntilChanged()
             .collectLatest(ioScope) { (enabled, maxSongCacheSizeMb) ->
@@ -3221,7 +3222,7 @@ class MusicService :
         }
         cancelInfiniteQueueBootstrap()
         suppressAutoPlayback = false
-        val currentMediaMetadata = player.currentMetadata ?: return
+        val currentMediaMetadata = player.currentMetadata ?: currentMediaMetadata.value ?: return
 
         val currentIndex = player.currentMediaItemIndex
         val currentMediaId = currentMediaMetadata.id

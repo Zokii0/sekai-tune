@@ -197,6 +197,7 @@ import kotlinx.coroutines.withContext
 import moe.rgsekai.sekaitune.aod.ACTION_AOD_MODE
 import moe.rgsekai.sekaitune.constants.AppBarHeight
 import moe.rgsekai.sekaitune.constants.AppFontPreference
+import moe.rgsekai.sekaitune.constants.AmbientArtScaleKey
 import moe.rgsekai.sekaitune.constants.AppLanguageKey
 import moe.rgsekai.sekaitune.constants.CustomFontUriKey
 import moe.rgsekai.sekaitune.constants.CustomThemeColorKey
@@ -288,7 +289,11 @@ import moe.rgsekai.sekaitune.ui.component.MarkdownText
 import moe.rgsekai.sekaitune.ui.component.NetworkStatusBanner
 import moe.rgsekai.sekaitune.ui.component.StarDialog
 import moe.rgsekai.sekaitune.ui.component.TopSearch
+import moe.rgsekai.sekaitune.constants.SmartTrimmerKey
 import moe.rgsekai.sekaitune.ui.component.TvNavigationRail
+import moe.rgsekai.sekaitune.ui.tv.TvRoot
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import moe.rgsekai.sekaitune.ui.component.rememberBottomSheetState
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerTheme
 import moe.rgsekai.sekaitune.ui.menu.YouTubeSongMenu
@@ -704,9 +709,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val isTv = isTvDevice()
+
             // Show prompt once per new version
-            LaunchedEffect(latestVersionName, dismissedUpdateVersion) {
+            LaunchedEffect(latestVersionName, dismissedUpdateVersion, isTv) {
                 if (
+                    !isTv &&
                     BuildConfig.UPDATER_AVAILABLE &&
                     Updater.isUpdateAvailable(latestVersionName, BuildConfig.VERSION_NAME)
                 ) {
@@ -720,6 +728,7 @@ class MainActivity : ComponentActivity() {
             }
 
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = false)
+            val effectiveDynamicTheme = if (isTv) false else enableDynamicTheme
             val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "default")
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val disableAnimations = false
@@ -781,10 +790,25 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme, customThemeColor) {
+            LaunchedEffect(Unit) {
+                if (isTvDevice()) {
+                    val preferences = dataStore.data.first()
+                    if (preferences[SmartTrimmerKey] != true) {
+                        dataStore.edit { it[SmartTrimmerKey] = true }
+                    }
+                    if (preferences[DynamicThemeKey] != false) {
+                        dataStore.edit { it[DynamicThemeKey] = false }
+                    }
+                    if (preferences[AmbientArtScaleKey] == null || preferences[AmbientArtScaleKey] == 0.85f) {
+                        dataStore.edit { it[AmbientArtScaleKey] = 0.95f }
+                    }
+                }
+            }
+
+            LaunchedEffect(playerConnection, effectiveDynamicTheme, isSystemInDarkTheme, customThemeColor) {
                 val playerConnection = playerConnection
-                if (!enableDynamicTheme || playerConnection == null) {
-                    themeColor = if (!enableDynamicTheme) customThemeColor else DefaultThemeColor
+                if (!effectiveDynamicTheme || playerConnection == null) {
+                    themeColor = if (!effectiveDynamicTheme) customThemeColor else DefaultThemeColor
                     return@LaunchedEffect
                 }
                 playerConnection.service.currentMediaMetadata.collectLatest { song ->
@@ -823,7 +847,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = useDarkTheme,
                 pureBlack = pureBlack,
                 themeColor = themeColor,
-                seedPalette = if (!enableDynamicTheme) customThemeSeedPalette else null,
+                seedPalette = if (!effectiveDynamicTheme) customThemeSeedPalette else null,
                 disableAnimations = disableAnimations,
                 fontPreference = fontPreference,
                 customFontUri = customFontUri,
@@ -1518,6 +1542,7 @@ class MainActivity : ComponentActivity() {
                     var showStarDialog by remember { mutableStateOf(false) }
 
                     LaunchedEffect(Unit) {
+                        if (isTvDevice) return@LaunchedEffect
                         kotlinx.coroutines.delay(3000)
 
                         withContext(Dispatchers.IO) {
@@ -1547,7 +1572,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    if (showStarDialog) {
+                    if (showStarDialog && !isTvDevice) {
                         StarDialog(
                             onDismissRequest = { showStarDialog = false },
                             onSupport = {
@@ -1623,7 +1648,14 @@ class MainActivity : ComponentActivity() {
                         LocalAppBackdrop provides (if (playerBottomSheetState.isExpanded || playerBottomSheetState.progress > 0.05f) playerBackdrop else rootBackdrop),
                         moe.rgsekai.sekaitune.ui.component.LocalBottomSheetPageState provides bottomSheetPageState,
                         moe.rgsekai.sekaitune.ui.component.LocalMenuState provides menuState,
+                        LocalIsTv provides isTvDevice,
                     ) {
+                        if (isTvDevice) {
+                            TvRoot(
+                                navController = navController,
+                                playerConnection = playerConnection,
+                            )
+                        } else {
                         Row(
                             modifier =
                                 Modifier
@@ -2391,6 +2423,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        }
                     }
 
                         BackHandler(enabled = playerBottomSheetState.isExpanded) {
@@ -3045,15 +3078,6 @@ private fun OnlineSearchSortMenu(
             }
         }
     }
-}
-
-private fun Context.isTvDevice(): Boolean {
-    val isTelevisionUiMode =
-        (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
-            Configuration.UI_MODE_TYPE_TELEVISION
-    return isTelevisionUiMode ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
-        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
 }
 
 
