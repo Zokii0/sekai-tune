@@ -470,7 +470,7 @@ fun SongMenu(
                             text = startRadioText,
                             onClick = {
                                 onDismiss()
-                                playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
+                                playerConnection.startRadio(song.toMediaMetadata())
                             },
                         ),
                     )
