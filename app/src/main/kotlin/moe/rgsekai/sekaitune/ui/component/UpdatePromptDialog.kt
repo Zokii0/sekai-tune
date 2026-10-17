@@ -72,11 +72,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.utils.UpdateDownloadState
+import moe.rgsekai.sekaitune.utils.isTvDevice
 import kotlin.math.roundToInt
 
 @Composable
@@ -89,6 +92,10 @@ fun UpdatePromptDialog(
     onLater: () -> Unit,
     onViewChangelog: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val isTv = LocalIsTv.current || context.isTvDevice()
+    if (isTv) return
+
     val isBusy = downloadState is UpdateDownloadState.Downloading || downloadState is UpdateDownloadState.Installing
     val coroutineScope = rememberCoroutineScope()
     val collapseProgress = remember { Animatable(0f) }

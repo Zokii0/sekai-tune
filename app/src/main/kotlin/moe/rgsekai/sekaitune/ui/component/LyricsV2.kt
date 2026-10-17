@@ -137,6 +137,7 @@ import moe.rgsekai.sekaitune.lyrics.WordTimestamp
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerHost
 import moe.rgsekai.sekaitune.ui.component.shimmer.TextPlaceholder
 import moe.rgsekai.sekaitune.ui.theme.rememberSekaiTuneLyricsFontFamily
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.smoothFadingEdge
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
@@ -202,9 +203,10 @@ fun LyricsV2(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     // ── Preferences ──
+    val isTv = LocalIsTv.current
     val (lyricsClick) = rememberPreference(LyricsClickKey, defaultValue = true)
     val (lyricsScroll) = rememberPreference(LyricsScrollKey, defaultValue = true)
-    val (lyricsTextSize) = rememberPreference(LyricsTextSizeKey, defaultValue = 26f)
+    val (lyricsTextSize) = rememberPreference(LyricsTextSizeKey, defaultValue = if (isTv) 32f else 26f)
     val (lyricsLineSpacing) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
     val (lyricsLineBlurPreference) = rememberPreference(LyricsLineBlurKey, defaultValue = true)
     val (bounceFactor) = rememberPreference(LyricsV2BounceFactorKey, defaultValue = 1f)

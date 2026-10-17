@@ -40,12 +40,14 @@ import moe.rgsekai.sekaitune.R
 import moe.rgsekai.sekaitune.ui.component.IconButton
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 
 @Composable
 fun AdvancedSettings(navController: NavController) {
     val context = LocalContext.current
     val isAndroid12OrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val isTv = LocalIsTv.current
 
     Scaffold(
         topBar = {
@@ -92,36 +94,40 @@ fun AdvancedSettings(navController: NavController) {
                     )
                 }
 
-                item {
-                    PreferenceEntry(
-                        title = { Text(stringResource(R.string.settings_behavior_title)) },
-                        description = stringResource(R.string.settings_behavior_subtitle),
-                        icon = { Icon(painterResource(R.drawable.swipe), null) },
-                        trailingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.navigate_next),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { navController.navigate("settings/privacy") },
-                    )
+                if (!isTv) {
+                    item {
+                        PreferenceEntry(
+                            title = { Text(stringResource(R.string.settings_behavior_title)) },
+                            description = stringResource(R.string.settings_behavior_subtitle),
+                            icon = { Icon(painterResource(R.drawable.swipe), null) },
+                            trailingContent = {
+                                Icon(
+                                    painter = painterResource(R.drawable.navigate_next),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = { navController.navigate("settings/privacy") },
+                        )
+                    }
                 }
             }
 
-            PreferenceGroup(title = stringResource(R.string.network_and_connectivity)) {
-                item {
-                    PreferenceEntry(
-                        title = { Text(stringResource(R.string.internet)) },
-                        description = stringResource(R.string.settings_internet_subtitle),
-                        icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
-                        trailingContent = {
-                            Icon(
-                                painter = painterResource(R.drawable.navigate_next),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { navController.navigate("settings/internet") },
-                    )
+            if (!isTv) {
+                PreferenceGroup(title = stringResource(R.string.network_and_connectivity)) {
+                    item {
+                        PreferenceEntry(
+                            title = { Text(stringResource(R.string.internet)) },
+                            description = stringResource(R.string.settings_internet_subtitle),
+                            icon = { Icon(painterResource(R.drawable.wifi_proxy), null) },
+                            trailingContent = {
+                                Icon(
+                                    painter = painterResource(R.drawable.navigate_next),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = { navController.navigate("settings/internet") },
+                        )
+                    }
                 }
             }
 

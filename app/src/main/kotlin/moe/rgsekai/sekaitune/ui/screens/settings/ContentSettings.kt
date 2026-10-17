@@ -43,6 +43,7 @@ import moe.rgsekai.sekaitune.ui.component.ListPreference
 import moe.rgsekai.sekaitune.ui.component.PreferenceEntry
 import moe.rgsekai.sekaitune.ui.component.PreferenceGroup
 import moe.rgsekai.sekaitune.ui.component.SwitchPreference
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.backToMain
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
@@ -52,6 +53,7 @@ import java.util.Locale
 @Composable
 fun ContentSettings(navController: NavController) {
     val context = LocalContext.current
+    val isTv = LocalIsTv.current
 
     // Used only before Android 13
     val (appLanguage, onAppLanguageChange) = rememberPreference(key = AppLanguageKey, defaultValue = SYSTEM_DEFAULT)
@@ -148,44 +150,46 @@ fun ContentSettings(navController: NavController) {
                 )
             }
 
-            item {
-                ListPreference(
-                    title = { Text(stringResource(R.string.you_might_like_source)) },
-                    icon = { Icon(painterResource(R.drawable.playlist_play), null) },
-                    selectedValue = playlistSuggestionSource,
-                    values =
-                        listOf(
-                            PlaylistSuggestionSource.PLAYLIST_TITLE,
-                            PlaylistSuggestionSource.PLAYLIST_CONTENT,
-                            PlaylistSuggestionSource.BOTH,
-                        ),
-                    valueText = {
-                        when (it) {
-                            PlaylistSuggestionSource.PLAYLIST_TITLE -> stringResource(R.string.playlist_suggestion_source_title)
-                            PlaylistSuggestionSource.PLAYLIST_CONTENT -> stringResource(R.string.playlist_suggestion_source_content)
-                            PlaylistSuggestionSource.BOTH -> stringResource(R.string.playlist_suggestion_source_both)
-                        }
-                    },
-                    onValueSelected = onPlaylistSuggestionSourceChange,
-                )
-            }
+            if (!isTv) {
+                item {
+                    ListPreference(
+                        title = { Text(stringResource(R.string.you_might_like_source)) },
+                        icon = { Icon(painterResource(R.drawable.playlist_play), null) },
+                        selectedValue = playlistSuggestionSource,
+                        values =
+                            listOf(
+                                PlaylistSuggestionSource.PLAYLIST_TITLE,
+                                PlaylistSuggestionSource.PLAYLIST_CONTENT,
+                                PlaylistSuggestionSource.BOTH,
+                            ),
+                        valueText = {
+                            when (it) {
+                                PlaylistSuggestionSource.PLAYLIST_TITLE -> stringResource(R.string.playlist_suggestion_source_title)
+                                PlaylistSuggestionSource.PLAYLIST_CONTENT -> stringResource(R.string.playlist_suggestion_source_content)
+                                PlaylistSuggestionSource.BOTH -> stringResource(R.string.playlist_suggestion_source_both)
+                            }
+                        },
+                        onValueSelected = onPlaylistSuggestionSourceChange,
+                    )
+                }
 
-            item {
-                SwitchPreference(
-                    title = { Text(stringResource(R.string.hide_explicit)) },
-                    icon = { Icon(painterResource(R.drawable.explicit), null) },
-                    checked = hideExplicit,
-                    onCheckedChange = onHideExplicitChange,
-                )
-            }
+                item {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.hide_explicit)) },
+                        icon = { Icon(painterResource(R.drawable.explicit), null) },
+                        checked = hideExplicit,
+                        onCheckedChange = onHideExplicitChange,
+                    )
+                }
 
-            item {
-                SwitchPreference(
-                    title = { Text(stringResource(R.string.hide_video)) },
-                    icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
-                    checked = hideVideo,
-                    onCheckedChange = onHideVideoChange,
-                )
+                item {
+                    SwitchPreference(
+                        title = { Text(stringResource(R.string.hide_video)) },
+                        icon = { Icon(painterResource(R.drawable.slow_motion_video), null) },
+                        checked = hideVideo,
+                        onCheckedChange = onHideVideoChange,
+                    )
+                }
             }
         }
 
@@ -228,15 +232,17 @@ fun ContentSettings(navController: NavController) {
             }
         }
 
-        PreferenceGroup(title = stringResource(R.string.misc)) {
-            item {
-                EditTextPreference(
-                    title = { Text(stringResource(R.string.top_length)) },
-                    icon = { Icon(painterResource(R.drawable.trending_up), null) },
-                    value = lengthTop,
-                    isInputValid = { it.toIntOrNull()?.let { num -> num > 0 } == true },
-                    onValueChange = onLengthTopChange,
-                )
+        if (!isTv) {
+            PreferenceGroup(title = stringResource(R.string.misc)) {
+                item {
+                    EditTextPreference(
+                        title = { Text(stringResource(R.string.top_length)) },
+                        icon = { Icon(painterResource(R.drawable.trending_up), null) },
+                        value = lengthTop,
+                        isInputValid = { it.toIntOrNull()?.let { num -> num > 0 } == true },
+                        onValueChange = onLengthTopChange,
+                    )
+                }
             }
         }
 

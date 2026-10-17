@@ -162,6 +162,7 @@ import moe.rgsekai.sekaitune.ui.component.shimmer.TextPlaceholder
 import moe.rgsekai.sekaitune.ui.screens.settings.DarkMode
 import moe.rgsekai.sekaitune.ui.screens.settings.LyricsPosition
 import moe.rgsekai.sekaitune.ui.theme.rememberSekaiTuneLyricsFontFamily
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 import moe.rgsekai.sekaitune.ui.utils.smoothFadingEdge
 import moe.rgsekai.sekaitune.utils.rememberEnumPreference
 import moe.rgsekai.sekaitune.utils.rememberPreference
@@ -428,9 +429,10 @@ fun Lyrics(
     val landscapeOffset =
         configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+    val isTv = LocalIsTv.current
     val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.LEFT)
     val lyricsAnimationStyle by rememberEnumPreference(LyricsAnimationStyleKey, LyricsAnimationStyle.APPLE)
-    val lyricsTextSize by rememberPreference(LyricsTextSizeKey, 26f)
+    val lyricsTextSize by rememberPreference(LyricsTextSizeKey, if (isTv) 32f else 26f)
     val lyricsLineSpacing by rememberPreference(LyricsLineSpacingKey, 1.3f)
     val lyricsLineBlur by rememberPreference(LyricsLineBlurKey, true)
     val animationsDisabled = LocalAnimationsDisabled.current

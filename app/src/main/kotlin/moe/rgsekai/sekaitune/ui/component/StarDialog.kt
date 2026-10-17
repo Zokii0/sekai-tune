@@ -34,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import moe.rgsekai.sekaitune.R
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +43,8 @@ fun StarDialog(
     onSupport: () -> Unit,
     onLater: () -> Unit,
 ) {
+    if (LocalIsTv.current) return
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val glassConfig = LocalGlassEffectConfig.current
     val isGlass = glassConfig.isEnabledFor(GlassComponent.POPUP_MENU) || glassConfig.isEnabledFor(GlassComponent.DIALOG)

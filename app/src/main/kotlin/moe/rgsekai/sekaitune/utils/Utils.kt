@@ -11,8 +11,25 @@ import android.content.Context
 import android.content.res.Configuration
 import java.util.Locale
 
+import android.content.pm.PackageManager
+
+import moe.rgsekai.sekaitune.BuildConfig
+
 fun reportException(throwable: Throwable) {
     throwable.printStackTrace()
+}
+
+/**
+ * Detects whether the device is an Android TV / Google TV.
+ */
+fun Context.isTvDevice(): Boolean {
+    if (BuildConfig.DEVICE == "tv") return true
+    val isTelevisionUiMode =
+        (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
+            Configuration.UI_MODE_TYPE_TELEVISION
+    return isTelevisionUiMode ||
+        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
+        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
 }
 
 @Suppress("DEPRECATION")

@@ -34,8 +34,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import moe.rgsekai.sekaitune.ui.utils.LocalIsTv
 
 @Composable
 fun ResizableIconButton(
@@ -46,12 +48,21 @@ fun ResizableIconButton(
     indication: Indication? = null,
     onClick: () -> Unit = {},
 ) {
+    val isTv = LocalIsTv.current
+    val inTvSettingsSubScreen = LocalTvSettingsInSubScreen.current
     Image(
         painter = painterResource(icon),
         contentDescription = null,
         colorFilter = ColorFilter.tint(color),
         modifier =
             modifier
+                .then(
+                    if (isTv && inTvSettingsSubScreen) {
+                        Modifier.focusProperties { canFocus = false }
+                    } else {
+                        Modifier
+                    }
+                )
                 .clickable(
                     indication = indication ?: ripple(bounded = false),
                     interactionSource = remember { MutableInteractionSource() },
@@ -72,9 +83,18 @@ fun IconButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable () -> Unit,
 ) {
+    val isTv = LocalIsTv.current
+    val inTvSettingsSubScreen = LocalTvSettingsInSubScreen.current
     Box(
         modifier =
             modifier
+                .then(
+                    if (isTv && inTvSettingsSubScreen) {
+                        Modifier.focusProperties { canFocus = false }
+                    } else {
+                        Modifier
+                    }
+                )
                 .minimumInteractiveComponentSize()
                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                 .clip(CircleShape)
