@@ -34,9 +34,6 @@ import moe.rgsekai.sekaitune.about.FetchAboutContributorsUseCase
 import moe.rgsekai.sekaitune.about.FetchAboutDependencyLicensesUseCase
 import moe.rgsekai.sekaitune.about.FetchAboutTranslationContributorsUseCase
 import moe.rgsekai.sekaitune.currentBuildHash
-import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
-import moe.rgsekai.sekaitune.utils.isTvDevice
 import javax.inject.Inject
 
 sealed interface AboutScreenState {
@@ -248,7 +245,6 @@ sealed interface AboutScreenEffect {
 class AboutViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val fetchAboutContributors: FetchAboutContributorsUseCase,
         private val fetchTranslationContributors: FetchAboutTranslationContributorsUseCase,
         private val fetchDependencyLicenses: FetchAboutDependencyLicensesUseCase,
@@ -441,21 +437,12 @@ class AboutViewModel
                             labelResId = R.string.visit_website,
                             url = "https://rgsekai.github.io/sekai-tune/",
                         ),
-                        if (context.isTvDevice()) {
-                            AboutLinkUiModel(
-                                id = "reddit",
-                                iconResId = R.drawable.reddit,
-                                labelResId = R.string.about_reddit,
-                                url = "https://www.reddit.com/r/SekaiTune/s/uGzuuwpCzR",
-                            )
-                        } else {
-                            AboutLinkUiModel(
-                                id = "instagram",
-                                iconResId = R.drawable.instagram,
-                                labelResId = R.string.about_instagram,
-                                url = "https://www.instagram.com/sekaiplug?stkn=MXE3azFlMGJzZDc1OQ==",
-                            )
-                        },
+                        AboutLinkUiModel(
+                            id = "reddit",
+                            iconResId = R.drawable.reddit,
+                            labelResId = R.string.about_reddit,
+                            url = "https://www.reddit.com/r/SekaiTune/s/uGzuuwpCzR",
+                        ),
                         AboutLinkUiModel(
                             id = "telegram",
                             iconResId = R.drawable.telegram,
