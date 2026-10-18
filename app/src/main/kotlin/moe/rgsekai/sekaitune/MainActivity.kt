@@ -298,6 +298,7 @@ import moe.rgsekai.sekaitune.ui.component.rememberBottomSheetState
 import moe.rgsekai.sekaitune.ui.component.shimmer.ShimmerTheme
 import moe.rgsekai.sekaitune.ui.menu.YouTubeSongMenu
 import moe.rgsekai.sekaitune.ui.player.BottomSheetPlayer
+import moe.rgsekai.sekaitune.ui.screens.LOGIN_ROUTE
 import moe.rgsekai.sekaitune.ui.screens.LOGIN_URL_ARGUMENT
 import moe.rgsekai.sekaitune.ui.screens.Screens
 import moe.rgsekai.sekaitune.ui.screens.buildLoginRoute
@@ -925,6 +926,7 @@ class MainActivity : ComponentActivity() {
                         }
                     val isYearInMusicScreen = currentRoute?.startsWith("year_in_music") == true
                     val isAmbientModeScreen = currentRoute == "ambient_mode"
+                    val isLoginScreen = currentRoute?.startsWith(LOGIN_ROUTE) == true
 
                     val navigationItems =
                         remember(isTvDevice) {
@@ -1196,14 +1198,15 @@ class MainActivity : ComponentActivity() {
                         mutableStateOf(false)
                     }
 
-                    LaunchedEffect(miniPlayerAnchor, isYearInMusicScreen, isAmbientModeScreen, miniPlayerAnchorPersistenceEnabled) {
-                        if (!isYearInMusicScreen && !isAmbientModeScreen && miniPlayerAnchorPersistenceEnabled) {
+                    LaunchedEffect(miniPlayerAnchor, isYearInMusicScreen, isAmbientModeScreen, isLoginScreen, miniPlayerAnchorPersistenceEnabled) {
+                        if (!isYearInMusicScreen && !isAmbientModeScreen && !isLoginScreen && miniPlayerAnchorPersistenceEnabled) {
                             setSavedMiniPlayerAnchor(miniPlayerAnchor)
                         }
                     }
 
                     var yearInMusicSavedPlayerAnchor by rememberSaveable { mutableStateOf(-1) }
                     var ambientModeSavedPlayerAnchor by rememberSaveable { mutableStateOf(-1) }
+                    var loginSavedPlayerAnchor by rememberSaveable { mutableStateOf(-1) }
 
                     val shouldHideStatusBars =
                         isYearInMusicScreen ||
@@ -1215,7 +1218,7 @@ class MainActivity : ComponentActivity() {
                         setStatusBarsHidden(shouldHideStatusBars)
                     }
 
-                    LaunchedEffect(isYearInMusicScreen, isAmbientModeScreen, playerConnection) {
+                    LaunchedEffect(isYearInMusicScreen, isAmbientModeScreen, isLoginScreen, playerConnection) {
                         val connection = playerConnection ?: return@LaunchedEffect
                         val player = connection.player
 
@@ -1266,6 +1269,36 @@ class MainActivity : ComponentActivity() {
                         } else if (ambientModeSavedPlayerAnchor != -1) {
                             val anchorToRestore = ambientModeSavedPlayerAnchor
                             ambientModeSavedPlayerAnchor = -1
+
+                            if (!awaitRestorablePlayback(connection)) {
+                                playerBottomSheetState.dismiss()
+                            } else {
+                                when (anchorToRestore) {
+                                    EXPANDED_ANCHOR -> playerBottomSheetState.expandSoft()
+                                    COLLAPSED_ANCHOR -> playerBottomSheetState.collapseSoft()
+                                    DISMISSED_ANCHOR -> playerBottomSheetState.collapseSoft()
+                                    else -> playerBottomSheetState.collapseSoft()
+                                }
+                            }
+                        }
+
+                        if (isLoginScreen) {
+                            if (loginSavedPlayerAnchor == -1) {
+                                loginSavedPlayerAnchor =
+                                    when {
+                                        playerBottomSheetState.isExpanded -> EXPANDED_ANCHOR
+                                        playerBottomSheetState.isCollapsed -> COLLAPSED_ANCHOR
+                                        playerBottomSheetState.isDismissed -> DISMISSED_ANCHOR
+                                        else -> COLLAPSED_ANCHOR
+                                    }
+                            }
+
+                            if (!playerBottomSheetState.isDismissed) {
+                                playerBottomSheetState.dismiss()
+                            }
+                        } else if (loginSavedPlayerAnchor != -1) {
+                            val anchorToRestore = loginSavedPlayerAnchor
+                            loginSavedPlayerAnchor = -1
 
                             if (!awaitRestorablePlayback(connection)) {
                                 playerBottomSheetState.dismiss()
@@ -1441,7 +1474,7 @@ class MainActivity : ComponentActivity() {
 
                     var restoredMiniPlayerAnchor by remember(playerConnection) { mutableStateOf(false) }
 
-                    LaunchedEffect(playerConnection, savedMiniPlayerAnchor, isYearInMusicScreen) {
+                    LaunchedEffect(playerConnection, savedMiniPlayerAnchor, isYearInMusicScreen, isLoginScreen) {
                         if (restoredMiniPlayerAnchor) return@LaunchedEffect
                         val connection = playerConnection ?: return@LaunchedEffect
                         connection.queueRestoreCompleted.first { it }
@@ -1450,7 +1483,7 @@ class MainActivity : ComponentActivity() {
                                 playerBottomSheetState.dismiss()
                             }
                         } else {
-                            if (!isYearInMusicScreen) {
+                            if (!isYearInMusicScreen && !isLoginScreen) {
                                 when (savedMiniPlayerAnchor) {
                                     EXPANDED_ANCHOR -> playerBottomSheetState.expandSoft()
                                     COLLAPSED_ANCHOR -> playerBottomSheetState.collapseSoft()
@@ -1466,6 +1499,7 @@ class MainActivity : ComponentActivity() {
                     val currentPlayerBottomSheetState = rememberUpdatedState(playerBottomSheetState)
                     val currentIsYearInMusicScreen = rememberUpdatedState(isYearInMusicScreen)
                     val currentIsAmbientModeScreen = rememberUpdatedState(isAmbientModeScreen)
+                    val currentIsLoginScreen = rememberUpdatedState(isLoginScreen)
 
                     DisposableEffect(playerConnection) {
                         val player =
@@ -1481,7 +1515,8 @@ class MainActivity : ComponentActivity() {
                                         player.playbackState != Player.STATE_ENDED &&
                                         currentPlayerBottomSheetState.value.isDismissed &&
                                         !currentIsYearInMusicScreen.value &&
-                                        !currentIsAmbientModeScreen.value
+                                        !currentIsAmbientModeScreen.value &&
+                                        !currentIsLoginScreen.value
                                     ) {
                                         currentPlayerBottomSheetState.value.collapseSoft()
                                     }
@@ -1660,7 +1695,7 @@ class MainActivity : ComponentActivity() {
                             modifier =
                                 Modifier
                                     .fillMaxSize()
-                                    .layerBackdrop(rootBackdrop),
+                                    .then(if (isLoginScreen) Modifier else Modifier.layerBackdrop(rootBackdrop)),
                         ) {
                             CompositionLocalProvider(
                                 LocalAppBackdrop provides screenBackdrop,
@@ -2320,7 +2355,7 @@ class MainActivity : ComponentActivity() {
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
-                                            .layerBackdrop(screenBackdrop),
+                                            .then(if (isLoginScreen) Modifier else Modifier.layerBackdrop(screenBackdrop)),
                                 ) {
                                     NavHost(
                                         navController = navController,

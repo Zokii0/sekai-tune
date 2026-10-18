@@ -16,14 +16,19 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -81,7 +86,7 @@ fun LoginScreen(
     @Suppress("UNUSED_VARIABLE")
     val screenState by viewModel.screenState.collectAsStateWithLifecycle()
     val loginSuccessMessage = stringResource(R.string.login_success)
-    var webView: WebView? = null
+    var webView by remember { mutableStateOf<WebView?>(null) }
 
     LaunchedEffect(viewModel, loginSuccessMessage) {
         viewModel.events.collect { event ->
@@ -94,86 +99,95 @@ fun LoginScreen(
         }
     }
 
-    AndroidView(
-        modifier =
-            Modifier
-                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-                .fillMaxSize(),
-        factory = { context ->
-            WebView(context).apply {
-                val cookieManager = CookieManager.getInstance()
-                webViewClient =
-                    object : WebViewClient() {
-                        override fun onPageFinished(
-                            view: WebView,
-                            url: String?,
-                        ) {
-                            val isYouTubePage = url?.contains("youtube.com", ignoreCase = true) == true
-                            if (isYouTubePage) {
-                                loadUrl(
-                                    "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var v=c.get('VISITOR_DATA');if(v){Android.onRetrieveVisitorData(v);return}}var y=window.yt&&window.yt.config_;if(y&&y.VISITOR_DATA){Android.onRetrieveVisitorData(y.VISITOR_DATA);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/\"VISITOR_DATA\":\"([^\"]+)\"/);if(m){Android.onRetrieveVisitorData(m[1]);return}}}catch(e){}})())",
-                                )
-                                loadUrl(
-                                    "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var d=c.get('DATASYNC_ID');if(d){Android.onRetrieveDataSyncId(d);return}}var y=window.yt&&window.yt.config_;if(y&&y.DATASYNC_ID){Android.onRetrieveDataSyncId(y.DATASYNC_ID);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/[\\\"'](?:DATASYNC_ID|dataSyncId)[\\\"']\\s*:\\s*[\\\"']([^\\\"']+)[\\\"']/);if(m){Android.onRetrieveDataSyncId(m[1]);return}}}catch(e){}})())",
-                                )
-                                loadUrl(
-                                    "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var t=c.get('PO_TOKEN');if(t){Android.onRetrievePoToken(t);return}}var y=window.yt&&window.yt.config_;if(y&&y.PO_TOKEN){Android.onRetrievePoToken(y.PO_TOKEN);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/\"PO_TOKEN\":\"([^\"]+)\"/);if(m){Android.onRetrievePoToken(m[1]);return}}}catch(e){}})())",
-                                )
-                            }
-
-                            val mergedCookie = mergeYouTubeCookies(cookieManager, url)
-                            if (!mergedCookie.isNullOrBlank()) {
-                                viewModel.onCookiesCaptured(mergedCookie)
-                            }
-                        }
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.login)) },
+                navigationIcon = {
+                    IconButton(
+                        onClick = navController::navigateUp,
+                        onLongClick = navController::backToMain,
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.arrow_back),
+                            contentDescription = null,
+                        )
                     }
-                settings.apply {
-                    javaScriptEnabled = true
-                    setSupportZoom(true)
-                    builtInZoomControls = true
-                    displayZoomControls = false
-                }
-                addJavascriptInterface(
-                    object {
-                        @JavascriptInterface
-                        fun onRetrieveVisitorData(newVisitorData: String?) {
-                            viewModel.onVisitorDataExtracted(newVisitorData)
-                        }
-
-                        @JavascriptInterface
-                        fun onRetrieveDataSyncId(newDataSyncId: String?) {
-                            viewModel.onDataSyncIdExtracted(newDataSyncId)
-                        }
-
-                        @JavascriptInterface
-                        fun onRetrievePoToken(newPoToken: String?) {
-                            viewModel.onPoTokenExtracted(newPoToken)
-                        }
-                    },
-                    "Android",
-                )
-                webView = this
-                resetAuthWebViewSession(context, this, clearCookies = true) {
-                    loadUrl(startUrl?.takeIf { it.isNotBlank() } ?: DEFAULT_LOGIN_URL)
-                }
-            }
+                },
+            )
         },
-    )
+    ) { innerPadding ->
+        AndroidView(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            factory = { context ->
+                WebView(context).apply {
+                    val cookieManager = CookieManager.getInstance()
+                    webViewClient =
+                        object : WebViewClient() {
+                            override fun onPageFinished(
+                                view: WebView,
+                                url: String?,
+                            ) {
+                                val isYouTubePage = url?.contains("youtube.com", ignoreCase = true) == true
+                                if (isYouTubePage) {
+                                    loadUrl(
+                                        "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var v=c.get('VISITOR_DATA');if(v){Android.onRetrieveVisitorData(v);return}}var y=window.yt&&window.yt.config_;if(y&&y.VISITOR_DATA){Android.onRetrieveVisitorData(y.VISITOR_DATA);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/\"VISITOR_DATA\":\"([^\"]+)\"/);if(m){Android.onRetrieveVisitorData(m[1]);return}}}catch(e){}})())",
+                                    )
+                                    loadUrl(
+                                        "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var d=c.get('DATASYNC_ID');if(d){Android.onRetrieveDataSyncId(d);return}}var y=window.yt&&window.yt.config_;if(y&&y.DATASYNC_ID){Android.onRetrieveDataSyncId(y.DATASYNC_ID);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/[\\\"'](?:DATASYNC_ID|dataSyncId)[\\\"']\\s*:\\s*[\\\"']([^\\\"']+)[\\\"']/);if(m){Android.onRetrieveDataSyncId(m[1]);return}}}catch(e){}})())",
+                                    )
+                                    loadUrl(
+                                        "javascript:void((function(){try{var c=window.ytcfg;if(c&&c.get){var t=c.get('PO_TOKEN');if(t){Android.onRetrievePoToken(t);return}}var y=window.yt&&window.yt.config_;if(y&&y.PO_TOKEN){Android.onRetrievePoToken(y.PO_TOKEN);return}var s=document.querySelectorAll('script');for(var i=0;i<s.length;i++){var m=s[i].textContent.match(/\"PO_TOKEN\":\"([^\"]+)\"/);if(m){Android.onRetrievePoToken(m[1]);return}}}catch(e){}})())",
+                                    )
+                                }
 
-    TopAppBar(
-        title = { Text(stringResource(R.string.login)) },
-        navigationIcon = {
-            IconButton(
-                onClick = navController::navigateUp,
-                onLongClick = navController::backToMain,
-            ) {
-                Icon(
-                    painterResource(R.drawable.arrow_back),
-                    contentDescription = null,
-                )
-            }
-        },
-    )
+                                val mergedCookie = mergeYouTubeCookies(cookieManager, url)
+                                if (!mergedCookie.isNullOrBlank()) {
+                                    viewModel.onCookiesCaptured(mergedCookie)
+                                }
+                            }
+                        }
+                    settings.apply {
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
+                        databaseEnabled = true
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        setSupportZoom(true)
+                        builtInZoomControls = true
+                        displayZoomControls = false
+                    }
+                    addJavascriptInterface(
+                        object {
+                            @JavascriptInterface
+                            fun onRetrieveVisitorData(newVisitorData: String?) {
+                                viewModel.onVisitorDataExtracted(newVisitorData)
+                            }
+
+                            @JavascriptInterface
+                            fun onRetrieveDataSyncId(newDataSyncId: String?) {
+                                viewModel.onDataSyncIdExtracted(newDataSyncId)
+                            }
+
+                            @JavascriptInterface
+                            fun onRetrievePoToken(newPoToken: String?) {
+                                viewModel.onPoTokenExtracted(newPoToken)
+                            }
+                        },
+                        "Android",
+                    )
+                    webView = this
+                    resetAuthWebViewSession(context, this, clearCookies = true) {
+                        loadUrl(startUrl?.takeIf { it.isNotBlank() } ?: DEFAULT_LOGIN_URL)
+                    }
+                }
+            },
+        )
+    }
 
     BackHandler(enabled = webView?.canGoBack() == true) {
         webView?.goBack()
