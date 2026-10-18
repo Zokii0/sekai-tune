@@ -6,7 +6,7 @@
 
   <p>
     <a href="https://github.com/rgsekai/sekai-tune/releases/latest"><img src="https://img.shields.io/badge/Download-Latest_APK-7C4DFF?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest APK"></a>
-    <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/latest/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github&label=DOWNLOADS" alt="Total Downloads"></a>
+    <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github&label=DOWNLOADS" alt="Total Downloads"></a>
     <a href="https://rgsekai.github.io/sekai-tune/"><img src="https://img.shields.io/badge/Website-Visit_Site-007ACC?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Website"></a>
     <a href="https://github.com/rgsekai/sekai-tune/issues/new?template=bug_report.yml"><img src="https://img.shields.io/badge/Report-Bug-E53935?style=for-the-badge&logo=github&logoColor=white" alt="Report a Bug"></a>
     <a href="https://github.com/rgsekai/sekai-tune/issues/new?template=feature_request.yml"><img src="https://img.shields.io/badge/Request-Feature-FFA000?style=for-the-badge&logo=github&logoColor=white" alt="Request a Feature"></a>
@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/latest/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github&label=DOWNLOADS" alt="Total Downloads"></a>
+  <a href="https://github.com/rgsekai/sekai-tune/releases"><img src="https://img.shields.io/github/downloads/rgsekai/sekai-tune/total?style=for-the-badge&color=7C4DFF&labelColor=1e1e2e&logo=github&label=DOWNLOADS" alt="Total Downloads"></a>
 </p>
 
 When installing the APK, Android may display a Google Play Protect prompt stating *"App scan recommended"* for apps installed outside the Play Store; tapping **"Scan app"** is completely normal.
