@@ -271,7 +271,7 @@ private fun OneLineLyricsContent(
         )
     }
 
-    LaunchedEffect(mediaMetadata.id, showOneLineLyrics) {
+    LaunchedEffect(mediaMetadata.id) {
         while (isActive) {
             delay(1000L)
             Timber.tag("OneLineLyrics").d(
